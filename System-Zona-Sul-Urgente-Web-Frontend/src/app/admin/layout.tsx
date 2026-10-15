@@ -13,7 +13,9 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
       <aside className="hidden w-60 border-r bg-sidebar p-4 text-sidebar-foreground md:block">
         <span className="font-semibold">Painel</span>
       </aside>
-      <main className="flex-1 p-6">{children}</main>
+      <main id="conteudo" className="flex-1 p-6">
+        {children}
+      </main>
     </div>
   );
 }
