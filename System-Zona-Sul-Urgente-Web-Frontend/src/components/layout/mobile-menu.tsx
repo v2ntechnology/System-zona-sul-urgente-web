@@ -6,9 +6,10 @@ import { useRef, useState } from "react";
 
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { SearchForm } from "@/components/layout/search-form";
+import { SectionMenu } from "@/components/layout/section-menu";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { allSections, institutional, neighborhoods, type NavItem } from "@/config/navigation";
+import { institutional, neighborhoods, type NavItem } from "@/config/navigation";
 import { siteConfig } from "@/config/site";
 
 // Menu completo (☰), aberto pela esquerda como na CNN. Disponível em todas as larguras:
@@ -47,8 +48,11 @@ export function MobileMenu() {
 
         <div className="flex flex-col gap-6 p-4">
           <SearchForm />
+        </div>
 
-          <MenuGroup title="Editorias" items={allSections} onNavigate={close} />
+        <SectionMenu onNavigate={close} />
+
+        <div className="flex flex-col gap-6 p-4">
           <MenuGroup title="Bairros" items={neighborhoods} onNavigate={close} columns />
           <MenuGroup title="Institucional" items={institutional} onNavigate={close} muted />
 

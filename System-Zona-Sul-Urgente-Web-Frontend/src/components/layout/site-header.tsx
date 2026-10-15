@@ -4,6 +4,7 @@ import Link from "next/link";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { MainNav } from "@/components/layout/main-nav";
 import { MobileMenu } from "@/components/layout/mobile-menu";
+import { SectionLabel } from "@/components/layout/section-label";
 import { BreakingTicker } from "@/components/news/breaking-ticker";
 import { routes } from "@/config/navigation";
 import { siteConfig } from "@/config/site";
@@ -14,10 +15,11 @@ import { siteConfig } from "@/config/site";
 export function SiteHeader() {
   return (
     <>
-      <header className="masthead-bar sticky top-0 z-40 bg-masthead text-masthead-foreground">
+      <header className="masthead-bar group/masthead sticky top-0 z-40 bg-masthead text-masthead-foreground">
         <div className="mx-auto flex max-w-site items-center gap-2 px-2 py-2.5 sm:px-4">
           <MobileMenu />
-          <BrandLogo className="masthead-logo mr-4 text-[0.6rem] sm:text-xs" />
+          <BrandLogo className="masthead-logo mr-3 shrink-0 text-[0.6rem] sm:text-xs" />
+          <SectionLabel />
           <MainNav variant="bar" className="hidden lg:block" />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <a
@@ -28,8 +30,11 @@ export function SiteHeader() {
               className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full bg-brand-red-dark px-3 text-sm font-semibold whitespace-nowrap text-white shadow-sm transition hover:-translate-y-px hover:shadow-md focus-visible:outline-white sm:px-4"
             >
               <MessageCircleIcon className="size-4" aria-hidden />
-              {/* Texto curto onde a barra de editorias divide espaço (celular e lg). */}
-              <span className="sm:max-lg:hidden xl:hidden">Envie</span>
+              {/* Texto curto onde a barra divide espaço (celular e lg); no celular, com o nome
+                  da editoria ao lado do logo, fica só o ícone. */}
+              <span className="group-has-[[data-section-label]]/masthead:max-sm:hidden sm:max-lg:hidden xl:hidden">
+                Envie
+              </span>
               <span className="hidden whitespace-nowrap sm:max-lg:inline xl:inline">
                 Envie sua notícia
               </span>

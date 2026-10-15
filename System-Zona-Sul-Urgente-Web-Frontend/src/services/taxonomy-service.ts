@@ -10,3 +10,8 @@ export async function getCategories(): Promise<Category[]> {
 export async function getNeighborhoods(): Promise<Neighborhood[]> {
   return neighborhoods;
 }
+
+/** Subeditorias diretas de uma editoria (um nível). */
+export async function getSubcategories(parentSlug: string): Promise<Category[]> {
+  return categories.filter((c) => c.parent?.slug === parentSlug);
+}

@@ -20,6 +20,8 @@ export type Category = {
   name: string;
   description?: string;
   parent?: CategoryRef;
+  /** Canal de WhatsApp da editoria ("Acompanhe Esportes no WhatsApp"). Subeditoria herda da mãe. */
+  whatsappUrl?: string;
 };
 
 export type Tag = {
@@ -216,3 +218,29 @@ export type Advertisement =
       type: "ADSENSE";
       adUnitId: string;
     };
+
+// ---------------------------------------------------------------- web stories
+
+export type WebStoryPage = {
+  /** Foto vertical (9:16 ou 3:4) que preenche a tela. */
+  image: MediaAsset;
+  /** Texto curto sobre a foto (até ~140 caracteres). */
+  text: string;
+};
+
+/**
+ * Web Story no formato AMP Story (o que o Google Discover exibe). Publicada em /stories/{slug};
+ * a última página leva para a matéria completa.
+ */
+export type WebStory = {
+  id: UUID;
+  slug: string;
+  title: string;
+  category: Category;
+  /** Capa retrato 3:4 (mínimo 640×853, exigência do formato). */
+  cover: MediaAsset;
+  pages: WebStoryPage[];
+  /** Matéria relacionada (link "Leia mais" no fim da story). */
+  news?: Pick<NewsSummary, "slug" | "title" | "category">;
+  publishedAt: ISODateTime;
+};

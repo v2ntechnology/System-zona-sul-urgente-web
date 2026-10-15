@@ -21,11 +21,17 @@ export const routes = {
     category.parent ? `/${category.parent.slug}/${category.slug}` : `/${category.slug}`,
   news: (news: NewsLike) => `${routes.category(news.category)}/${news.slug}`,
   neighborhood: (slug: string) => `/bairro/${slug}`,
+  /** Web Story (página AMP fora do layout do site). Usar <a>, não <Link>. */
+  story: (slug: string) => `/stories/${slug}`,
 } as const;
 
 /** Primeiros segmentos usados por rotas fixas do site. */
 export const RESERVED_SLUGS = new Set([
   "admin",
+  // Rotas do site antigo, redirecionadas na migração (ver OPS-003).
+  "article",
+  "category",
+  "search",
   "anuncie",
   "api",
   "ao-vivo",
@@ -38,6 +44,8 @@ export const RESERVED_SLUGS = new Set([
   "quem-somos",
   "rss",
   "sitemap",
+  "stories",
+  "brand",
   "tag",
   "termos",
   "zona",

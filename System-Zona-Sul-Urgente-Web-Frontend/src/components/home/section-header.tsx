@@ -1,6 +1,7 @@
 import { ArrowRightIcon } from "lucide-react";
 import Link from "next/link";
 
+import { sectionStyle } from "@/lib/section-color";
 import { cn } from "@/lib/utils";
 
 type SectionHeaderProps = {
@@ -9,23 +10,33 @@ type SectionHeaderProps = {
   href?: string;
   linkLabel?: string;
   onDark?: boolean;
+  /** Pinta o título com a cor da editoria; sem ela, vermelho da marca. */
+  category?: { slug: string; parent?: { slug: string } };
   className?: string;
 };
 
-// Título de seção com barra vermelha e link "Ver tudo" opcional.
+// Título de seção no estilo CNN ("Economia■"): cor da editoria + quadradinho, e "Ver tudo".
 export function SectionHeader({
   id,
   title,
   href,
   linkLabel = "Ver tudo",
   onDark,
+  category,
   className,
 }: SectionHeaderProps) {
   return (
     <div className={cn("mb-5 flex items-end justify-between gap-4", className)}>
-      <h2 id={id} className={cn("flex items-center gap-3 text-headline", onDark && "text-white")}>
-        <span aria-hidden className="h-[0.9em] w-1.5 bg-brand-red" />
+      <h2
+        id={id}
+        style={sectionStyle(category)}
+        className={cn("text-headline", onDark ? "text-white" : "text-[color:var(--section)]")}
+      >
         {title}
+        <span
+          aria-hidden
+          className="ml-1 inline-block size-[0.26em] bg-[color:var(--section)] align-baseline"
+        />
       </h2>
       {href && (
         <Link

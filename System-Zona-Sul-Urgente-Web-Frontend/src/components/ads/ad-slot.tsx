@@ -18,6 +18,11 @@ type AdSlotProps = {
   contained?: boolean;
 };
 
+/** O slot vai aparecer? Útil para a página decidir o layout (ex.: coluna lateral só com anúncio). */
+export async function isAdSlotVisible(key: AdSlotKey): Promise<boolean> {
+  return showPlaceholders || Boolean((await getAdForSlot(key)).ad);
+}
+
 export async function AdSlot({ slotKey, className, contained }: AdSlotProps) {
   const { slot, ad } = await getAdForSlot(slotKey);
   if (!ad && !showPlaceholders) return null;

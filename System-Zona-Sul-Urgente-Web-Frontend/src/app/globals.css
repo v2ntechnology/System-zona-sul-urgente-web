@@ -28,6 +28,7 @@
   --color-brand-blue-dark: var(--brand-blue-dark);
   --color-brand-red: var(--brand-red);
   --color-brand-red-dark: var(--brand-red-dark);
+  --color-brand-red-deep: var(--brand-red-deep);
   --color-brand-sky: var(--brand-sky);
   --color-brand-sky-light: var(--brand-sky-light);
 
@@ -39,6 +40,7 @@
   --color-masthead: var(--masthead);
   --color-masthead-foreground: var(--masthead-foreground);
   --color-ad-slot: var(--ad-slot);
+  --color-whatsapp: var(--whatsapp);
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -108,6 +110,7 @@
   --brand-blue-dark: #013a85;
   --brand-red: #fd3132;
   --brand-red-dark: #d91f26;
+  --brand-red-deep: #8f0b10;
   --brand-sky: #38b8ff;
   --brand-sky-light: #e3f4ff;
 
@@ -139,6 +142,19 @@
   --masthead: var(--brand-blue);
   --masthead-foreground: #ffffff;
   --ad-slot: #f2f4f7;
+  /* Cor de cada editoria (chapéu, título de seção, filete das fotos). Todas com AA (≥4,5:1)
+     sobre branco. O vermelho fica reservado para "Urgente" e para a marca. */
+  --section-seguranca: #334155;
+  --section-transito: #a16207;
+  --section-cidade: #024baa;
+  --section-politica: #6d28d9;
+  --section-economia: #047857;
+  --section-esportes: #0e7490;
+  --section-entretenimento: #be185d;
+  --section-comunidade: #c2410c;
+  --section-classificados: #7c4a1e;
+  /* Verde do WhatsApp escurecido para texto branco passar no AA (5,4:1). */
+  --whatsapp: #187a43;
 
   --chart-1: var(--brand-blue);
   --chart-2: var(--brand-red);

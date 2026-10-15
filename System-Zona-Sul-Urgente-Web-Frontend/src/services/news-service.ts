@@ -180,6 +180,13 @@ export async function resolveSectionPath(segments: string[]): Promise<ResolvedPa
   return { type: "news", news, canonicalPath: routes.news(news) };
 }
 
+/** Todos os caminhos conhecidos (editorias e matérias) para pré-gerar no build. */
+export async function getSectionPaths(): Promise<string[][]> {
+  const categoryPaths = categories.map((c) => (c.parent ? [c.parent.slug, c.slug] : [c.slug]));
+  const newsPaths = newsMock.map((n) => routes.news(n).split("/").filter(Boolean));
+  return [...categoryPaths, ...newsPaths];
+}
+
 // ---------------------------------------------------------------- utilitários
 
 function clampLimit(limit: number | undefined): number {

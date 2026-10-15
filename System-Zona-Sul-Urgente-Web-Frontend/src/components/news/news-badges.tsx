@@ -3,9 +3,17 @@ import { cn } from "@/lib/utils";
 type BadgeProps = { className?: string; children?: React.ReactNode };
 
 // Chapéu da matéria (editoria ou assunto), acima do título — padrão O Globo/CNN.
+// Usa a cor da editoria (--section, ver sectionStyle); sem ela, o vermelho do chapéu.
 export function Kicker({ className, children }: BadgeProps) {
   return (
-    <span className={cn("text-label font-bold text-kicker uppercase", className)}>{children}</span>
+    <span
+      className={cn(
+        "text-label font-bold text-[color:var(--section,var(--kicker))] uppercase",
+        className,
+      )}
+    >
+      {children}
+    </span>
   );
 }
 

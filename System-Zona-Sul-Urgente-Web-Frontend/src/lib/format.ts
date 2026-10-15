@@ -34,6 +34,18 @@ export function formatLongDateTime(iso: string): string {
   return longDateTime.format(new Date(iso));
 }
 
+const shortDate = new Intl.DateTimeFormat("pt-BR", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "2-digit",
+  timeZone: TIME_ZONE,
+});
+
+/** "15/10/26 às 14:30" — cabeçalho da matéria (padrão CNN). */
+export function formatShortDateTime(iso: string): string {
+  return `${shortDate.format(new Date(iso))} às ${time.format(new Date(iso))}`;
+}
+
 export function formatTime(iso: string): string {
   return time.format(new Date(iso));
 }

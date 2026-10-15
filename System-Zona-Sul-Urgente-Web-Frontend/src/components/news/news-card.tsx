@@ -2,9 +2,11 @@ import { PlayIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { Kicker, SponsoredBadge, UrgentBadge } from "@/components/news/news-badges";
 import { RelativeTime } from "@/components/news/relative-time";
 import { routes } from "@/config/navigation";
+import { sectionStyle } from "@/lib/section-color";
 import { cn } from "@/lib/utils";
 import type { NewsSummary } from "@/types/news";
 
@@ -53,7 +55,10 @@ function TitleLink({
 function CardLabels({ news, onDark }: { news: NewsSummary; onDark?: boolean }) {
   const place = news.location?.neighborhood?.name;
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+    <div
+      style={sectionStyle(news.category)}
+      className="flex flex-wrap items-center gap-x-2 gap-y-1"
+    >
       {news.isUrgent && <UrgentBadge />}
       {news.isSponsored ? (
         <SponsoredBadge />
@@ -94,8 +99,12 @@ function CardImage({
           className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
         />
       )}
-      {/* Acento vermelho no canto, como na CNN. */}
-      <span aria-hidden className="absolute top-0 left-0 h-1 w-8 bg-brand-red" />
+      {/* Filete na cor da editoria, no canto da foto (como na CNN). */}
+      <span
+        aria-hidden
+        style={sectionStyle(news.category)}
+        className="absolute top-0 left-0 h-1 w-8 bg-[color:var(--section)]"
+      />
       {news.hasVideo && <PlayBadge size={playSize} />}
     </div>
   );
@@ -246,18 +255,43 @@ export function NewsCardCompact({ news, className }: CardProps) {
   );
 }
 
-/** Card de vídeo para a faixa escura da home. */
+/**
+ * Card de vídeo com a "moldura" do site (estilo CNN): borda vermelha, logo no canto,
+ * botão de play e faixa com o título sobre a foto; título completo abaixo.
+ */
 export function NewsCardVideo({ news, className }: CardProps) {
   return (
-    <article className={cn("group relative flex flex-col gap-3 text-white", className)}>
-      <CardImage
-        news={news}
-        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-        playSize="lg"
-      />
-      <CardLabels news={news} onDark />
-      <h3 className="text-title text-white">
-        <TitleLink news={news} overlay />
+    <article className={cn("group relative flex flex-col gap-3", className)}>
+      <div className="relative aspect-video overflow-hidden rounded-md bg-brand-blue-dark ring-[3px] ring-brand-red ring-inset">
+        {news.image && (
+          <Image
+            src={news.image.url}
+            alt={news.image.alt}
+            fill
+            sizes="(min-width: 1024px) 20vw, 280px"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.04] motion-reduce:transition-none"
+          />
+        )}
+        <BrandLogo
+          asLink={false}
+          variant="light"
+          className="absolute top-0 left-0 z-1 text-[0.32rem]"
+        />
+        <span className="absolute inset-0 z-1 flex items-center justify-center">
+          <span className="flex h-10 w-12 items-center justify-center rounded-md bg-white text-black shadow-md transition-transform group-hover:scale-110 motion-reduce:transition-none">
+            <PlayIcon aria-hidden className="size-5 fill-current" />
+          </span>
+        </span>
+        <span
+          aria-hidden
+          className="absolute bottom-[3px] left-[3px] z-1 line-clamp-2 max-w-[80%] bg-brand-red px-2 py-1 text-[0.625rem] leading-tight font-extrabold text-white uppercase"
+        >
+          {news.title}
+        </span>
+        <span className="sr-only">Vídeo</span>
+      </div>
+      <h3 className="font-heading text-teaser font-bold">
+        <TitleLink news={news} />
       </h3>
     </article>
   );

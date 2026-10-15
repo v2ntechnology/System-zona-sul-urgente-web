@@ -18,7 +18,14 @@ const mainCategories: Category[] = [
   ["entretenimento", "Entretenimento", "Gastronomia, shows, feiras e passeios."],
   ["comunidade", "Comunidade", "Projetos sociais, iniciativas locais e histórias dos moradores."],
   ["classificados", "Classificados", "Imóveis, vagas de emprego e serviços locais."],
-].map(([slug, name, description], i) => ({ id: mockId(1, i + 1), slug, name, description }));
+].map(([slug, name, description], i) => ({
+  id: mockId(1, i + 1),
+  slug,
+  name,
+  description,
+  // Links FICTÍCIOS de exemplo: trocar pelos canais reais de cada editoria.
+  whatsappUrl: `https://whatsapp.com/channel/exemplo-${slug}`,
+}));
 
 const ref = (slug: string) => {
   const { id, name } = mainCategories.find((c) => c.slug === slug)!;
@@ -35,6 +42,7 @@ const subCategories: Category[] = [
   name,
   description,
   parent: ref(parent),
+  whatsappUrl: `https://whatsapp.com/channel/exemplo-${slug}`,
 }));
 
 export const categories: Category[] = [...mainCategories, ...subCategories];
