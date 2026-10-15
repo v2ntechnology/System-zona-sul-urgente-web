@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { FilterTabs } from "@/components/admin/filter-tabs";
 import { NewsTable } from "@/components/admin/news-table";
 import { statusLabel } from "@/components/admin/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -99,41 +100,17 @@ async function NewsList({ searchParams }: { searchParams: Promise<Params> }) {
 
   return (
     <>
-      <nav aria-label="Filtrar por status" className="-mx-1 [scrollbar-width:none] overflow-x-auto">
-        <ul className="flex gap-1 px-1">
-          {STATUS_TABS.map((status) => {
-            const active = (filter.status ?? "ALL") === status;
-            return (
-              <li key={status}>
-                <Link
-                  href={query({ status: status === "ALL" ? undefined : status })}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap transition",
-                    active
-                      ? "bg-brand-blue text-white"
-                      : "bg-background text-muted-foreground ring-1 ring-border hover:text-foreground",
-                  )}
-                >
-                  {status === "ALL"
-                    ? "Todas"
-                    : status === "DELETED"
-                      ? "Lixeira"
-                      : statusLabel(status)}
-                  <span
-                    className={cn(
-                      "rounded-full px-1.5 text-xs tabular-nums",
-                      active ? "bg-white/20" : "bg-muted",
-                    )}
-                  >
-                    {counts[status] ?? 0}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+      <FilterTabs
+        label="Filtrar por status"
+        active={filter.status ?? "ALL"}
+        tabs={STATUS_TABS.map((status) => ({
+          key: status,
+          label:
+            status === "ALL" ? "Todas" : status === "DELETED" ? "Lixeira" : statusLabel(status),
+          count: counts[status] ?? 0,
+          href: query({ status: status === "ALL" ? undefined : status }),
+        }))}
+      />
 
       <form method="get" action={adminRoutes.news} className="flex flex-wrap gap-2">
         {filter.status && <input type="hidden" name="status" value={filter.status} />}

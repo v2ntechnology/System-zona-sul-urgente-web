@@ -1,5 +1,6 @@
 import { emptyDraft } from "@/lib/editor/validate";
-import { adminNewsMock, instagramPostsMock } from "@/mocks/admin";
+import { escapeHtml } from "@/lib/html";
+import { adminNewsMock, draftContentMock, instagramPostsMock } from "@/mocks/admin";
 import { newsMock } from "@/mocks/news";
 import type { NewsDraft } from "@/types/admin";
 
@@ -9,6 +10,7 @@ export async function getDraftForEdit(id: string): Promise<NewsDraft | null> {
   const row = adminNewsMock.find((n) => n.id === id);
   if (!row) return null;
   const full = newsMock.find((n) => n.id === id);
+  const generated = draftContentMock[row.slug];
   const instagram = instagramPostsMock.find((p) => p.newsSlug && p.newsSlug === row.slug);
 
   return {
@@ -16,8 +18,14 @@ export async function getDraftForEdit(id: string): Promise<NewsDraft | null> {
     id: row.id,
     title: row.title,
     subtitle: full?.subtitle ?? "",
-    summary: full?.summary ?? "",
-    body: full?.body ?? [],
+    summary: full?.summary ?? generated?.summary ?? "",
+    body:
+      full?.body ??
+      generated?.paragraphs.map((text) => ({
+        type: "paragraph" as const,
+        html: escapeHtml(text),
+      })) ??
+      [],
     categorySlug: row.category.slug,
     authorSlugs: full?.authors.map((a) => a.slug) ?? [],
     neighborhoodSlug: full?.location?.neighborhood?.slug ?? "",

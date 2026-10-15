@@ -81,6 +81,51 @@ export type AdminPage<T> = {
 export type InstagramImportStatus =
   "NEW" | "IMPORTED" | "CHANGED_AT_SOURCE" | "ERROR" | "IGNORED" | "REMOVED_AT_SOURCE";
 
+export type InstagramMediaType = "IMAGE" | "VIDEO" | "CAROUSEL_ALBUM";
+
+/** Post do Instagram na fila de importação (FE-155) — GET /api/v1/admin/instagram/posts. */
+export type InstagramPost = {
+  /** ID do post no Instagram (deduplicação). */
+  id: string;
+  /** Legenda como foi importada (imutável, auditoria). */
+  caption: string;
+  /** Legenda atual na origem, quando mudou depois da importação (CHANGED_AT_SOURCE). */
+  currentCaption?: string;
+  permalink: string;
+  mediaType: InstagramMediaType;
+  /** Quantidade de mídias (carrossel). */
+  mediaCount: number;
+  thumbnailUrl?: string;
+  postedAt: ISODateTime;
+  status: InstagramImportStatus;
+  /** Notícia gerada a partir do post. */
+  news?: {
+    id: UUID;
+    title: string;
+    status: NewsStatus;
+    summary: string;
+    /** Parágrafos em texto puro (comparação com a legenda). */
+    paragraphs: string[];
+  };
+  error?: string;
+  attempts?: number;
+  ignoredReason?: string;
+  /** Quando a reconciliação percebeu a edição/remoção na origem. */
+  sourceChangedAt?: ISODateTime;
+};
+
+/** Conexão com a conta (ARCHITECTURE §6): polling, token de 60 dias, regra de publicação. */
+export type InstagramConnection = {
+  username: string;
+  lastCheckAt: ISODateTime;
+  pollMinutes: number;
+  tokenExpiresAt: ISODateTime;
+  /** Dias até o token expirar (alerta abaixo de 10; renovação automática a cada 30). */
+  tokenDaysLeft: number;
+  /** DRAFT = tudo vira rascunho; URGENT_AUTO = urgente publica sozinho. */
+  publishRule: "DRAFT" | "URGENT_AUTO";
+};
+
 export type DashboardStats = {
   publishedToday: number;
   drafts: number;

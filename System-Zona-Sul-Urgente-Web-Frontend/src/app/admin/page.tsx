@@ -11,6 +11,7 @@ import {
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { InstagramStatusBadge } from "@/components/admin/instagram-status-badge";
 import { Panel, PanelEmpty } from "@/components/admin/panel";
 import { StatCard } from "@/components/admin/stat-card";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -26,12 +27,6 @@ import {
 import { getMostRead } from "@/services/news-service";
 
 export const metadata: Metadata = { title: "Dashboard" };
-
-const igStatus = {
-  NEW: { label: "Novo", className: "bg-brand-sky-light text-brand-blue" },
-  ERROR: { label: "Erro", className: "bg-red-50 text-red-800" },
-  CHANGED_AT_SOURCE: { label: "Alterado no Instagram", className: "bg-amber-50 text-amber-800" },
-} as const;
 
 // Dashboard do painel (FE-152), com dados de exemplo.
 export default async function AdminDashboardPage() {
@@ -120,15 +115,10 @@ export default async function AdminDashboardPage() {
           ) : (
             <ul className="divide-y">
               {queue.map((post) => {
-                const status = igStatus[post.status as keyof typeof igStatus];
                 return (
                   <li key={post.id} className="flex flex-col gap-1.5 px-4 py-3">
                     <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${status.className}`}
-                      >
-                        {status.label}
-                      </span>
+                      <InstagramStatusBadge status={post.status} />
                       <RelativeTime iso={post.postedAt} className="text-xs text-muted-foreground" />
                     </div>
                     <p className="line-clamp-2 text-sm">{post.caption}</p>
