@@ -35,6 +35,7 @@ const published: AdminNewsRow[] = newsMock.map((n) => ({
   updatedAt: n.updatedAt ?? n.publishedAt,
   publishedAt: n.publishedAt,
   views: viewsBySlug.get(n.slug)?.total ?? 0,
+  imageUrl: n.image?.url,
 }));
 
 type Extra = {
@@ -127,6 +128,9 @@ const extraRows: AdminNewsRow[] = extras.map((e, i) => ({
   scheduledFor: e.scheduledInHours ? hoursAfter(e.scheduledInHours) : undefined,
   deletedAt: e.deleted ? hoursBefore(e.hoursAgo - 1) : undefined,
   views: 0,
+  // Rascunhos do Instagram já vêm com a foto do post; os manuais ainda não têm foto.
+  imageUrl:
+    e.origin === "INSTAGRAM" ? `https://picsum.photos/seed/rascunho-${i + 1}/1200/675` : undefined,
 }));
 
 export const adminNewsMock: AdminNewsRow[] = [...extraRows, ...published].sort((a, b) =>

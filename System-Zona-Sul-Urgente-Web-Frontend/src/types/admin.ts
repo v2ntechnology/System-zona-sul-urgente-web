@@ -58,6 +58,8 @@ export type AdminNewsRow = {
   /** Exclusão lógica (pode ser restaurada). */
   deletedAt?: ISODateTime;
   views: number;
+  /** Miniatura da foto principal (cards da listagem). */
+  imageUrl?: string;
 };
 
 export type AdminNewsFilter = {

@@ -10,11 +10,50 @@ export function FilterTabs({
   label,
   tabs,
   active,
+  variant = "pill",
 }: {
   label: string;
   tabs: FilterTab[];
   active: string;
+  /** "underline": abas sublinhadas (estilo portal), para o filtro principal da página. */
+  variant?: "pill" | "underline";
 }) {
+  if (variant === "underline")
+    return (
+      <nav aria-label={label} className="-mx-1 [scrollbar-width:none] overflow-x-auto border-b">
+        <ul className="flex gap-1 px-1">
+          {tabs.map((tab) => {
+            const current = tab.key === active;
+            return (
+              <li key={tab.key}>
+                <Link
+                  href={tab.href}
+                  aria-current={current ? "page" : undefined}
+                  className={cn(
+                    "-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition",
+                    current
+                      ? "border-brand-red text-foreground"
+                      : "border-transparent text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  {tab.label}
+                  {tab.count !== undefined && (
+                    <span
+                      className={cn(
+                        "rounded-full px-1.5 text-xs tabular-nums",
+                        current ? "bg-brand-blue text-white" : "bg-muted",
+                      )}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+    );
   return (
     <nav aria-label={label} className="-mx-1 [scrollbar-width:none] overflow-x-auto">
       <ul className="flex gap-1 px-1">

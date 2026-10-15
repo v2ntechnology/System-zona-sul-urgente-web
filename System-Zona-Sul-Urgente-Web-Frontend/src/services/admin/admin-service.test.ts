@@ -40,3 +40,22 @@ describe("admin-service", () => {
     expect(stats.instagramNew).toBe(2);
   });
 });
+
+describe("lateral da listagem", () => {
+  it("fila de revisão só tem notícias em revisão, mais antigas primeiro", async () => {
+    const { getReviewQueue } = await import("@/services/admin/admin-service");
+    const queue = await getReviewQueue();
+    expect(queue.length).toBeGreaterThan(0);
+    expect(queue.every((n) => n.status === "IN_REVIEW")).toBe(true);
+    const dates = queue.map((n) => n.updatedAt);
+    expect(dates).toEqual([...dates].sort());
+  });
+
+  it("tópicos em alta vêm ordenados por uso", async () => {
+    const { getTrendingTags } = await import("@/services/admin/admin-service");
+    const tags = await getTrendingTags();
+    expect(tags.length).toBeGreaterThan(0);
+    const counts = tags.map((t) => t.count);
+    expect(counts).toEqual([...counts].sort((a, b) => b - a));
+  });
+});

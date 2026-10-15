@@ -1,4 +1,4 @@
-import { MOCK_NOW } from "@/mocks/news";
+import { MOCK_NOW, newsMock, viewsBySlug } from "@/mocks/news";
 import {
   activeCampaignsMock,
   adminNewsMock,
@@ -97,6 +97,32 @@ export async function countAdminNewsByStatus(): Promise<Record<string, number>> 
 /** Últimas atualizações (dashboard). */
 export async function getRecentlyUpdated(limit = 6): Promise<AdminNewsRow[]> {
   return adminNewsMock.filter((n) => !n.deletedAt).slice(0, limit);
+}
+
+/** Notícias esperando revisão de um editor (lateral da listagem), mais antigas primeiro. */
+export async function getReviewQueue(limit = 4): Promise<AdminNewsRow[]> {
+  return adminNewsMock
+    .filter((n) => !n.deletedAt && n.status === "IN_REVIEW")
+    .sort((a, b) => a.updatedAt.localeCompare(b.updatedAt))
+    .slice(0, limit);
+}
+
+/** Tópicos mais usados nas notícias das últimas 48 h (lateral "Tópicos em alta"). */
+export async function getTrendingTags(
+  limit = 5,
+): Promise<{ slug: string; name: string; count: number; views: number }[]> {
+  const since = MOCK_NOW.getTime() - 48 * 3_600_000;
+  const byTag = new Map<string, { slug: string; name: string; count: number; views: number }>();
+  for (const news of newsMock) {
+    if (Date.parse(news.publishedAt) < since) continue;
+    for (const tag of news.tags) {
+      const entry = byTag.get(tag.slug) ?? { slug: tag.slug, name: tag.name, count: 0, views: 0 };
+      entry.count += 1;
+      entry.views += viewsBySlug.get(news.slug)?.day ?? 0;
+      byTag.set(tag.slug, entry);
+    }
+  }
+  return [...byTag.values()].sort((a, b) => b.count - a.count || b.views - a.views).slice(0, limit);
 }
 
 export async function getInstagramQueue(limit = 5) {
