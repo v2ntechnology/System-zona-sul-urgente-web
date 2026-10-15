@@ -11,13 +11,18 @@ import {
   PlayIcon,
   RotateCwIcon,
   SparklesIcon,
+  XIcon,
   Trash2Icon,
 } from "lucide-react";
+import { Dialog } from "@base-ui/react/dialog";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-import { InstagramStatusBadge } from "@/components/admin/instagram-status-badge";
+import {
+  InstagramStatusBadge,
+  instagramStatusLabel,
+} from "@/components/admin/instagram-status-badge";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { RelativeTime } from "@/components/news/relative-time";
 import {
@@ -52,13 +57,18 @@ const primaryButton =
 export function InstagramQueue({
   posts: initialPosts,
   userName,
+  view = "grid",
 }: {
   posts: InstagramPost[];
   userName: string;
+  /** "grid": grade do perfil (como no Instagram); "list": fila detalhada. */
+  view?: "grid" | "list";
 }) {
   const [posts, setPosts] = useState(initialPosts);
   const [message, setMessage] = useState("");
   const [comparing, setComparing] = useState<InstagramPost | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const opened = posts.find((p) => p.id === openId) ?? null;
 
   function apply(post: InstagramPost, action: Action) {
     const result = actionResult[action];
@@ -97,13 +107,41 @@ export function InstagramQueue({
         {message}
       </p>
 
-      <ul className="flex flex-col gap-3">
-        {posts.map((post) => (
-          <li key={post.id}>
-            <PostCard post={post} onAction={apply} onCompare={() => setComparing(post)} />
-          </li>
-        ))}
-      </ul>
+      {view === "grid" ? (
+        <ul className="grid grid-cols-3 gap-1 sm:gap-1.5">
+          {posts.map((post) => (
+            <li key={post.id}>
+              <GridTile post={post} onOpen={() => setOpenId(post.id)} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {posts.map((post) => (
+            <li key={post.id}>
+              <PostCard post={post} onAction={apply} onCompare={() => setComparing(post)} />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <Dialog.Root open={opened !== null} onOpenChange={(open) => !open && setOpenId(null)}>
+        <Dialog.Portal>
+          <Dialog.Backdrop className="fixed inset-0 z-50 bg-foreground/70 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0" />
+          <Dialog.Popup className="fixed top-1/2 left-1/2 z-50 flex max-h-[92vh] w-[calc(100%-1.5rem)] max-w-5xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-background shadow-2xl transition duration-150 outline-none data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0 md:h-[min(85vh,38rem)] md:w-auto md:flex-row">
+            {opened && (
+              <PostDetail
+                post={opened}
+                onAction={apply}
+                onCompare={() => {
+                  setOpenId(null);
+                  setComparing(opened);
+                }}
+              />
+            )}
+          </Dialog.Popup>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       <Sheet open={comparing !== null} onOpenChange={(open) => !open && setComparing(null)}>
         <SheetContent
@@ -472,6 +510,137 @@ function Comparison({
             className={cn(button, "ml-auto")}
           >
             Ver no Instagram <ArrowUpRightIcon aria-hidden className="size-3.5" />
+            <span className="sr-only">(abre em nova aba)</span>
+          </a>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ---------------------------------------------------------------- grade do perfil
+
+/** Quadrado da grade: foto, ícone de vídeo/carrossel (como no Instagram) e o status. */
+function GridTile({ post, onOpen }: { post: InstagramPost; onOpen: () => void }) {
+  const attention =
+    post.status === "NEW" || post.status === "ERROR" || post.status === "CHANGED_AT_SOURCE";
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`${instagramStatusLabel(post.status)}: ${post.caption.slice(0, 80)}`}
+      className="group relative block aspect-square w-full overflow-hidden bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    >
+      {post.thumbnailUrl && (
+        <Image
+          src={post.thumbnailUrl}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 310px, 33vw"
+          className={cn(
+            "object-cover transition duration-300 group-hover:scale-[1.03] motion-reduce:transition-none",
+            (post.status === "IGNORED" || post.status === "REMOVED_AT_SOURCE") && "grayscale",
+          )}
+        />
+      )}
+      <span className="absolute top-2 right-2 text-white drop-shadow">
+        {post.mediaType === "VIDEO" ? (
+          <PlayIcon aria-hidden className="size-5 fill-current" />
+        ) : post.mediaType === "CAROUSEL_ALBUM" ? (
+          <GalleryHorizontalIcon aria-hidden className="size-5" />
+        ) : null}
+      </span>
+      <span className="absolute bottom-2 left-2">
+        <InstagramStatusBadge
+          status={post.status}
+          className={cn("shadow-sm", !attention && "max-sm:hidden")}
+        />
+      </span>
+      {/* Ao passar o mouse: começo da legenda (no Instagram seriam as curtidas). */}
+      <span className="absolute inset-0 hidden items-center justify-center bg-foreground/60 p-4 text-center text-sm font-medium text-white opacity-0 transition group-hover:opacity-100 sm:flex">
+        <span className="line-clamp-4">{post.caption}</span>
+      </span>
+    </button>
+  );
+}
+
+/** Post aberto, como no Instagram: mídia à esquerda, legenda e ações à direita. */
+function PostDetail({
+  post,
+  onAction,
+  onCompare,
+}: {
+  post: InstagramPost;
+  onAction: (post: InstagramPost, action: Action) => void;
+  onCompare: () => void;
+}) {
+  return (
+    <>
+      <div className="relative aspect-square w-full shrink-0 bg-foreground md:h-full md:w-auto">
+        {post.thumbnailUrl && (
+          <Image
+            src={post.thumbnailUrl}
+            alt=""
+            fill
+            sizes="(min-width: 768px) 560px, 100vw"
+            className="object-contain"
+          />
+        )}
+        {post.mediaType !== "IMAGE" && (
+          <span className="absolute top-3 left-3 rounded-full bg-background/90 px-2.5 py-1 text-xs font-semibold">
+            {mediaLabel(post)}
+          </span>
+        )}
+      </div>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col md:w-96 md:flex-none">
+        <div className="flex items-center gap-3 border-b px-4 py-3">
+          <span
+            aria-hidden
+            className="flex size-9 items-center justify-center rounded-full bg-brand-blue text-[0.6rem] font-extrabold text-white ring-2 ring-brand-red ring-offset-2 ring-offset-background"
+          >
+            ZSU
+          </span>
+          <Dialog.Title className="flex-1 text-sm font-semibold">zonasulurgente</Dialog.Title>
+          <InstagramStatusBadge status={post.status} />
+          <Dialog.Close
+            aria-label="Fechar"
+            className="inline-flex size-8 items-center justify-center rounded-full hover:bg-muted"
+          >
+            <XIcon aria-hidden className="size-5" />
+          </Dialog.Close>
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
+          <Dialog.Description className="text-sm whitespace-pre-line">
+            <strong className="mr-1 font-semibold">zonasulurgente</strong>
+            {post.caption}
+          </Dialog.Description>
+          <p className="text-xs text-muted-foreground">
+            Postado <RelativeTime iso={post.postedAt} />
+          </p>
+          <StatusNote post={post} />
+          {post.news && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md bg-muted/60 px-3 py-2 text-sm">
+              <FileTextIcon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+              <Link
+                href={adminRoutes.editNews(post.news.id)}
+                className="line-clamp-2 min-w-0 flex-1 font-semibold hover:text-brand-blue hover:underline"
+              >
+                {post.news.title}
+              </Link>
+              <StatusBadge status={post.news.status} />
+            </div>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2 border-t p-4">
+          <Actions post={post} onAction={onAction} onCompare={onCompare} />
+          <a
+            href={post.permalink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(button, "ml-auto")}
+          >
+            Ver no Instagram
+            <ArrowUpRightIcon aria-hidden className="size-3.5" />
             <span className="sr-only">(abre em nova aba)</span>
           </a>
         </div>

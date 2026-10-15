@@ -54,7 +54,7 @@ function toPost(p: InstagramPostMock): InstagramPost {
     permalink: p.permalink,
     mediaType: p.mediaType,
     mediaCount: p.mediaCount ?? 1,
-    thumbnailUrl: `https://picsum.photos/seed/${p.id}/320/320`,
+    thumbnailUrl: `https://picsum.photos/seed/${p.id}/640/640`,
     postedAt: p.postedAt,
     status: p.status,
     news: row && {
