@@ -14,6 +14,18 @@ const nextConfig: NextConfig = {
     // (media.<dominio>) por um loader próprio — ver ARCHITECTURE §18.
     remotePatterns: [new URL("https://picsum.photos/**")],
   },
+  async headers() {
+    return [
+      {
+        // Service worker sempre atualizado e restrito ao próprio site.
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
+    ];
+  },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

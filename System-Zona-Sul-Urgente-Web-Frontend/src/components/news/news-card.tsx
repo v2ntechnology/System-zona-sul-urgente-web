@@ -96,6 +96,7 @@ function CardImage({
           fill
           sizes={sizes}
           preload={preload}
+          loading={preload ? "eager" : undefined}
           className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
         />
       )}

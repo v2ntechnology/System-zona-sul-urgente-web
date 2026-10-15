@@ -18,6 +18,9 @@ import { getNeighborhoods } from "@/services/taxonomy-service";
 // Página de bairro (FE-105). Mesma regra das editorias: pré-gerada e com 404 real
 // (ver comentário de ensureStatic em [...path]/page.tsx).
 export const ensureStatic = "navigation";
+// A rota bloqueia de propósito (resolve existência/URL antes de responder, por causa do
+// 404/308); isto avisa a validação de "navegação instantânea" do Next que é intencional.
+export const instant = false;
 
 export async function generateStaticParams() {
   return (await getNeighborhoods()).map((n) => ({ slug: n.slug }));

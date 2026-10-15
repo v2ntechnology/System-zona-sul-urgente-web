@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Archivo, Inter, Montserrat } from "next/font/google";
 
+import { ServiceWorker } from "@/components/layout/service-worker";
 import { siteConfig } from "@/config/site";
 
 import "./globals.css";
@@ -33,6 +34,12 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   robots: siteConfig.indexable ? undefined : { index: false, follow: false },
+  // Leitores de RSS descobrem o feed sozinhos por este <link rel="alternate">.
+  alternates: {
+    types: { "application/rss+xml": [{ url: "/feed.xml", title: siteConfig.name }] },
+  },
+  // App instalado no iPhone: abre em tela cheia, com o nome curto.
+  appleWebApp: { capable: true, title: "ZS Urgente", statusBarStyle: "default" },
   openGraph: {
     siteName: siteConfig.name,
     locale: siteConfig.locale,
@@ -40,13 +47,18 @@ export const metadata: Metadata = {
   },
 };
 
+// Cor da barra do navegador/sistema no celular (azul da marca).
+export const viewport: Viewport = { themeColor: "#024baa" };
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
       className={`${inter.variable} ${archivo.variable} ${montserrat.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">
+      {/* suppressHydrationWarning: extensões do navegador (ex.: ColorZilla) injetam atributos
+          no <body>; vale só para os atributos deste elemento, não para os filhos. */}
+      <body className="flex min-h-full flex-col" suppressHydrationWarning>
         <a
           href="#conteudo"
           className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-background focus:px-4 focus:py-2 focus:font-medium"
@@ -54,6 +66,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Pular para o conteúdo
         </a>
         {children}
+        <ServiceWorker />
       </body>
     </html>
   );

@@ -235,9 +235,14 @@
   }
 }
 
-/* Âncoras não ficam escondidas atrás do header fixo. */
+/* Âncoras não ficam escondidas atrás do header fixo. Barra de rolagem da página oculta
+   (pedido do Vinicius): a rolagem continua por mouse, trackpad, teclado e toque. */
 html {
   scroll-padding-top: 5rem;
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  display: none;
 }
 
 /* Faixa de urgentes: letreiro contínuo (a lista vem duplicada no HTML). */

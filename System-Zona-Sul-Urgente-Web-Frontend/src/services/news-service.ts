@@ -186,6 +186,23 @@ export async function resolveSectionPath(segments: string[]): Promise<ResolvedPa
   return { type: "news", news, canonicalPath: routes.news(news) };
 }
 
+/**
+ * Matérias para RSS: as mais recentes, sem patrocinadas (agregadores republicam sem o selo).
+ * Com `categorySlug`, só a editoria (incluindo subeditorias). `null` = editoria inexistente.
+ */
+export async function getNewsForFeed(categorySlug?: string, limit = 30): Promise<News[] | null> {
+  if (categorySlug && !categories.some((c) => c.slug === categorySlug)) return null;
+  return newsMock
+    .filter((n) => !n.isSponsored)
+    .filter(
+      (n) =>
+        !categorySlug ||
+        n.category.slug === categorySlug ||
+        n.category.parent?.slug === categorySlug,
+    )
+    .slice(0, clampLimit(limit));
+}
+
 export type SitemapNews = Pick<
   NewsSummary,
   "slug" | "title" | "category" | "publishedAt" | "updatedAt" | "image"

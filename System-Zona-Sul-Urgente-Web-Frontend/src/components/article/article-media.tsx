@@ -14,6 +14,7 @@ export function ArticleFigure({ image, preload }: { image: MediaAsset; preload?:
           fill
           sizes="(min-width: 1024px) 760px, 100vw"
           preload={preload}
+          loading={preload ? "eager" : undefined}
           className="object-cover"
         />
       </div>

@@ -20,6 +20,9 @@ import { getSubcategories } from "@/services/taxonomy-service";
 // página ficar pronta em vez de receber o App Shell com 200. Sem isso, 404 e 308 viram
 // "200 + noindex" e redirecionamento via JavaScript — ruim para o Google.
 export const ensureStatic = "navigation";
+// A rota bloqueia de propósito (resolve existência/URL antes de responder, por causa do
+// 404/308); isto avisa a validação de "navegação instantânea" do Next que é intencional.
+export const instant = false;
 
 export async function generateStaticParams() {
   return (await getSectionPaths()).map((path) => ({ path }));
@@ -35,7 +38,14 @@ export async function generateMetadata({ params }: PageProps<"/[...path]">): Pro
     return {
       title: category.name,
       description: category.description,
-      alternates: { canonical: routes.category(category) },
+      alternates: {
+        canonical: routes.category(category),
+        types: {
+          "application/rss+xml": [
+            { url: routes.feed(category.slug), title: `${category.name} | ${siteConfig.name}` },
+          ],
+        },
+      },
     };
   }
 

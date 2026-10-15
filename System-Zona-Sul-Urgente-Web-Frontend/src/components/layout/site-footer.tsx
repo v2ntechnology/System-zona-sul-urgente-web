@@ -1,7 +1,13 @@
 import Link from "next/link";
 
 import { BrandLogo } from "@/components/brand/brand-logo";
-import { allSections, institutional, neighborhoods, type NavItem } from "@/config/navigation";
+import {
+  allSections,
+  institutional,
+  neighborhoods,
+  type NavItem,
+  routes,
+} from "@/config/navigation";
 import { siteConfig } from "@/config/site";
 
 // Rodapé (FE-007): editorias, bairros, institucional e redes. Fundo azul-escuro (branco: 10,8:1).
@@ -20,6 +26,12 @@ export function SiteFooter() {
               className="font-medium hover:underline focus-visible:outline-white"
             >
               Instagram @zonasulurgente
+            </a>
+            <a
+              href={routes.feed()}
+              className="font-medium hover:underline focus-visible:outline-white"
+            >
+              RSS
             </a>
             {siteConfig.whatsappUrl && (
               <a

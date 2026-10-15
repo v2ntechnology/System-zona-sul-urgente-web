@@ -23,6 +23,8 @@ export const routes = {
   neighborhood: (slug: string) => `/bairro/${slug}`,
   /** Web Story (página AMP fora do layout do site). Usar <a>, não <Link>. */
   story: (slug: string) => `/stories/${slug}`,
+  /** RSS geral ou da editoria. */
+  feed: (categorySlug?: string) => (categorySlug ? `/feed/${categorySlug}.xml` : "/feed.xml"),
 } as const;
 
 /** Primeiros segmentos usados por rotas fixas do site. */
@@ -35,6 +37,7 @@ export const RESERVED_SLUGS = new Set([
   "anuncie",
   "api",
   "ao-vivo",
+  "offline",
   "autor",
   "bairro",
   "busca",
