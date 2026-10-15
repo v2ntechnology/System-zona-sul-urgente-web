@@ -9,7 +9,22 @@ const eslintConfig = defineConfig([
   {
     // `cn` precisa vir de @/lib/utils (tem a escala tipográfica registrada).
     // Componentes adicionados pelo `shadcn add` importam de "cn" e devem ser ajustados.
+    // Mocks só podem ser lidos pelos services (FE-010): o resto do app usa @/services.
     ignores: ["src/lib/utils.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [{ name: "cn", message: 'Importe cn de "@/lib/utils".' }],
+          patterns: [
+            { group: ["@/mocks/*"], message: "Use os services (@/services/*), nunca os mocks." },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/services/**", "src/mocks/**"],
     rules: {
       "no-restricted-imports": [
         "error",
