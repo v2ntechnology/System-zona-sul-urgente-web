@@ -5,7 +5,6 @@ import { AdSlot } from "@/components/ads/ad-slot";
 import { ArticleBody } from "@/components/article/article-body";
 import { ArticleFigure, ArticleVideo } from "@/components/article/article-media";
 import { Breadcrumbs } from "@/components/article/breadcrumbs";
-import { ShareButtons } from "@/components/article/share-buttons";
 import { pillButton, ShareMenu } from "@/components/article/share-menu";
 import { Container } from "@/components/layout/container";
 import { MostReadList } from "@/components/news/most-read";
@@ -143,11 +142,6 @@ export function ArticleView({ news }: { news: News }) {
             <ArticleBody blocks={news.body} />
 
             <WhatsAppCta category={news.category} />
-
-            <div className="flex flex-col gap-3 border-t pt-5">
-              <p className="font-semibold">Compartilhe esta notícia</p>
-              <ShareButtons url={url} title={news.title} />
-            </div>
 
             <AdSlot slotKey="ARTICLE_BOTTOM" />
 
