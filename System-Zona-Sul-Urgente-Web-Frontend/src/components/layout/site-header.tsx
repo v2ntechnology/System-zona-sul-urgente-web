@@ -1,16 +1,12 @@
-import Link from "next/link";
+import { BrandLogo } from "@/components/brand/brand-logo";
 
-import { siteConfig } from "@/config/site";
-
-// Placeholder do header público. A versão final (top bar, navegação,
-// busca e menu mobile) entra no FE-007, depois das referências visuais.
+// Header provisório: barra marinho com o logo, na linha da CNN (barra escura + bloco
+// vermelho). Navegação, busca, menu mobile e faixa de urgente entram no FE-007.
 export function SiteHeader() {
   return (
-    <header className="border-b">
-      <div className="mx-auto flex h-16 max-w-6xl items-center px-4">
-        <Link href="/" className="text-lg font-bold tracking-tight">
-          {siteConfig.name}
-        </Link>
+    <header className="bg-masthead text-masthead-foreground">
+      <div className="mx-auto flex max-w-site items-center px-4 py-3">
+        <BrandLogo className="text-sm" />
       </div>
     </header>
   );

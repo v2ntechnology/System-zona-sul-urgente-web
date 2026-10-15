@@ -4,7 +4,7 @@ import { siteConfig } from "@/config/site";
 export function SiteFooter() {
   return (
     <footer className="border-t">
-      <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-muted-foreground">
+      <div className="mx-auto max-w-site px-4 py-6 text-sm text-muted-foreground">
         {siteConfig.name}
       </div>
     </footer>
