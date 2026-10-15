@@ -305,4 +305,3 @@ export const instagramConnectionMock = {
 };
 
 export const activeCampaignsMock = 3;
-export const viewsTodayMock = { today: 84_210, yesterday: 71_900 };

@@ -4,8 +4,9 @@ import {
   adminNewsMock,
   currentUserMock,
   instagramPostsMock,
-  viewsTodayMock,
 } from "@/mocks/admin";
+import { percentChange } from "@/lib/chart";
+import { getAnalytics } from "@/services/admin/analytics-service";
 import type {
   AdminNewsFilter,
   AdminNewsRow,
@@ -28,6 +29,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const dayStart = new Date(MOCK_NOW);
   dayStart.setHours(0, 0, 0, 0);
   const alive = adminNewsMock.filter((n) => !n.deletedAt);
+  const today = await getAnalytics("hoje");
   return {
     publishedToday: alive.filter(
       (n) =>
@@ -41,9 +43,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     instagramNew: instagramPostsMock.filter((p) => p.status === "NEW").length,
     importErrors: instagramPostsMock.filter((p) => p.status === "ERROR").length,
     activeCampaigns: activeCampaignsMock,
-    viewsToday: viewsTodayMock.today,
+    viewsToday: today.totals.views,
     viewsTrendPercent: Math.round(
-      ((viewsTodayMock.today - viewsTodayMock.yesterday) / viewsTodayMock.yesterday) * 100,
+      percentChange(today.totals.views, today.previousTotals.views) ?? 0,
     ),
   };
 }

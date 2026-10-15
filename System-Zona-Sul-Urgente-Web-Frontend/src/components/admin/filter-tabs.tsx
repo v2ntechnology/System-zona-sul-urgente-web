@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 
-export type FilterTab = { key: string; label: string; count: number; href: string };
+export type FilterTab = { key: string; label: string; count?: number; href: string };
 
 // Abas de filtro com contagem (status de notícias, fila do Instagram). Links na URL:
 // recarregar ou compartilhar mantém o filtro.
@@ -33,14 +33,16 @@ export function FilterTabs({
                 )}
               >
                 {tab.label}
-                <span
-                  className={cn(
-                    "rounded-full px-1.5 text-xs tabular-nums",
-                    current ? "bg-white/20" : "bg-muted",
-                  )}
-                >
-                  {tab.count}
-                </span>
+                {tab.count !== undefined && (
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 text-xs tabular-nums",
+                      current ? "bg-white/20" : "bg-muted",
+                    )}
+                  >
+                    {tab.count}
+                  </span>
+                )}
               </Link>
             </li>
           );

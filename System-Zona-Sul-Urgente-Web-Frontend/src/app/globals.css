@@ -55,6 +55,8 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-chart-context: var(--chart-context);
+  --color-chart-grid: var(--chart-grid);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -161,6 +163,10 @@
   --chart-3: var(--brand-sky);
   --chart-4: #f59e0b;
   --chart-5: #10b981;
+  /* Analytics (FE-156): série de contexto (período anterior) e grade. Ordem categórica
+     validada para daltonismo: chart-1 (azul), chart-3 (azul-claro), chart-2 (vermelho). */
+  --chart-context: #a3abb7;
+  --chart-grid: #e8ebef;
 
   --sidebar: #f7f8fa;
   --sidebar-foreground: #111111;
@@ -174,6 +180,8 @@
 
 /* Tema escuro preparado, ainda sem seletor na interface. */
 .dark {
+  --chart-context: #5b6577;
+  --chart-grid: #1f2a40;
   --background: #0b1220;
   --foreground: #f2f4f7;
   --card: #111a2e;

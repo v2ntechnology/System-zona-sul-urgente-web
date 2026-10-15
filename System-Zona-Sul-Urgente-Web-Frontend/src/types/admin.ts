@@ -181,3 +181,44 @@ export type DraftErrors = Partial<
 export type SaveResult =
   | { ok: true; id: UUID; status: NewsStatus; savedAt: ISODateTime; simulated: boolean }
   | { ok: false; errors: DraftErrors; message: string };
+
+// ---------------------------------------------------------------- analytics (FE-156)
+
+/** Períodos do filtro (?periodo=). Comparação sempre com o período anterior de mesmo tamanho. */
+export type AnalyticsPeriod = "hoje" | "24h" | "7d" | "30d";
+
+export type AnalyticsTotals = {
+  views: number;
+  /** Sessões anônimas deduplicadas (ARCHITECTURE §12, sem dado pessoal). */
+  visitors: number;
+  avgReadSeconds: number;
+  published: number;
+};
+
+export type AnalyticsPoint = { at: ISODateTime; views: number; previous: number };
+
+export type AnalyticsShare = { key: string; label: string; views: number };
+
+/** GET /api/v1/admin/analytics?period= — agregados de analytics_daily/eventos. */
+export type AnalyticsReport = {
+  period: AnalyticsPeriod;
+  granularity: "hour" | "day";
+  totals: AnalyticsTotals;
+  previousTotals: AnalyticsTotals;
+  series: AnalyticsPoint[];
+  sources: AnalyticsShare[];
+  devices: AnalyticsShare[];
+  categories: AnalyticsShare[];
+  topNews: {
+    id: UUID;
+    title: string;
+    categoryName: string;
+    views: number;
+    avgReadSeconds: number;
+  }[];
+  /** Leitores nos últimos 30 minutos. */
+  trending: { id: UUID; title: string; readersNow: number }[];
+};
+
+/** GET /api/v1/admin/analytics/ads?period= — exige analytics.ads.view. */
+export type AdSlotMetrics = { key: string; label: string; impressions: number; clicks: number };
