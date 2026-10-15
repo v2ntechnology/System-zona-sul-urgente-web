@@ -1,32 +1,53 @@
-import { SearchIcon } from "lucide-react";
+import { MessageCircleIcon, SearchIcon } from "lucide-react";
 import Link from "next/link";
 
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { MainNav } from "@/components/layout/main-nav";
 import { MobileMenu } from "@/components/layout/mobile-menu";
+import { BreakingTicker } from "@/components/news/breaking-ticker";
 import { routes } from "@/config/navigation";
+import { siteConfig } from "@/config/site";
 
-// Header no padrão CNN (FE-007): barra azul com menu, logo, editorias e busca.
-// Abaixo de lg as editorias descem para uma faixa branca rolável.
-// A faixa de notícia urgente entra no FE-108.
+// Header no padrão CNN (FE-007): barra azul fixa no topo, que encolhe e ganha sombra
+// ao rolar (CSS scroll-driven, ver .masthead-bar em globals.css). Abaixo dela, a faixa
+// de editorias (mobile) e a faixa de urgentes rolam junto com a página.
 export function SiteHeader() {
   return (
-    <header>
-      <div className="bg-masthead text-masthead-foreground">
+    <>
+      <header className="masthead-bar sticky top-0 z-40 bg-masthead text-masthead-foreground">
         <div className="mx-auto flex max-w-site items-center gap-2 px-2 py-2.5 sm:px-4">
           <MobileMenu />
-          <BrandLogo className="mr-4 text-[0.6rem] sm:text-xs" />
+          <BrandLogo className="masthead-logo mr-4 text-[0.6rem] sm:text-xs" />
           <MainNav variant="bar" className="hidden lg:block" />
-          <Link
-            href={routes.search}
-            aria-label="Buscar"
-            className="ml-auto inline-flex size-10 items-center justify-center rounded-md hover:bg-white/10 focus-visible:outline-white"
-          >
-            <SearchIcon className="size-5" />
-          </Link>
+          <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            <a
+              href={siteConfig.reportUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Envie sua notícia pelo WhatsApp"
+              className="inline-flex h-9 items-center gap-2 rounded-full bg-brand-red-dark px-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-px hover:shadow-md focus-visible:outline-white sm:px-4"
+            >
+              <MessageCircleIcon className="size-4" aria-hidden />
+              <span className="sm:hidden">Envie</span>
+              <span className="hidden sm:inline">Envie sua notícia</span>
+            </a>
+            <Link
+              href={routes.search}
+              aria-label="Buscar"
+              className="inline-flex size-10 items-center justify-center rounded-md hover:bg-white/10 focus-visible:outline-white"
+            >
+              <SearchIcon className="size-5" />
+            </Link>
+          </div>
         </div>
-      </div>
+        {/* Filete em duas cores do logo (azul-claro | vermelho), com corte seco. */}
+        <div
+          aria-hidden
+          className="h-0.75 bg-linear-to-r from-brand-sky from-70% to-brand-red to-70%"
+        />
+      </header>
       <MainNav variant="strip" className="border-b lg:hidden" />
-    </header>
+      <BreakingTicker />
+    </>
   );
 }

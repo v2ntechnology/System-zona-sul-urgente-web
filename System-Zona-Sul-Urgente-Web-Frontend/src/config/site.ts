@@ -11,4 +11,8 @@ export const siteConfig = {
   },
   // Canal/grupo de WhatsApp (FE-111). Vazio = CTA some sem quebrar o layout.
   whatsappUrl: process.env.NEXT_PUBLIC_WHATSAPP_URL || null,
+  // WhatsApp da redação para o leitor enviar notícia/denúncia (número do site atual).
+  reportUrl:
+    process.env.NEXT_PUBLIC_REPORT_WHATSAPP_URL ||
+    `https://wa.me/5521972805020?text=${encodeURIComponent("Olá! Quero enviar uma notícia para o Zona Sul Urgente:")}`,
 } as const;

@@ -218,3 +218,65 @@
     @apply outline-2 outline-offset-2 outline-ring;
   }
 }
+
+/* Âncoras não ficam escondidas atrás do header fixo. */
+html {
+  scroll-padding-top: 5rem;
+}
+
+/* Faixa de urgentes: letreiro contínuo (a lista vem duplicada no HTML). */
+@keyframes ticker-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ticker-track {
+  animation: ticker-scroll 45s linear infinite;
+}
+.ticker:hover .ticker-track,
+.ticker:focus-within .ticker-track {
+  animation-play-state: paused;
+}
+.ticker-viewport {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 1.5rem,
+    #000 calc(100% - 3rem),
+    transparent
+  );
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
+  }
+  .ticker-viewport {
+    overflow-x: auto;
+    mask-image: none;
+  }
+}
+
+/* Header encolhe e ganha sombra nos primeiros 120px de rolagem. Só CSS (scroll-driven
+   animations); navegadores sem suporte mostram o header fixo normal. */
+@supports (animation-timeline: scroll()) {
+  @keyframes masthead-compact {
+    to {
+      box-shadow: 0 6px 20px rgb(1 36 79 / 0.25);
+    }
+  }
+  @keyframes masthead-logo-compact {
+    to {
+      font-size: 0.5rem;
+    }
+  }
+  .masthead-bar {
+    animation: masthead-compact linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 120px;
+  }
+  .masthead-logo {
+    animation: masthead-logo-compact linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 120px;
+  }
+}

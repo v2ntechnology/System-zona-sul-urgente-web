@@ -2,6 +2,7 @@
 // /api/revalidate quando uma notícia é publicada, editada ou despublicada.
 export const cacheTags = {
   home: () => "home",
+  breaking: () => "breaking",
   newsList: () => "news",
   news: (slug: string) => `news:${slug}`,
   category: (slug: string) => `category:${slug}`,
