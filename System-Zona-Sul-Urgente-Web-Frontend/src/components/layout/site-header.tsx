@@ -25,11 +25,14 @@ export function SiteHeader() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Envie sua notícia pelo WhatsApp"
-              className="inline-flex h-9 items-center gap-2 rounded-full bg-brand-red-dark px-3 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-px hover:shadow-md focus-visible:outline-white sm:px-4"
+              className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full bg-brand-red-dark px-3 text-sm font-semibold whitespace-nowrap text-white shadow-sm transition hover:-translate-y-px hover:shadow-md focus-visible:outline-white sm:px-4"
             >
               <MessageCircleIcon className="size-4" aria-hidden />
-              <span className="sm:hidden">Envie</span>
-              <span className="hidden sm:inline">Envie sua notícia</span>
+              {/* Texto curto onde a barra de editorias divide espaço (celular e lg). */}
+              <span className="sm:max-lg:hidden xl:hidden">Envie</span>
+              <span className="hidden whitespace-nowrap sm:max-lg:inline xl:inline">
+                Envie sua notícia
+              </span>
             </a>
             <Link
               href={routes.search}

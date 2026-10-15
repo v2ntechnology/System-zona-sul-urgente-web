@@ -9,6 +9,8 @@ import {
   getFeatured,
   getLatest,
   getMostRead,
+  getVideos,
+  resolveSectionPath,
   MAX_PAGE_SIZE,
   search,
 } from "@/services/news-service";
@@ -76,6 +78,12 @@ describe("news-service", () => {
     expect(day.map((n) => n.slug)).not.toContain("cameras-de-monitoramento-no-cosme-velho");
   });
 
+  it("lista só notícias com vídeo", async () => {
+    const videos = await getVideos(4);
+    expect(videos).toHaveLength(4);
+    expect(videos.every((n) => n.hasVideo)).toBe(true);
+  });
+
   it("destaque da home tem manchete e secundários em ordem editorial", async () => {
     const featured = await getFeatured();
     expect(featured?.main.slug).toBe("temporal-alaga-ruas-de-copacabana-e-botafogo");
@@ -85,10 +93,80 @@ describe("news-service", () => {
   it("dados de exemplo cobrem os critérios do FE-009", async () => {
     const all = (await getLatest({ limit: MAX_PAGE_SIZE })).items;
     expect(all.length).toBeGreaterThanOrEqual(20);
-    expect(new Set(all.map((n) => n.category.slug)).size).toBe(8);
+    const roots = new Set(all.map((n) => n.category.parent?.slug ?? n.category.slug));
+    for (const slug of [
+      "seguranca",
+      "transito",
+      "cidade",
+      "politica",
+      "economia",
+      "esportes",
+      "entretenimento",
+      "comunidade",
+    ]) {
+      expect(roots).toContain(slug);
+    }
     expect(all.some((n) => n.isUrgent)).toBe(true);
     expect(all.some((n) => n.isSponsored)).toBe(true);
     expect(all.every((n) => n.image?.alt)).toBe(true);
     expect(new Set(all.map((n) => n.slug)).size).toBe(all.length);
+  });
+
+  it("editoria mãe inclui as notícias das subeditorias", async () => {
+    const result = await getByCategory("entretenimento", { limit: 50 });
+    const slugs = new Set(result?.page.items.map((n) => n.category.slug));
+    expect(slugs).toContain("gastronomia");
+    expect(slugs).toContain("eventos");
+  });
+
+  describe("resolveSectionPath", () => {
+    it("resolve editoria e subeditoria", async () => {
+      expect(await resolveSectionPath(["seguranca"])).toMatchObject({
+        type: "category",
+        category: { slug: "seguranca" },
+      });
+      expect(await resolveSectionPath(["entretenimento", "gastronomia"])).toMatchObject({
+        type: "category",
+        category: { slug: "gastronomia", parent: { slug: "entretenimento" } },
+      });
+    });
+
+    it("resolve matéria em editoria e em subeditoria, com a URL canônica", async () => {
+      const simple = await resolveSectionPath([
+        "esportes",
+        "remadores-da-lagoa-conquistam-ouro-no-estadual",
+      ]);
+      expect(simple).toMatchObject({
+        type: "news",
+        canonicalPath: "/esportes/remadores-da-lagoa-conquistam-ouro-no-estadual",
+      });
+      const nested = await resolveSectionPath([
+        "entretenimento",
+        "gastronomia",
+        "bares-do-leblon-lancam-circuito-de-petiscos",
+      ]);
+      expect(nested).toMatchObject({
+        type: "news",
+        canonicalPath: "/entretenimento/gastronomia/bares-do-leblon-lancam-circuito-de-petiscos",
+      });
+    });
+
+    it("aponta a URL correta quando a editoria do link está desatualizada", async () => {
+      const result = await resolveSectionPath([
+        "cidade",
+        "remadores-da-lagoa-conquistam-ouro-no-estadual",
+      ]);
+      expect(result?.type === "news" && result.canonicalPath).toBe(
+        "/esportes/remadores-da-lagoa-conquistam-ouro-no-estadual",
+      );
+    });
+
+    it("devolve null para caminhos inválidos", async () => {
+      expect(await resolveSectionPath([])).toBeNull();
+      expect(await resolveSectionPath(["nao-existe"])).toBeNull();
+      expect(await resolveSectionPath(["gastronomia"])).toBeNull(); // sub só existe sob a mãe
+      expect(await resolveSectionPath(["seguranca", "nao-existe"])).toBeNull();
+      expect(await resolveSectionPath(["a", "b", "c", "d"])).toBeNull();
+    });
   });
 });

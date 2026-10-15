@@ -46,7 +46,7 @@ function TickerList({ items, hidden }: { items: BreakingNews[]; hidden?: boolean
       {items.map((item) => (
         <li key={item.id} className="flex items-center">
           <Link
-            href={routes.news(item.slug)}
+            href={routes.news(item)}
             tabIndex={hidden ? -1 : undefined}
             className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold whitespace-nowrap hover:underline focus-visible:outline-white"
           >

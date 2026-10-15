@@ -8,7 +8,7 @@ import { BrandLogo } from "@/components/brand/brand-logo";
 import { SearchForm } from "@/components/layout/search-form";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { institutional, neighborhoods, type NavItem, sections } from "@/config/navigation";
+import { allSections, institutional, neighborhoods, type NavItem } from "@/config/navigation";
 import { siteConfig } from "@/config/site";
 
 // Menu completo (☰), aberto pela esquerda como na CNN. Disponível em todas as larguras:
@@ -48,7 +48,7 @@ export function MobileMenu() {
         <div className="flex flex-col gap-6 p-4">
           <SearchForm />
 
-          <MenuGroup title="Editorias" items={sections} onNavigate={close} />
+          <MenuGroup title="Editorias" items={allSections} onNavigate={close} />
           <MenuGroup title="Bairros" items={neighborhoods} onNavigate={close} columns />
           <MenuGroup title="Institucional" items={institutional} onNavigate={close} muted />
 
@@ -80,7 +80,7 @@ export function MobileMenu() {
 
 type MenuGroupProps = {
   title: string;
-  items: NavItem[];
+  items: (NavItem & { children?: NavItem[] })[];
   onNavigate: () => void;
   columns?: boolean;
   muted?: boolean;
@@ -104,6 +104,21 @@ function MenuGroup({ title, items, onNavigate, columns, muted }: MenuGroupProps)
             >
               {item.label}
             </Link>
+            {item.children && (
+              <ul className="mb-1 ml-3 border-l pl-3">
+                {item.children.map((child) => (
+                  <li key={child.href}>
+                    <Link
+                      href={child.href}
+                      onClick={onNavigate}
+                      className="block py-1 text-sm text-muted-foreground hover:text-brand-blue"
+                    >
+                      {child.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </li>
         ))}
       </ul>

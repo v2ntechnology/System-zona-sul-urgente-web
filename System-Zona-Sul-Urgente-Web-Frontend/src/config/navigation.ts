@@ -1,28 +1,89 @@
-// Navegação do portal. Provisório até a API de categorias/localidades (BE-004):
-// depois estes dados passam a vir do service, com o mesmo formato.
+// Navegação e URLs do portal. Provisório até a API de categorias/localidades (BE-004):
+// depois as editorias passam a vir do service, com o mesmo formato.
 
 export type NavItem = { label: string; href: string };
 
-// Rotas públicas: /categoria/[slug], /bairro/[slug], /busca, /noticia/[slug] (ARCHITECTURE §11).
+type CategoryLike = { slug: string; parent?: { slug: string } };
+type NewsLike = { slug: string; category: CategoryLike };
+
+/**
+ * URLs no padrão CNN/g1 (decisão de 2026-10-15):
+ *   /{editoria}                      ex.: /seguranca
+ *   /{editoria}/{subeditoria}        ex.: /entretenimento/gastronomia
+ *   /{editoria}/{slug-da-noticia}    ex.: /seguranca/policia-prende-suspeito...
+ *   /{editoria}/{sub}/{slug}         ex.: /entretenimento/gastronomia/novo-restaurante...
+ * Como editorias ficam na raiz, os nomes de RESERVED_SLUGS nunca podem ser editoria.
+ */
 export const routes = {
   home: "/",
   search: "/busca",
-  category: (slug: string) => `/categoria/${slug}`,
+  category: (category: CategoryLike) =>
+    category.parent ? `/${category.parent.slug}/${category.slug}` : `/${category.slug}`,
+  news: (news: NewsLike) => `${routes.category(news.category)}/${news.slug}`,
   neighborhood: (slug: string) => `/bairro/${slug}`,
-  news: (slug: string) => `/noticia/${slug}`,
 } as const;
 
-// Editorias herdadas do site atual.
-export const sections: NavItem[] = [
-  { label: "Segurança", href: routes.category("seguranca") },
-  { label: "Trânsito", href: routes.category("transito") },
-  { label: "Cidade", href: routes.category("cidade") },
-  { label: "Comunidade", href: routes.category("comunidade") },
-  { label: "Política", href: routes.category("politica") },
-  { label: "Gastronomia", href: routes.category("gastronomia") },
-  { label: "Eventos e lazer", href: routes.category("eventos-e-lazer") },
-  { label: "Classificados", href: routes.category("classificados") },
+/** Primeiros segmentos usados por rotas fixas do site. */
+export const RESERVED_SLUGS = new Set([
+  "admin",
+  "anuncie",
+  "api",
+  "ao-vivo",
+  "autor",
+  "bairro",
+  "busca",
+  "expediente",
+  "feed",
+  "privacidade",
+  "quem-somos",
+  "rss",
+  "sitemap",
+  "tag",
+  "termos",
+  "zona",
+]);
+
+type Section = NavItem & {
+  slug: string;
+  /** Aparece na barra azul e na faixa do celular; as demais ficam só no menu ☰ e no rodapé. */
+  inBar: boolean;
+  children?: NavItem[];
+};
+
+const section = (
+  slug: string,
+  label: string,
+  inBar: boolean,
+  children?: [string, string][],
+): Section => ({
+  slug,
+  label,
+  inBar,
+  href: routes.category({ slug }),
+  children: children?.map(([childSlug, childLabel]) => ({
+    label: childLabel,
+    href: routes.category({ slug: childSlug, parent: { slug } }),
+  })),
+});
+
+/** Todas as editorias, na ordem do menu. Slugs batem com a taxonomia (ver teste). */
+export const allSections: Section[] = [
+  section("seguranca", "Segurança", true),
+  section("transito", "Trânsito", true),
+  section("cidade", "Cidade", true),
+  section("politica", "Política", true),
+  section("economia", "Economia", true),
+  section("esportes", "Esportes", true),
+  section("entretenimento", "Entretenimento", true, [
+    ["gastronomia", "Gastronomia"],
+    ["eventos", "Eventos"],
+  ]),
+  section("comunidade", "Comunidade", false),
+  section("classificados", "Classificados", false),
 ];
+
+/** Editorias principais (barra), como a CNN: as demais aparecem no menu ☰. */
+export const sections: NavItem[] = allSections.filter((s) => s.inBar);
 
 export const neighborhoods: NavItem[] = [
   "Botafogo",
@@ -53,7 +114,7 @@ export const institutional: NavItem[] = [
   { label: "Termos de uso", href: "/termos" },
 ];
 
-function slugify(value: string) {
+export function slugify(value: string) {
   return value
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")

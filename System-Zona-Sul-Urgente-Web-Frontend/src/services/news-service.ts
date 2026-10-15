@@ -1,3 +1,4 @@
+import { routes } from "@/config/navigation";
 import { featuredRank, MOCK_NOW, newsMock, toSummary, viewsBySlug } from "@/mocks/news";
 import { categories, city, neighborhoods } from "@/mocks/taxonomy";
 import { ServiceError } from "@/services/errors";
@@ -34,7 +35,13 @@ export async function getBreakingNews(): Promise<BreakingNews[]> {
   const since = MOCK_NOW.getTime() - BREAKING_WINDOW_HOURS * 3_600_000;
   return newsMock
     .filter((n) => n.isUrgent && Date.parse(n.publishedAt) >= since)
-    .map(({ id, slug, title, publishedAt }) => ({ id, slug, title, publishedAt }));
+    .map(({ id, slug, title, category, publishedAt }) => ({
+      id,
+      slug,
+      title,
+      category,
+      publishedAt,
+    }));
 }
 
 export async function getFeatured(): Promise<HomeFeatured | null> {
@@ -51,6 +58,14 @@ export async function getLatest(request: PageRequest = {}): Promise<Page<NewsSum
   return paginate(newsMock.map(toSummary), request);
 }
 
+/** Notícias com vídeo, das mais recentes (faixa de vídeos da home). */
+export async function getVideos(limit = 4): Promise<NewsSummary[]> {
+  return newsMock
+    .filter((n) => n.hasVideo)
+    .slice(0, clampLimit(limit))
+    .map(toSummary);
+}
+
 /** Matéria completa. `null` = não existe ou não está publicada → página chama notFound(). */
 export async function getBySlug(slug: string): Promise<News | null> {
   return newsMock.find((n) => n.slug === slug) ?? null;
@@ -62,7 +77,10 @@ export async function getByCategory(
 ): Promise<{ category: Category; page: Page<NewsSummary> } | null> {
   const category = categories.find((c) => c.slug === slug);
   if (!category) return null;
-  const items = newsMock.filter((n) => n.category.slug === slug).map(toSummary);
+  // Editoria mãe inclui as subeditorias (Entretenimento traz Gastronomia e Eventos).
+  const items = newsMock
+    .filter((n) => n.category.slug === slug || n.category.parent?.slug === slug)
+    .map(toSummary);
   return { category, page: paginate(items, request) };
 }
 
@@ -128,6 +146,38 @@ export async function search(request: SearchRequest): Promise<Page<NewsSummary>>
     .map(toSummary);
 
   return paginate(items, request);
+}
+
+export type ResolvedPath =
+  | { type: "category"; category: Category }
+  | {
+      type: "news";
+      news: News;
+      /** URL correta; difere quando a editoria mudou. */ canonicalPath: string;
+    };
+
+/**
+ * Traduz os segmentos de URL na raiz (/{editoria}, /{editoria}/{sub}, /{editoria}/{slug},
+ * /{editoria}/{sub}/{slug}) em editoria ou matéria. `null` = 404.
+ * Se a matéria existir mas a editoria da URL estiver desatualizada, a página redireciona (301)
+ * para `canonicalPath` — assim mudar a editoria de uma notícia não quebra links antigos.
+ */
+export async function resolveSectionPath(segments: string[]): Promise<ResolvedPath | null> {
+  if (segments.length === 0 || segments.length > 3) return null;
+  const [first, second, third] = segments;
+  const root = categories.find((c) => c.slug === first && !c.parent);
+  if (!root) return null;
+
+  if (segments.length === 1) return { type: "category", category: root };
+
+  const sub = categories.find((c) => c.slug === second && c.parent?.slug === root.slug);
+  if (segments.length === 2 && sub) return { type: "category", category: sub };
+
+  const newsSlug = segments.length === 2 ? second : sub ? third : undefined;
+  if (!newsSlug) return null;
+  const news = await getBySlug(newsSlug);
+  if (!news) return null;
+  return { type: "news", news, canonicalPath: routes.news(news) };
 }
 
 // ---------------------------------------------------------------- utilitários

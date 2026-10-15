@@ -9,7 +9,7 @@ import {
   mockId,
 } from "@/mocks/taxonomy";
 
-// Dados de exemplo (FE-009): 25 notícias fictícias, coerentes entre si.
+// Dados de exemplo (FE-009): 29 notícias fictícias, coerentes entre si.
 // Nunca importar em componentes: use os services.
 // Fotos: picsum.photos com semente fixa (sempre a mesma foto por notícia, mas genérica).
 
@@ -42,6 +42,76 @@ type Seed = {
 };
 
 const seeds: Seed[] = [
+  {
+    slug: "remadores-da-lagoa-conquistam-ouro-no-estadual",
+    title: "Remadores da Lagoa conquistam três ouros no Campeonato Estadual",
+    summary:
+      "Equipe de clube da Lagoa Rodrigo de Freitas venceu as provas de skiff, double e quatro sem.",
+    category: "esportes",
+    neighborhood: "lagoa",
+    authors: ["rafael-duarte"],
+    tags: ["cultura"],
+    hoursAgo: 4,
+    video: true,
+    imageAlt: "Barco de remo deslizando na lagoa ao amanhecer",
+    paragraphs: [
+      "Atletas de um clube de remo da Lagoa Rodrigo de Freitas conquistaram três medalhas de ouro no Campeonato Estadual disputado no fim de semana.",
+      "Os títulos vieram nas provas de skiff, double e quatro sem. Parte da equipe treina na lagoa desde a categoria de base.",
+    ],
+    views: { day: 5200, week: 5200, total: 5200 },
+  },
+  {
+    slug: "torneio-de-futevolei-reune-300-atletas-em-copacabana",
+    title: "Torneio de futevôlei reúne 300 atletas nas areias de Copacabana",
+    summary: "Competição gratuita para o público vai até domingo, na altura do Posto 5.",
+    category: "esportes",
+    neighborhood: "copacabana",
+    authors: ["ana-ribeiro"],
+    tags: ["praia", "orla"],
+    hoursAgo: 20,
+    imageAlt: "Jogadores de futevôlei disputando bola na areia",
+    paragraphs: [
+      "Cerca de 300 atletas participam até domingo de um torneio de futevôlei na praia de Copacabana, na altura do Posto 5.",
+      "A entrada é gratuita. As finais estão marcadas para domingo à tarde.",
+    ],
+    views: { day: 2100, week: 4600, total: 4600 },
+  },
+  {
+    slug: "comercio-de-copacabana-espera-vendas-maiores-no-fim-de-ano",
+    title: "Comércio de Copacabana espera alta de 12% nas vendas de fim de ano",
+    subtitle:
+      "Lojistas apostam no turismo e no décimo terceiro; contratações temporárias já começaram",
+    summary:
+      "Associação de lojistas projeta o melhor dezembro desde 2019 e abre 600 vagas temporárias.",
+    category: "economia",
+    neighborhood: "copacabana",
+    authors: ["carlos-menezes", "juliana-prado"],
+    tags: [],
+    hoursAgo: 8,
+    imageAlt: "Rua comercial movimentada com lojas e pedestres",
+    paragraphs: [
+      "A associação de lojistas de Copacabana projeta alta de 12% nas vendas de fim de ano em relação a 2025, puxada pelo turismo e pelo décimo terceiro salário.",
+      "Para dar conta do movimento, o comércio do bairro deve abrir cerca de 600 vagas temporárias, principalmente para vendedores e estoquistas.",
+    ],
+    views: { day: 3900, week: 3900, total: 3900 },
+  },
+  {
+    slug: "feirao-de-empregos-em-botafogo-oferece-800-vagas",
+    title: "Feirão de empregos em Botafogo oferece 800 vagas nesta sexta",
+    summary:
+      "Há oportunidades no comércio, em serviços e em hotelaria; leve currículo e documento.",
+    category: "economia",
+    neighborhood: "botafogo",
+    authors: ["redacao"],
+    tags: [],
+    hoursAgo: 44,
+    imageAlt: "Pessoas em fila com currículos na mão",
+    paragraphs: [
+      "Um feirão de empregos vai oferecer cerca de 800 vagas nesta sexta-feira, das 9h às 16h, em Botafogo.",
+      "As oportunidades são para comércio, serviços e hotelaria, com vagas para primeiro emprego. É preciso levar currículo e documento com foto.",
+    ],
+    views: { day: 800, week: 6300, total: 6300 },
+  },
   {
     slug: "temporal-alaga-ruas-de-copacabana-e-botafogo",
     title: "Temporal alaga ruas de Copacabana e Botafogo; Defesa Civil emite alerta",
@@ -184,9 +254,10 @@ const seeds: Seed[] = [
   },
   {
     slug: "lagoa-recebe-festival-de-musica-gratuito",
+    video: true,
     title: "Lagoa recebe festival de música gratuito no fim de semana",
     summary: "Programação reúne 12 atrações no Parque dos Patins, de sábado a domingo.",
-    category: "eventos-e-lazer",
+    category: "eventos",
     neighborhood: "lagoa",
     authors: ["juliana-prado"],
     tags: ["cultura"],
@@ -232,6 +303,7 @@ const seeds: Seed[] = [
   },
   {
     slug: "projeto-social-do-vidigal-leva-aulas-de-surfe",
+    video: true,
     title: "Projeto social do Vidigal leva aulas de surfe para crianças",
     summary: "Iniciativa de moradores atende 60 crianças e busca doações de pranchas.",
     category: "comunidade",
@@ -266,7 +338,7 @@ const seeds: Seed[] = [
     slug: "procura-por-aluguel-em-laranjeiras-cresce",
     title: "Procura por aluguel em Laranjeiras cresce 15% em um ano",
     summary: "Bairro atrai famílias pela oferta de apartamentos maiores e preço abaixo da orla.",
-    category: "classificados",
+    category: "economia",
     neighborhood: "laranjeiras",
     authors: ["carlos-menezes"],
     tags: [],
@@ -296,9 +368,10 @@ const seeds: Seed[] = [
   },
   {
     slug: "pao-de-acucar-tera-horario-estendido-no-feriado",
+    video: true,
     title: "Pão de Açúcar terá horário estendido no feriado",
     summary: "Bondinho funciona até meia-noite e terá programação musical no Morro da Urca.",
-    category: "eventos-e-lazer",
+    category: "eventos",
     neighborhood: "urca",
     authors: ["redacao"],
     tags: ["cultura"],
@@ -410,7 +483,7 @@ const seeds: Seed[] = [
     slug: "jardim-botanico-abre-exposicao-de-orquideas",
     title: "Jardim Botânico abre exposição de orquídeas raras",
     summary: "Mostra reúne 300 espécies e fica aberta até o fim de novembro.",
-    category: "eventos-e-lazer",
+    category: "eventos",
     neighborhood: "jardim-botanico",
     authors: ["juliana-prado"],
     tags: ["cultura"],

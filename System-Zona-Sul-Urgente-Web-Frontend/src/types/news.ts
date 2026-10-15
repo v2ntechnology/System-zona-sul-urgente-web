@@ -8,11 +8,18 @@ export type ISODateTime = string;
 
 // ---------------------------------------------------------------- taxonomia
 
+export type CategoryRef = Pick<Category, "id" | "slug" | "name">;
+
+/**
+ * Editoria. URL na raiz, como CNN/g1: /{slug} ou /{mae}/{slug} quando tem editoria mãe
+ * (ex.: /entretenimento/gastronomia). Um nível de hierarquia só.
+ */
 export type Category = {
   id: UUID;
   slug: string;
   name: string;
   description?: string;
+  parent?: CategoryRef;
 };
 
 export type Tag = {
@@ -41,11 +48,19 @@ export type City = {
   state: string;
 };
 
+/** Zona da cidade (Zona Sul, Zona Norte, Zona Oeste...). O portal começa só na Zona Sul. */
+export type Zone = {
+  id: UUID;
+  slug: string;
+  name: string;
+};
+
 export type Neighborhood = {
   id: UUID;
   slug: string;
   name: string;
   citySlug: string;
+  zone: Zone;
 };
 
 export type NewsLocation = {
@@ -138,8 +153,8 @@ export type News = NewsSummary & {
   related: NewsSummary[];
 };
 
-/** Item da faixa de urgentes. */
-export type BreakingNews = Pick<NewsSummary, "id" | "slug" | "title" | "publishedAt">;
+/** Item da faixa de urgentes (a editoria entra para montar a URL /{editoria}/{slug}). */
+export type BreakingNews = Pick<NewsSummary, "id" | "slug" | "title" | "category" | "publishedAt">;
 
 // ---------------------------------------------------------------- listagens
 
