@@ -13,6 +13,7 @@ const ALL: Permission[] = [
   "instagram.review",
   "instagram.settings",
   "taxonomy.manage",
+  "tags.manage",
   "ads.manage",
   "analytics.view",
   "analytics.ads.view",
@@ -33,6 +34,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     "news.mark_sponsored",
     "instagram.review",
     "taxonomy.manage",
+    "tags.manage",
     "analytics.view",
   ],
   REPORTER: [
@@ -40,6 +42,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     "news.edit.own",
     "news.mark_urgent",
     "instagram.review",
+    "tags.manage",
     "analytics.view",
   ],
   COMERCIAL: [

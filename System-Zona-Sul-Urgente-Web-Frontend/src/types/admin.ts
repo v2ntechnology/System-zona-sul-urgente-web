@@ -1,4 +1,11 @@
-import type { CategoryRef, ISODateTime, NewsOrigin, NewsStatus, UUID } from "@/types/news";
+import type {
+  ArticleBlock,
+  CategoryRef,
+  ISODateTime,
+  NewsOrigin,
+  NewsStatus,
+  UUID,
+} from "@/types/news";
 
 // Tipos do painel administrativo (contrato de /api/v1/admin/**).
 
@@ -17,6 +24,7 @@ export type Permission =
   | "instagram.review"
   | "instagram.settings"
   | "taxonomy.manage"
+  | "tags.manage"
   | "ads.manage"
   | "analytics.view"
   | "analytics.ads.view"
@@ -85,3 +93,46 @@ export type DashboardStats = {
   /** Variação de visualizações vs. ontem, em %. */
   viewsTrendPercent: number;
 };
+
+// ---------------------------------------------------------------- editor (FE-154)
+
+/**
+ * Notícia em edição — contrato de POST/PUT /api/v1/admin/news. Referências por slug
+ * (a API resolve os IDs). O corpo segue o mesmo ArticleBlock do site público.
+ */
+export type NewsDraft = {
+  id?: UUID;
+  title: string;
+  subtitle: string;
+  summary: string;
+  body: ArticleBlock[];
+  categorySlug: string;
+  authorSlugs: string[];
+  neighborhoodSlug: string;
+  tagSlugs: string[];
+  /** Tópicos novos (nomes) criados pela API ao salvar; exige `tags.manage`. */
+  newTags: string[];
+  image: { url: string; alt: string; caption: string; credit: string };
+  isUrgent: boolean;
+  isSponsored: boolean;
+  sponsorName: string;
+  seo: { title: string; description: string };
+  status: NewsStatus;
+  /** Data/hora local "AAAA-MM-DDTHH:mm" (input datetime-local), fuso de Brasília. */
+  scheduledFor: string;
+  origin: NewsOrigin;
+  /** Legenda original do Instagram (somente leitura, auditoria). */
+  instagramCaption?: string;
+  updatedAt?: ISODateTime;
+};
+
+/** O que o botão pediu: salvar rascunho, mandar para revisão, publicar ou agendar. */
+export type SaveIntent = "draft" | "review" | "publish" | "schedule";
+
+export type DraftErrors = Partial<
+  Record<keyof NewsDraft | "image.alt" | "image.url" | "body", string>
+>;
+
+export type SaveResult =
+  | { ok: true; id: UUID; status: NewsStatus; savedAt: ISODateTime; simulated: boolean }
+  | { ok: false; errors: DraftErrors; message: string };

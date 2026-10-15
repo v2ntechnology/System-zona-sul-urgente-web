@@ -23,4 +23,11 @@ describe("matriz de permissões", () => {
       expect(can(role, "instagram.settings")).toBe(false);
     }
   });
+
+  it("criar tópicos: ADMIN, EDITOR e REPÓRTER", () => {
+    expect(can("REPORTER", "tags.manage")).toBe(true);
+    expect(can("EDITOR", "tags.manage")).toBe(true);
+    expect(can("AUTOR", "tags.manage")).toBe(false);
+    expect(can("COMERCIAL", "tags.manage")).toBe(false);
+  });
 });
