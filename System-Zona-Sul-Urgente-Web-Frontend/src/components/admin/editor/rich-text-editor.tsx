@@ -1,5 +1,6 @@
 "use client";
 
+import { Placeholder } from "@tiptap/extensions";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import {
@@ -24,6 +25,9 @@ type RichTextEditorProps = {
   onChange: (blocks: ArticleBlock[]) => void;
   invalid?: boolean;
   describedBy?: string;
+  placeholder?: string;
+  /** Sem moldura: o texto se integra ao painel (editor estilo post do Instagram). */
+  bare?: boolean;
 };
 
 // Editor do corpo da matéria (FE-154) com Tiptap. Só os formatos que o site exibe:
@@ -33,6 +37,8 @@ export function RichTextEditor({
   onChange,
   invalid,
   describedBy,
+  placeholder,
+  bare,
 }: RichTextEditorProps) {
   const editor = useEditor({
     // Next/SSR: o editor só monta no navegador.
@@ -52,6 +58,7 @@ export function RichTextEditor({
           HTMLAttributes: { rel: null, target: null },
         },
       }),
+      Placeholder.configure({ placeholder: placeholder ?? "" }),
     ],
     content: blocksToEditorHtml(initialBlocks),
     editorProps: {
@@ -61,7 +68,7 @@ export function RichTextEditor({
         "aria-label": "Texto da matéria",
         ...(describedBy && { "aria-describedby": describedBy }),
         class:
-          "min-h-80 px-4 py-3 text-article outline-none [&_a]:text-brand-blue [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-brand-red [&_blockquote]:pl-4 [&_blockquote]:font-heading [&_blockquote]:font-bold [&_h2]:mt-4 [&_h2]:text-headline [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-3 [&_ul]:list-disc [&_ul]:pl-6",
+          "min-h-60 px-4 py-3 text-article outline-none [&_p.is-editor-empty:first-child]:before:pointer-events-none [&_p.is-editor-empty:first-child]:before:float-left [&_p.is-editor-empty:first-child]:before:h-0 [&_p.is-editor-empty:first-child]:before:text-muted-foreground [&_p.is-editor-empty:first-child]:before:content-[attr(data-placeholder)] [&_a]:text-brand-blue [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-brand-red [&_blockquote]:pl-4 [&_blockquote]:font-heading [&_blockquote]:font-bold [&_h2]:mt-4 [&_h2]:text-headline [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-3 [&_ul]:list-disc [&_ul]:pl-6",
       },
     },
     // Corpo inicial também passa pelo conversor: o que vai para a API e para a
@@ -150,14 +157,22 @@ export function RichTextEditor({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-md border bg-background focus-within:ring-2 focus-within:ring-ring/30",
-        invalid ? "border-destructive" : "border-input",
+        "bg-background",
+        bare
+          ? cn("rounded-md", invalid && "ring-2 ring-destructive/60")
+          : cn(
+              "overflow-hidden rounded-md border focus-within:ring-2 focus-within:ring-ring/30",
+              invalid ? "border-destructive" : "border-input",
+            ),
       )}
     >
       <div
         role="toolbar"
         aria-label="Formatação do texto"
-        className="flex flex-wrap items-center gap-0.5 border-b bg-muted/50 p-1"
+        className={cn(
+          "flex flex-wrap items-center gap-0.5 p-1",
+          bare ? "rounded-md bg-muted/60" : "border-b bg-muted/50",
+        )}
       >
         {tools.map((tool) => (
           <button
@@ -201,7 +216,7 @@ export function RichTextEditor({
       {editor ? (
         <EditorContent editor={editor} />
       ) : (
-        <div className="min-h-80 animate-pulse bg-muted/40" />
+        <div className="min-h-60 animate-pulse bg-muted/40" />
       )}
     </div>
   );

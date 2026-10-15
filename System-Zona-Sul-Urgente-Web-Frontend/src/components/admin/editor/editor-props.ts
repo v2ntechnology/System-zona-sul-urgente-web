@@ -7,6 +7,8 @@ import { getAuthors, getCategories, getNeighborhoods, getTags } from "@/services
 export async function loadEditorProps(): Promise<{
   options: EditorOptions;
   permissions: EditorPermissions;
+  /** Autor do usuário logado: vem marcado em notícia nova (como o "seu perfil" do post). */
+  defaultAuthorSlug?: string;
 }> {
   const [user, categories, authors, neighborhoods, tags] = await Promise.all([
     getCurrentUser(),
@@ -26,6 +28,7 @@ export async function loadEditorProps(): Promise<{
       neighborhoods: neighborhoods.map((n) => ({ slug: n.slug, name: n.name })),
       tags: tags.map((t) => ({ slug: t.slug, name: t.name })),
     },
+    defaultAuthorSlug: user.authorSlug,
     permissions: {
       canPublish: can(user.role, "news.publish"),
       canMarkUrgent: can(user.role, "news.mark_urgent"),

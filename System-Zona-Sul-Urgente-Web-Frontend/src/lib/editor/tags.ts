@@ -51,3 +51,13 @@ export function newTagError(name: string): string | null {
   if (!slugify(clean)) return "Use letras ou números no nome do tópico.";
   return null;
 }
+
+/** Hashtags de um texto, sem repetição e na ordem em que aparecem ("#Chuva forte" → "Chuva"). */
+export function extractHashtags(text: string): string[] {
+  const found = new Map<string, string>();
+  for (const match of text.matchAll(/(?:^|[^\p{L}\p{N}_&/])#([\p{L}\p{N}_]{2,40})/gu)) {
+    const key = tagKey(match[1]);
+    if (key && !found.has(key)) found.set(key, match[1]);
+  }
+  return [...found.values()];
+}

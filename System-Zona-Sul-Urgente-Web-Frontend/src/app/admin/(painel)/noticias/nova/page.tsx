@@ -7,6 +7,10 @@ import { emptyDraft } from "@/lib/editor/validate";
 export const metadata: Metadata = { title: "Nova notícia" };
 
 export default async function NewNewsPage() {
-  const { options, permissions } = await loadEditorProps();
-  return <NewsEditor initial={emptyDraft()} options={options} permissions={permissions} />;
+  const { options, permissions, defaultAuthorSlug } = await loadEditorProps();
+  const initial = {
+    ...emptyDraft(),
+    authorSlugs: defaultAuthorSlug ? [defaultAuthorSlug] : [],
+  };
+  return <NewsEditor initial={initial} options={options} permissions={permissions} />;
 }

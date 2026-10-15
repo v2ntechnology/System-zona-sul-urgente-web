@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { matchTags, newTagError, tagKey } from "@/lib/editor/tags";
+import { extractHashtags, matchTags, newTagError, tagKey } from "@/lib/editor/tags";
 import { emptyDraft, validateDraft } from "@/lib/editor/validate";
 
 const options = [
@@ -44,5 +44,12 @@ describe("tópicos do editor", () => {
     };
     expect(validateDraft(draft, "draft").newTags).toMatch(/No máximo 10/);
     expect(validateDraft({ ...draft, newTags: ["Novo A"] }, "draft").newTags).toBeUndefined();
+  });
+
+  it("extrai hashtags do texto sem repetir (ignora links e e-mails)", () => {
+    expect(
+      extractHashtags("Chuva forte agora! #chuva #Copacabana #CHUVA https://x.com/#ancora a#b"),
+    ).toEqual(["chuva", "Copacabana"]);
+    expect(extractHashtags("sem hashtag #a")).toEqual([]);
   });
 });
