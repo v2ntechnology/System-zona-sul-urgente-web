@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AdSlot, isAdSlotVisible } from "@/components/ads/ad-slot";
+import { ColumnsRow } from "@/components/columns/columns-row";
 import { SectionHeader } from "@/components/home/section-header";
 import { Container } from "@/components/layout/container";
 import { MostReadRow } from "@/components/news/most-read";
@@ -21,6 +22,7 @@ import {
   getBySlug,
   getFeatured,
   getLatest,
+  getLatestColumns,
   getVideos,
 } from "@/services/news-service";
 import { getLatestStories } from "@/services/story-service";
@@ -28,23 +30,32 @@ import { getNeighborhoods } from "@/services/taxonomy-service";
 import type { NewsSummary } from "@/types/news";
 
 // Home (FE-101), na estrutura da CNN: manchete + destaques, últimas, Mais Lidas em faixa,
-// Webstories, vídeos com moldura do site, editorias em colunas coloridas e bairros.
+// Webstories, vídeos com moldura do site, Blogs e colunas, editorias em colunas coloridas e bairros.
 // Uma notícia aparece uma vez só nas seções editoriais (Mais Lidas e Vídeos são rankings
 // e formatos próprios, então podem repetir).
 
 const CATEGORY_BLOCKS = ["seguranca", "esportes", "economia"];
 
 export default async function HomePage() {
-  const [featured, latest, videos, stories, neighborhoods, hasSidebarAd, ...categoryResults] =
-    await Promise.all([
-      getFeatured(),
-      getLatest({ limit: 30 }),
-      getVideos(8),
-      getLatestStories(10),
-      getNeighborhoods(),
-      isAdSlotVisible("HOME_SIDEBAR"),
-      ...CATEGORY_BLOCKS.map((slug) => getByCategory(slug, { limit: 12 })),
-    ]);
+  const [
+    featured,
+    latest,
+    videos,
+    stories,
+    neighborhoods,
+    hasSidebarAd,
+    columns,
+    ...categoryResults
+  ] = await Promise.all([
+    getFeatured(),
+    getLatest({ limit: 30 }),
+    getVideos(8),
+    getLatestStories(10),
+    getNeighborhoods(),
+    isAdSlotVisible("HOME_SIDEBAR"),
+    getLatestColumns(10),
+    ...CATEGORY_BLOCKS.map((slug) => getByCategory(slug, { limit: 12 })),
+  ]);
 
   const shown = new Set<string>();
   // Registra cada item ao escolher: a mesma notícia pode vir em duas listas de entrada.
@@ -168,6 +179,12 @@ export default async function HomePage() {
               <NewsCardVideo key={news.id} news={news} className="w-64 shrink-0 snap-start" />
             ))}
           </CarouselRow>
+        </Container>
+      )}
+
+      {columns.length > 0 && columns[0].column.parent && (
+        <Container>
+          <ColumnsRow columns={columns} section={columns[0].column.parent} />
         </Container>
       )}
 

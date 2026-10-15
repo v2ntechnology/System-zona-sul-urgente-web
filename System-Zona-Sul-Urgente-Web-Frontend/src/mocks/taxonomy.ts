@@ -18,6 +18,7 @@ const mainCategories: Category[] = [
   ["entretenimento", "Entretenimento", "Gastronomia, shows, feiras e passeios."],
   ["comunidade", "Comunidade", "Projetos sociais, iniciativas locais e histórias dos moradores."],
   ["classificados", "Classificados", "Imóveis, vagas de emprego e serviços locais."],
+  ["colunas", "Blogs e colunas", "Opinião e análise de quem conhece a Zona Sul de perto."],
 ].map(([slug, name, description], i) => ({
   id: mockId(1, i + 1),
   slug,
@@ -45,7 +46,58 @@ const subCategories: Category[] = [
   whatsappUrl: `https://whatsapp.com/channel/exemplo-${slug}`,
 }));
 
-export const categories: Category[] = [...mainCategories, ...subCategories];
+// Colunas (subeditorias de "colunas"): URL /colunas/{coluna} e posts em /colunas/{coluna}/{slug}.
+// Colunistas FICTÍCIOS de exemplo: trocar pelos reais quando a redação definir.
+export const columnsMock: [string, string, string, string, string][] = [
+  [
+    "bairro-a-bairro",
+    "Bairro a Bairro",
+    "marina-teixeira",
+    "Marina Teixeira",
+    "Urbanismo e vida nos bairros",
+  ],
+  [
+    "plantao-seguranca",
+    "Plantão Segurança",
+    "ricardo-alves",
+    "Ricardo Alves",
+    "Segurança pública na Zona Sul",
+  ],
+  [
+    "mar-e-areia",
+    "Mar e Areia",
+    "paula-monteiro",
+    "Paula Monteiro",
+    "Praias, lagoa e meio ambiente",
+  ],
+  [
+    "bolso-carioca",
+    "Bolso Carioca",
+    "fernando-lacerda",
+    "Fernando Lacerda",
+    "Economia do dia a dia",
+  ],
+  [
+    "arquibancada-sul",
+    "Arquibancada Sul",
+    "diego-martins",
+    "Diego Martins",
+    "Esporte amador e de praia",
+  ],
+];
+
+const columnCategories: Category[] = columnsMock.map(
+  ([slug, name, authorSlug, author, bio], i) => ({
+    id: mockId(1, 200 + i),
+    slug,
+    name,
+    description: `Coluna de ${author}: ${bio.toLowerCase()}.`,
+    parent: ref("colunas"),
+    columnist: { authorSlug, name: author, bio },
+  }),
+);
+
+export const categories: Category[] = [...mainCategories, ...subCategories, ...columnCategories];
 
 export const zones: Zone[] = [{ id: mockId(6, 1), slug: "zona-sul", name: "Zona Sul" }];
 
@@ -90,6 +142,7 @@ export const authors: Author[] = [
   ["juliana-prado", "Juliana Prado", "Editora"],
   ["rafael-duarte", "Rafael Duarte", "Repórter"],
   ["redacao", "Redação Zona Sul Urgente", "Redação"],
+  ...columnsMock.map(([, , slug, name]) => [slug, name, "Colunista"]),
 ].map(([slug, name, role], i) => ({ id: mockId(4, i + 1), slug, name, role }));
 
 export const tags: Tag[] = [

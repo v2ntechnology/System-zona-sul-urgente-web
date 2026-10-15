@@ -91,6 +91,13 @@ export const allSections: Section[] = [
   ]),
   section("comunidade", "Comunidade", false),
   section("classificados", "Classificados", false),
+  section("colunas", "Blogs e colunas", false, [
+    ["bairro-a-bairro", "Bairro a Bairro"],
+    ["plantao-seguranca", "Plantão Segurança"],
+    ["mar-e-areia", "Mar e Areia"],
+    ["bolso-carioca", "Bolso Carioca"],
+    ["arquibancada-sul", "Arquibancada Sul"],
+  ]),
 ];
 
 /** Editorias principais (barra), como a CNN: as demais aparecem no menu ☰. */

@@ -22,6 +22,17 @@ export type Category = {
   parent?: CategoryRef;
   /** Canal de WhatsApp da editoria ("Acompanhe Esportes no WhatsApp"). Subeditoria herda da mãe. */
   whatsappUrl?: string;
+  /** Quando a subeditoria é uma coluna (Blogs e colunas): quem assina. */
+  columnist?: Columnist;
+};
+
+/** Colunista dono de uma coluna (subeditoria de "colunas"). */
+export type Columnist = {
+  authorSlug: string;
+  name: string;
+  /** Uma linha: especialidade ("Urbanismo e vida nos bairros"). */
+  bio: string;
+  photo?: MediaAsset;
 };
 
 export type Tag = {

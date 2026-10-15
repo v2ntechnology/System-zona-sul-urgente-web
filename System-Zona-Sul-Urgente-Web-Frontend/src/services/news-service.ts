@@ -84,6 +84,21 @@ export async function getByCategory(
   return { category, page: paginate(items, request) };
 }
 
+/** Colunas (Blogs e colunas) com o post mais recente de cada uma, da mais nova para a mais antiga. */
+export async function getLatestColumns(
+  limit = 10,
+): Promise<{ column: Category; latest: NewsSummary }[]> {
+  // newsMock já vem do mais recente para o mais antigo: o primeiro de cada coluna é o último post.
+  return categories
+    .filter((c) => c.columnist)
+    .flatMap((column) => {
+      const latest = newsMock.find((n) => n.category.slug === column.slug);
+      return latest ? [{ column, latest: toSummary(latest) }] : [];
+    })
+    .sort((a, b) => b.latest.publishedAt.localeCompare(a.latest.publishedAt))
+    .slice(0, clampLimit(limit));
+}
+
 export async function getByNeighborhood(
   slug: string,
   request: PageRequest = {},

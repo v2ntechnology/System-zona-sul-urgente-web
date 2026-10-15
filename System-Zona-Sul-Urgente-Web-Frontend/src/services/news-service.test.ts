@@ -190,3 +190,15 @@ describe("news-service", () => {
     ).toBe(false);
   });
 });
+
+describe("colunas", () => {
+  it("traz o último post de cada coluna, do mais novo para o mais antigo", async () => {
+    const { getLatestColumns } = await import("@/services/news-service");
+    const columns = await getLatestColumns();
+    expect(columns.length).toBe(5);
+    expect(columns.every(({ column, latest }) => latest.category.slug === column.slug)).toBe(true);
+    const dates = columns.map((c) => c.latest.publishedAt);
+    expect(dates).toEqual([...dates].sort().reverse());
+    expect(columns[0].column.columnist?.name).toBeTruthy();
+  });
+});
