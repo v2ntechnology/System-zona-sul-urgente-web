@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
   // Saída enxuta para a imagem Docker (self-hosting atrás da Cloudflare).
   output: "standalone",
   poweredByHeader: false,
+  // Fixado no build (inline): o painel inteiro decide igual, nas partes estáticas e nas
+  // dinâmicas. Sem isso, páginas estáticas leriam o valor do build e as dinâmicas o do
+  // servidor — o painel ficaria meio aberto, meio fechado.
+  env: { ADMIN_PREVIEW: process.env.ADMIN_PREVIEW ?? "" },
   images: {
     // Next 16 exige a lista de qualidades permitidas.
     qualities: [75],
