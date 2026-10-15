@@ -186,6 +186,35 @@ export async function resolveSectionPath(segments: string[]): Promise<ResolvedPa
   return { type: "news", news, canonicalPath: routes.news(news) };
 }
 
+export type SitemapNews = Pick<
+  NewsSummary,
+  "slug" | "title" | "category" | "publishedAt" | "updatedAt" | "image"
+>;
+
+/** Todas as matérias publicadas, para o sitemap geral (BE: endpoint paginado/streaming). */
+export async function getNewsForSitemap(): Promise<SitemapNews[]> {
+  return newsMock.map(({ slug, title, category, publishedAt, updatedAt, image }) => ({
+    slug,
+    title,
+    category,
+    publishedAt,
+    updatedAt,
+    image,
+  }));
+}
+
+/**
+ * Matérias das últimas 48 h para o sitemap do Google Notícias (regra do Google: só as
+ * publicadas nos últimos 2 dias, no máximo 1.000). Patrocinadas ficam de fora.
+ */
+export async function getNewsForNewsSitemap(): Promise<SitemapNews[]> {
+  const since = MOCK_NOW.getTime() - 48 * 3_600_000;
+  return (await getNewsForSitemap())
+    .filter((n) => Date.parse(n.publishedAt) >= since)
+    .filter((n) => !newsMock.find((m) => m.slug === n.slug)?.isSponsored)
+    .slice(0, 1000);
+}
+
 /** Todos os caminhos conhecidos (editorias e matérias) para pré-gerar no build. */
 export async function getSectionPaths(): Promise<string[][]> {
   const categoryPaths = categories.map((c) => (c.parent ? [c.parent.slug, c.slug] : [c.slug]));

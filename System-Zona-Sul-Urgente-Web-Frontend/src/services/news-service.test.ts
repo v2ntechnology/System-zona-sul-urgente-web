@@ -9,6 +9,8 @@ import {
   getFeatured,
   getLatest,
   getMostRead,
+  getNewsForNewsSitemap,
+  getNewsForSitemap,
   getVideos,
   resolveSectionPath,
   MAX_PAGE_SIZE,
@@ -174,5 +176,17 @@ describe("news-service", () => {
     const page = await search({ query: "leblon", categorySlug: "entretenimento", limit: 1 });
     expect(page.items[0]?.category.parent?.slug).toBe("entretenimento");
     expect(page.total).toBeGreaterThanOrEqual(1);
+  });
+
+  it("sitemap de notícias só tem as últimas 48 h e nenhuma patrocinada", async () => {
+    const all = await getNewsForSitemap();
+    const recent = await getNewsForNewsSitemap();
+    expect(recent.length).toBeGreaterThan(0);
+    expect(recent.length).toBeLessThan(all.length);
+    const limit = Date.parse("2026-10-15T15:00:00-03:00") - 48 * 3_600_000;
+    expect(recent.every((n) => Date.parse(n.publishedAt) >= limit)).toBe(true);
+    expect(
+      recent.some((n) => n.slug === "restaurante-em-botafogo-aposta-em-comida-nordestina"),
+    ).toBe(false);
   });
 });

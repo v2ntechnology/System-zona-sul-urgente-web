@@ -3,6 +3,7 @@ import Link from "next/link";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { Breadcrumbs } from "@/components/article/breadcrumbs";
 import { Container } from "@/components/layout/container";
+import { LoadMore } from "@/components/listing/load-more";
 import { NewsListing } from "@/components/listing/news-listing";
 import { WhatsAppCta } from "@/components/news/whatsapp-cta";
 import { sectionStyle } from "@/lib/section-color";
@@ -14,11 +15,12 @@ type CategoryViewProps = {
   category: Category;
   subcategories: Category[];
   items: NewsSummary[];
+  nextCursor: string | null;
 };
 
 // Página de editoria (FE-104): cabeçalho na cor da editoria, subeditorias e listagem.
 // Paginação ("carregar mais") entra na próxima etapa do FE-104.
-export function CategoryView({ category, subcategories, items }: CategoryViewProps) {
+export function CategoryView({ category, subcategories, items, nextCursor }: CategoryViewProps) {
   const crumbs: Crumb[] = [
     { name: "Início", path: routes.home },
     ...(category.parent
@@ -66,6 +68,7 @@ export function CategoryView({ category, subcategories, items }: CategoryViewPro
         items={items}
         middle={<WhatsAppCta category={category} />}
         emptyMessage={`Ainda não há notícias publicadas em ${category.name}.`}
+        footer={<LoadMore filter={{ editoria: category.slug }} initialCursor={nextCursor} />}
       />
     </Container>
   );

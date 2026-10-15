@@ -32,6 +32,7 @@ export const metadata: Metadata = {
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
+  robots: siteConfig.indexable ? undefined : { index: false, follow: false },
   openGraph: {
     siteName: siteConfig.name,
     locale: siteConfig.locale,

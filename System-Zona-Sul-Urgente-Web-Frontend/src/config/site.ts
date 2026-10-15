@@ -6,6 +6,11 @@ export const siteConfig = {
   description: "Notícias da Zona Sul do Rio de Janeiro, com rapidez e responsabilidade.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
   locale: "pt_BR",
+  /**
+   * Só produção pode ser indexada pelo Google. Qualquer outro valor (local, staging, vazio)
+   * gera robots.txt "Disallow: /" e meta noindex — staging nunca aparece na busca (OPS-001).
+   */
+  indexable: process.env.NEXT_PUBLIC_SITE_ENV === "production",
   social: {
     instagram: "https://www.instagram.com/zonasulurgente/",
   },

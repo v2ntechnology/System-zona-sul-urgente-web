@@ -3,6 +3,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 
 import { ArticleView } from "@/components/article/article-view";
 import { CategoryView } from "@/components/category/category-view";
+import { LISTING_FIRST_PAGE } from "@/components/listing/news-listing";
 import { routes } from "@/config/navigation";
 import { siteConfig } from "@/config/site";
 import { getByCategory, getSectionPaths, resolveSectionPath } from "@/services/news-service";
@@ -90,7 +91,7 @@ export default async function SectionPage({ params }: PageProps<"/[...path]">) {
 
   const { category } = resolved;
   const [listing, subcategories] = await Promise.all([
-    getByCategory(category.slug, { limit: 24 }),
+    getByCategory(category.slug, { limit: LISTING_FIRST_PAGE }),
     category.parent ? Promise.resolve([]) : getSubcategories(category.slug),
   ]);
   return (
@@ -98,6 +99,7 @@ export default async function SectionPage({ params }: PageProps<"/[...path]">) {
       category={category}
       subcategories={subcategories}
       items={listing?.page.items ?? []}
+      nextCursor={listing?.page.nextCursor ?? null}
     />
   );
 }

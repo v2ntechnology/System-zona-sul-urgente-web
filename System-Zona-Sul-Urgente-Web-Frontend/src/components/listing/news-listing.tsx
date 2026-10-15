@@ -1,17 +1,22 @@
 import { NewsCard, NewsCardCompact, NewsCardFeatured } from "@/components/news/news-card";
 import type { NewsSummary } from "@/types/news";
 
+/** 1ª página das listagens: destaque + 3 ao lado + 9 na grade (3 linhas completas). */
+export const LISTING_FIRST_PAGE = 13;
+
 type NewsListingProps = {
   items: NewsSummary[];
   /** Conteúdo entre o destaque e a grade (ex.: chamada do canal de WhatsApp). */
   middle?: React.ReactNode;
   /** Texto quando não há notícias. */
   emptyMessage: string;
+  /** Rodapé da listagem (ex.: botão "Carregar mais"). */
+  footer?: React.ReactNode;
 };
 
 // Listagem de editoria/bairro: destaque + 3 compactos ao lado + grade com o restante.
 // Patrocinada nunca é o destaque principal (vai para a lista, com selo).
-export function NewsListing({ items, middle, emptyMessage }: NewsListingProps) {
+export function NewsListing({ items, middle, emptyMessage, footer }: NewsListingProps) {
   const lead = items.find((news) => !news.isSponsored) ?? items[0];
   if (!lead) {
     return <p className="py-16 text-center text-muted-foreground">{emptyMessage}</p>;
@@ -40,6 +45,7 @@ export function NewsListing({ items, middle, emptyMessage }: NewsListingProps) {
           ))}
         </div>
       )}
+      {footer}
     </>
   );
 }

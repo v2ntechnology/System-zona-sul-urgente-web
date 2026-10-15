@@ -7,7 +7,8 @@ import { AdSlot } from "@/components/ads/ad-slot";
 import { Breadcrumbs } from "@/components/article/breadcrumbs";
 import { SectionHeader } from "@/components/home/section-header";
 import { Container } from "@/components/layout/container";
-import { NewsListing } from "@/components/listing/news-listing";
+import { LoadMore } from "@/components/listing/load-more";
+import { LISTING_FIRST_PAGE, NewsListing } from "@/components/listing/news-listing";
 import { WhatsAppCta } from "@/components/news/whatsapp-cta";
 import { routes } from "@/config/navigation";
 import { breadcrumbJsonLd, type Crumb, serializeJsonLd } from "@/lib/structured-data";
@@ -37,7 +38,7 @@ export async function generateMetadata({ params }: PageProps<"/bairro/[slug]">):
 export default async function NeighborhoodPage({ params }: PageProps<"/bairro/[slug]">) {
   const { slug } = await params;
   const [result, all] = await Promise.all([
-    getByNeighborhood(slug, { limit: 24 }),
+    getByNeighborhood(slug, { limit: LISTING_FIRST_PAGE }),
     getNeighborhoods(),
   ]);
   if (!result) notFound();
@@ -75,6 +76,7 @@ export default async function NeighborhoodPage({ params }: PageProps<"/bairro/[s
         items={page.items}
         middle={<WhatsAppCta />}
         emptyMessage={`Ainda não há notícias recentes de ${neighborhood.name}. Envie a sua pelo botão "Envie sua notícia".`}
+        footer={<LoadMore filter={{ bairro: neighborhood.slug }} initialCursor={page.nextCursor} />}
       />
 
       {others.length > 0 && (
