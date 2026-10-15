@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { Breadcrumbs } from "@/components/article/breadcrumbs";
 import { Container } from "@/components/layout/container";
-import { NewsCard, NewsCardCompact, NewsCardFeatured } from "@/components/news/news-card";
+import { NewsListing } from "@/components/listing/news-listing";
 import { WhatsAppCta } from "@/components/news/whatsapp-cta";
 import { sectionStyle } from "@/lib/section-color";
 import { routes } from "@/config/navigation";
@@ -16,8 +16,8 @@ type CategoryViewProps = {
   items: NewsSummary[];
 };
 
-// Página de editoria (FE-104, primeira versão): destaque + grade. Paginação ("carregar mais")
-// entra na próxima etapa do FE-104.
+// Página de editoria (FE-104): cabeçalho na cor da editoria, subeditorias e listagem.
+// Paginação ("carregar mais") entra na próxima etapa do FE-104.
 export function CategoryView({ category, subcategories, items }: CategoryViewProps) {
   const crumbs: Crumb[] = [
     { name: "Início", path: routes.home },
@@ -26,11 +26,6 @@ export function CategoryView({ category, subcategories, items }: CategoryViewPro
       : []),
     { name: category.name, path: routes.category(category) },
   ];
-  // Patrocinada nunca é o destaque principal da editoria (vai para a lista, com selo).
-  const lead = items.find((news) => !news.isSponsored) ?? items[0];
-  const others = items.filter((news) => news !== lead);
-  const side = others.slice(0, 3);
-  const rest = others.slice(3);
 
   return (
     <Container className="flex flex-col gap-8">
@@ -67,32 +62,11 @@ export function CategoryView({ category, subcategories, items }: CategoryViewPro
 
       <AdSlot slotKey="CATEGORY_TOP" />
 
-      {lead ? (
-        <>
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <NewsCardFeatured news={lead} preload />
-            {side.length > 0 && (
-              <div className="flex flex-col divide-y">
-                {side.map((news) => (
-                  <NewsCardCompact key={news.id} news={news} className="py-4 first:pt-0" />
-                ))}
-              </div>
-            )}
-          </div>
-          <WhatsAppCta category={category} />
-          {rest.length > 0 && (
-            <div className="grid gap-8 border-t pt-8 sm:grid-cols-2 lg:grid-cols-3">
-              {rest.map((news) => (
-                <NewsCard key={news.id} news={news} />
-              ))}
-            </div>
-          )}
-        </>
-      ) : (
-        <p className="py-16 text-center text-muted-foreground">
-          Ainda não há notícias publicadas em {category.name}.
-        </p>
-      )}
+      <NewsListing
+        items={items}
+        middle={<WhatsAppCta category={category} />}
+        emptyMessage={`Ainda não há notícias publicadas em ${category.name}.`}
+      />
     </Container>
   );
 }

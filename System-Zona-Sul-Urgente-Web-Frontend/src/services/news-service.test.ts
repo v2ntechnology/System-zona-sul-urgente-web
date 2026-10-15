@@ -169,4 +169,10 @@ describe("news-service", () => {
       expect(await resolveSectionPath(["a", "b", "c", "d"])).toBeNull();
     });
   });
+
+  it("busca filtra pela editoria mãe incluindo subeditorias e informa o total", async () => {
+    const page = await search({ query: "leblon", categorySlug: "entretenimento", limit: 1 });
+    expect(page.items[0]?.category.parent?.slug).toBe("entretenimento");
+    expect(page.total).toBeGreaterThanOrEqual(1);
+  });
 });

@@ -125,7 +125,13 @@ export async function search(request: SearchRequest): Promise<Page<NewsSummary>>
   if (terms.length === 0) return { items: [], nextCursor: null };
 
   const items = newsMock
-    .filter((n) => !request.categorySlug || n.category.slug === request.categorySlug)
+    // Editoria mãe inclui as subeditorias (filtrar "Entretenimento" traz Gastronomia).
+    .filter(
+      (n) =>
+        !request.categorySlug ||
+        n.category.slug === request.categorySlug ||
+        n.category.parent?.slug === request.categorySlug,
+    )
     .filter(
       (n) =>
         !request.neighborhoodSlug || n.location?.neighborhood?.slug === request.neighborhoodSlug,
@@ -202,6 +208,7 @@ function paginate<T>(items: T[], { cursor, limit }: PageRequest): Page<T> {
   return {
     items: items.slice(offset, next),
     nextCursor: next < items.length ? encodeCursor(next) : null,
+    total: items.length,
   };
 }
 

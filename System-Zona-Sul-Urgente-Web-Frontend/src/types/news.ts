@@ -164,6 +164,8 @@ export type BreakingNews = Pick<NewsSummary, "id" | "slug" | "title" | "category
 export type Page<T> = {
   items: T[];
   nextCursor: string | null;
+  /** Total de itens que atendem ao filtro (a busca mostra "N resultados"). */
+  total?: number;
 };
 
 export type PageRequest = {
