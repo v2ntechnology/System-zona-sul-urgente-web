@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 
-import { saveNewsAction } from "@/app/admin/noticias/actions";
+import { saveNewsAction } from "@/app/admin/(painel)/noticias/actions";
 import { RichTextEditor } from "@/components/admin/editor/rich-text-editor";
 import { TagPicker } from "@/components/admin/editor/tag-picker";
 import { StatusBadge } from "@/components/admin/status-badge";

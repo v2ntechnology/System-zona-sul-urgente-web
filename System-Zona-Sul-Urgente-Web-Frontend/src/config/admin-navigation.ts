@@ -6,10 +6,13 @@ export type AdminNavItem = {
   href: string;
   icon: "dashboard" | "news" | "new" | "instagram" | "analytics" | "ads" | "users" | "design";
   permission?: Permission;
+  /** Contador de pendências (ex.: posts do Instagram esperando ação). */
+  badge?: number;
 };
 
 export const adminRoutes = {
   dashboard: "/admin",
+  login: "/admin/login",
   news: "/admin/noticias",
   newNews: "/admin/noticias/nova",
   editNews: (id: string) => `/admin/noticias/${id}`,
@@ -20,10 +23,10 @@ export const adminRoutes = {
   designSystem: "/admin/design-system",
 } as const;
 
+/** Itens da navbar (desktop) e da barra inferior (celular). "Nova notícia" é o botão de destaque. */
 export const adminNav: AdminNavItem[] = [
   { label: "Dashboard", href: adminRoutes.dashboard, icon: "dashboard" },
   { label: "Notícias", href: adminRoutes.news, icon: "news" },
-  { label: "Nova notícia", href: adminRoutes.newNews, icon: "new", permission: "news.create" },
   {
     label: "Instagram",
     href: adminRoutes.instagram,
@@ -38,14 +41,21 @@ export const adminNav: AdminNavItem[] = [
   },
   { label: "Publicidade", href: adminRoutes.ads, icon: "ads", permission: "ads.manage" },
   { label: "Usuários", href: adminRoutes.users, icon: "users", permission: "users.manage" },
-  { label: "Design system", href: adminRoutes.designSystem, icon: "design" },
 ];
+
+export const newNewsItem: AdminNavItem = {
+  label: "Nova notícia",
+  href: adminRoutes.newNews,
+  icon: "new",
+  permission: "news.create",
+};
 
 /** Rótulos da trilha (breadcrumb) por segmento de URL. */
 export const adminSegmentLabels: Record<string, string> = {
   admin: "Painel",
   noticias: "Notícias",
   nova: "Nova notícia",
+  login: "Entrar",
   instagram: "Instagram",
   analytics: "Analytics",
   publicidade: "Publicidade",
