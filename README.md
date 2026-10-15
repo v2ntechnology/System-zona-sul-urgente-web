@@ -6,9 +6,37 @@ Portal de notícias da Zona Sul do Rio de Janeiro.
 
 ```
 System-zona-sul-urgente-web/
-├── System-Zona-Sul-Urgente-Web-Frontend/   # Frontend (em reconstrução)
-└── System-Zona-Sul-Urgente-Web-Backend/    # Backend (em definição)
+├── System-Zona-Sul-Urgente-Web-Frontend/   # Next.js 16 (portal público + /admin)
+├── System-Zona-Sul-Urgente-Web-Backend/    # Spring Boot 4 + PostgreSQL (API REST /api/v1)
+├── infra/                                  # Docker Compose do ambiente local
+└── .github/workflows/                      # CI do frontend e do backend
 ```
+
+## Stack
+
+| Camada   | Tecnologia                                                        |
+| -------- | ----------------------------------------------------------------- |
+| Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind 4, shadcn/ui |
+| Backend  | Java 25, Spring Boot 4, Spring Security, Spring Data JPA, Flyway   |
+| Banco    | PostgreSQL 18                                                     |
+| Borda    | Cloudflare (DNS, CDN, WAF) · mídia no Cloudflare R2               |
+
+## Rodando localmente
+
+Pré-requisitos: Node 24, JDK 25 e Docker.
+
+```bash
+# 1. Banco
+docker compose -f infra/compose.yaml up -d
+
+# 2. API (http://localhost:8080 — Swagger em /api/v1/docs)
+cd System-Zona-Sul-Urgente-Web-Backend && ./mvnw spring-boot:run
+
+# 3. Portal (http://localhost:3000)
+cd System-Zona-Sul-Urgente-Web-Frontend && npm ci && npm run dev
+```
+
+Stack inteira em containers: `docker compose -f infra/compose.yaml --profile app up -d --build`.
 
 ## Padrão de commits
 

@@ -1,0 +1,50 @@
+# Ambiente local.
+#   Só o banco (dia a dia):   docker compose -f infra/compose.yaml up -d
+#   Stack completa em Docker: docker compose -f infra/compose.yaml --profile app up -d --build
+name: zona-sul-urgente
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_DB: zonasul
+      POSTGRES_USER: zonasul
+      POSTGRES_PASSWORD: zonasul
+    # Exposto só em 127.0.0.1 — nunca em 0.0.0.0, nem localmente.
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zonasul -d zonasul"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    profiles: [app]
+    build: ../System-Zona-Sul-Urgente-Web-Backend
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/zonasul
+      DB_USER: zonasul
+      DB_PASSWORD: zonasul
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    profiles: [app]
+    build: ../System-Zona-Sul-Urgente-Web-Frontend
+    environment:
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      API_URL: http://api:8080
+      REVALIDATE_SECRET: dev-only-revalidate-secret-nao-usar-em-producao
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  postgres-data:

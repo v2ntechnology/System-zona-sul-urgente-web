@@ -1,0 +1,50 @@
+spring:
+  application:
+    name: zona-sul-urgente-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/zonasul}
+    username: ${DB_USER:zonasul}
+    password: ${DB_PASSWORD:zonasul}
+  jpa:
+    # Flyway é a única fonte de schema: o Hibernate só valida.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    locations: classpath:db/migration
+
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+  forward-headers-strategy: framework
+  error:
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /api/v1/openapi
+  swagger-ui:
+    path: /api/v1/docs
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+# Em produção a documentação da API não fica pública.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
