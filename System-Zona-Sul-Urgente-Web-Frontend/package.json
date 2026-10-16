@@ -10,7 +10,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "seed:export": "node --import ./scripts/seed/register.mjs scripts/seed/export.mts ../System-Zona-Sul-Urgente-Web-Backend/src/main/resources/db/seed/R__seed_local.sql"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

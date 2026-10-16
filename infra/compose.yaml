@@ -28,6 +28,8 @@ services:
       DB_URL: jdbc:postgresql://postgres:5432/zonasul
       DB_USER: zonasul
       DB_PASSWORD: zonasul
+      # Stack local: carrega os dados de exemplo (db/seed). Nunca usar "local" em produção.
+      SPRING_PROFILES_ACTIVE: local
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:

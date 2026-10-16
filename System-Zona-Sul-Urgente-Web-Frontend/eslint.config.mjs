@@ -24,7 +24,8 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    files: ["src/services/**", "src/mocks/**"],
+    // O gerador da carga de exemplo do backend também lê os mocks.
+    files: ["src/services/**", "src/mocks/**", "scripts/seed/**"],
     rules: {
       "no-restricted-imports": [
         "error",

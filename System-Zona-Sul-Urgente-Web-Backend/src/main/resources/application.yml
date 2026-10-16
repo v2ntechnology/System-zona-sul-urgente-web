@@ -49,6 +49,15 @@ springdoc:
 spring:
   config:
     activate:
+      on-profile: local
+  # Dados de exemplo (gerados dos mocks do frontend). Só neste perfil, nunca em produção.
+  flyway:
+    locations: classpath:db/migration,classpath:db/seed
+
+---
+spring:
+  config:
+    activate:
       on-profile: prod
 
 # Em produção a documentação da API não fica pública.
