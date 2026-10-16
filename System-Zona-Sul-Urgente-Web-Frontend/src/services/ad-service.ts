@@ -7,3 +7,8 @@ import type { AdSlot, AdSlotKey, Advertisement } from "@/types/news";
 export async function getAdForSlot(key: AdSlotKey): Promise<{ slot: AdSlot; ad?: Advertisement }> {
   return { slot: adSlots[key], ad: adsMock.find((ad) => ad.slot === key) };
 }
+
+/** Todas as posições de anúncio, com tamanhos aceitos (formulários do painel comercial). */
+export async function getAdSlots(): Promise<AdSlot[]> {
+  return Object.values(adSlots);
+}

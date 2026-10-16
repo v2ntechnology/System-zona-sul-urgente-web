@@ -1,10 +1,6 @@
+import { campaignsMock } from "@/mocks/ads";
 import { MOCK_NOW, newsMock, viewsBySlug } from "@/mocks/news";
-import {
-  activeCampaignsMock,
-  adminNewsMock,
-  currentUserMock,
-  instagramPostsMock,
-} from "@/mocks/admin";
+import { adminNewsMock, currentUserMock, instagramPostsMock } from "@/mocks/admin";
 import { percentChange } from "@/lib/chart";
 import { getAnalytics } from "@/services/admin/analytics-service";
 import type {
@@ -42,7 +38,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     scheduled: alive.filter((n) => n.status === "SCHEDULED").length,
     instagramNew: instagramPostsMock.filter((p) => p.status === "NEW").length,
     importErrors: instagramPostsMock.filter((p) => p.status === "ERROR").length,
-    activeCampaigns: activeCampaignsMock,
+    activeCampaigns: campaignsMock.filter((c) => c.status === "ACTIVE").length,
     viewsToday: today.totals.views,
     viewsTrendPercent: Math.round(
       percentChange(today.totals.views, today.previousTotals.views) ?? 0,

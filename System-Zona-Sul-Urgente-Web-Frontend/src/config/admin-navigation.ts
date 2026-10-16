@@ -19,6 +19,10 @@ export const adminRoutes = {
   instagram: "/admin/instagram",
   analytics: "/admin/analytics",
   ads: "/admin/publicidade",
+  advertisers: "/admin/publicidade/anunciantes",
+  adSlots: "/admin/publicidade/posicoes",
+  newCampaign: "/admin/publicidade/campanhas/nova",
+  campaign: (id: string) => `/admin/publicidade/campanhas/${id}`,
   users: "/admin/usuarios",
   designSystem: "/admin/design-system",
 } as const;
@@ -59,6 +63,14 @@ export const adminSegmentLabels: Record<string, string> = {
   instagram: "Instagram",
   analytics: "Analytics",
   publicidade: "Publicidade",
+  anunciantes: "Anunciantes",
+  posicoes: "Posições",
   usuarios: "Usuários",
   "design-system": "Design system",
+};
+
+/** Trilha: rótulos e links que dependem do caminho inteiro (ex.: "nova" de campanha). */
+export const adminPathCrumbs: Record<string, { label: string; href?: string }> = {
+  "/admin/publicidade/campanhas": { label: "Campanhas", href: "/admin/publicidade" },
+  "/admin/publicidade/campanhas/nova": { label: "Nova campanha" },
 };

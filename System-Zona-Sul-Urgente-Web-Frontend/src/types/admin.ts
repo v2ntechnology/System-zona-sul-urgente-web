@@ -1,4 +1,5 @@
 import type {
+  AdSlotKey,
   ArticleBlock,
   CategoryRef,
   ISODateTime,
@@ -224,3 +225,81 @@ export type AnalyticsReport = {
 
 /** GET /api/v1/admin/analytics/ads?period= — exige analytics.ads.view. */
 export type AdSlotMetrics = { key: string; label: string; impressions: number; clicks: number };
+
+// ---------------------------------------------------------------- publicidade (FE-157)
+
+export type CampaignStatus = "DRAFT" | "SCHEDULED" | "ACTIVE" | "PAUSED" | "ENDED";
+
+/** Anunciante da venda direta — GET /api/v1/admin/ads/advertisers. */
+export type Advertiser = {
+  id: UUID;
+  name: string;
+  /** CNPJ (só dígitos). */
+  document: string;
+  contactName: string;
+  email: string;
+  phone?: string;
+  activeCampaigns: number;
+  totalCampaigns: number;
+  createdAt: ISODateTime;
+};
+
+/** Peça de uma campanha para uma posição (tamanho IAB aceito pelo slot). */
+export type Creative = {
+  id: UUID;
+  slot: AdSlotKey;
+  imageUrl: string;
+  width: number;
+  height: number;
+  alt: string;
+  clickUrl: string;
+  impressions: number;
+  clicks: number;
+};
+
+/** Campanha — GET /api/v1/admin/ads/campaigns. Sem segmentação = site todo. */
+export type Campaign = {
+  id: UUID;
+  name: string;
+  advertiser: { id: UUID; name: string };
+  status: CampaignStatus;
+  startsAt: ISODateTime;
+  endsAt: ISODateTime;
+  slots: AdSlotKey[];
+  targeting: { categories: string[]; neighborhoods: string[] };
+  creatives: Creative[];
+  impressions: number;
+  clicks: number;
+  /** Impressões contratadas (opcional). */
+  goalImpressions?: number;
+};
+
+/** Visão de uma posição: quem ocupa hoje e desempenho de 7 dias. */
+export type AdSlotOverview = {
+  key: AdSlotKey;
+  label: string;
+  sizes: { width: number; height: number }[];
+  /** Onde aparece no site. */
+  page: "home" | "article" | "category" | "mobile";
+  campaign?: { id: UUID; name: string; advertiser: string };
+  /** Sem venda direta: AdSense preenche (ou fica vazio). */
+  fallback: "ADSENSE" | "EMPTY";
+  impressions7d: number;
+  clicks7d: number;
+};
+
+export type CampaignDraft = {
+  name: string;
+  advertiserId: string;
+  startsAt: string;
+  endsAt: string;
+  slots: AdSlotKey[];
+  categories: string[];
+  neighborhoods: string[];
+  clickUrl: string;
+  goalImpressions: string;
+  /** Peças escolhidas por posição (tamanho lido da imagem). */
+  creatives: Partial<
+    Record<AdSlotKey, { url: string; width: number; height: number; alt: string }>
+  >;
+};

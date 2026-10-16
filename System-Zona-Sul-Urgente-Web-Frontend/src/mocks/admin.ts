@@ -15,7 +15,8 @@ export const currentUserMock: AdminUser = {
   id: mockId(40, 1),
   name: "Juliana Prado",
   email: "juliana.prado@zonasulurgente.com.br",
-  role: "EDITOR",
+  // ADMIN no mock para o painel inteiro aparecer na prévia (publicidade inclusive).
+  role: "ADMIN",
   authorSlug: "juliana-prado",
 };
 
@@ -307,5 +308,3 @@ export const instagramConnectionMock = {
   tokenExpiresAt: hoursAfter(41 * 24),
   publishRule: "DRAFT" as const,
 };
-
-export const activeCampaignsMock = 3;
