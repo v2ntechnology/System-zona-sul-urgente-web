@@ -13,6 +13,15 @@ spring:
   flyway:
     locations: classpath:db/migration
 
+  mvc:
+    problemdetails:
+      enabled: true
+
+logging:
+  # requestId (X-Request-Id) em toda linha de log da requisição (BE-002).
+  pattern:
+    correlation: "[%X{requestId:-}] "
+
 server:
   port: ${PORT:8080}
   shutdown: graceful
