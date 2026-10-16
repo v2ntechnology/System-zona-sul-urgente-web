@@ -100,6 +100,15 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return ResponseEntity.badRequest().body(body);
 	}
 
+	/** Foto acima do limite do multipart (spring.servlet.multipart.max-file-size). */
+	@Override
+	protected ResponseEntity<Object> handleMaxUploadSizeExceededException(
+			org.springframework.web.multipart.MaxUploadSizeExceededException ex, HttpHeaders headers,
+			HttpStatusCode status, WebRequest request) {
+		return ResponseEntity.status(HttpStatus.CONTENT_TOO_LARGE)
+			.body(problem(HttpStatus.CONTENT_TOO_LARGE, "Foto grande demais", "A foto pode ter no máximo 10 MB."));
+	}
+
 	/** Erros do próprio Spring MVC (método não suportado, JSON malformado...) em português. */
 	@Override
 	protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body,

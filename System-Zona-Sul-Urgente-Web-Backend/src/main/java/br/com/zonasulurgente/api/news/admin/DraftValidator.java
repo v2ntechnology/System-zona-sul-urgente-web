@@ -29,7 +29,9 @@ final class DraftValidator {
 	private DraftValidator() {
 	}
 
-	static Map<String, String> validate(NewsDraft d, String intent, boolean hasParagraph, OffsetDateTime now) {
+	/** {@code ownMedia}: endereço de foto enviada pelo painel (aceito mesmo sem https no ambiente local). */
+	static Map<String, String> validate(NewsDraft d, String intent, boolean hasParagraph, OffsetDateTime now,
+			java.util.function.Predicate<String> ownMedia) {
 		Map<String, String> e = new LinkedHashMap<>();
 		String title = trim(d.title());
 		if (title.isEmpty()) {
@@ -80,7 +82,7 @@ final class DraftValidator {
 		if (image == null || trim(image.url()).isEmpty()) {
 			e.put("image.url", "Adicione a foto principal.");
 		}
-		else if (!image.url().matches("https://\\S+")) {
+		else if (!ownMedia.test(image.url().strip()) && !image.url().matches("https://\\S+")) {
 			e.put("image.url", "Use o endereço completo da imagem (https://).");
 		}
 		else if (trim(image.alt()).isEmpty()) {

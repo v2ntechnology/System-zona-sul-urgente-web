@@ -242,12 +242,31 @@ class AdminNewsRepository {
 	}
 
 	/** Foto principal por endereço (dimensões reais entram com o armazenamento de mídia, BE-012). */
+	/**
+	 * Foto enviada pelo painel (BE-012): reaproveita o registro do envio e atualiza o texto
+	 * alternativo, a legenda e o crédito. Endereço externo colado: cria um registro novo
+	 * (dimensões padrão; o site exibe sem otimização).
+	 */
 	UUID imageAsset(NewsDraft.Image image) {
+		String alt = image.alt() == null || image.alt().isBlank() ? "Foto da matéria" : image.alt().strip();
+		var uploaded = jdbc.sql("""
+				UPDATE media_assets SET alt = :alt, caption = :caption, credit = :credit
+				WHERE id = (SELECT id FROM media_assets WHERE url = :url AND storage_key IS NOT NULL LIMIT 1)
+				RETURNING id""")
+			.param("url", image.url().strip())
+			.param("alt", alt)
+			.param("caption", blankToNull(image.caption()))
+			.param("credit", blankToNull(image.credit()))
+			.query(UUID.class)
+			.optional();
+		if (uploaded.isPresent()) {
+			return uploaded.get();
+		}
 		return jdbc.sql("""
 				INSERT INTO media_assets (url, width, height, alt, caption, credit)
 				VALUES (:url, 1200, 675, :alt, :caption, :credit) RETURNING id""")
 			.param("url", image.url().strip())
-			.param("alt", image.alt() == null || image.alt().isBlank() ? "Foto da matéria" : image.alt().strip())
+			.param("alt", alt)
 			.param("caption", blankToNull(image.caption()))
 			.param("credit", blankToNull(image.credit()))
 			.query(UUID.class)

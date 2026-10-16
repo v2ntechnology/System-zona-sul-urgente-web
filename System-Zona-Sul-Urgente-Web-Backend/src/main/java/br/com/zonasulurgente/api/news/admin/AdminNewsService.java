@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.zonasulurgente.api.auth.application.AuthenticatedUser;
+import br.com.zonasulurgente.api.media.MediaProperties;
 import br.com.zonasulurgente.api.news.admin.AdminNewsRepository.Current;
 import br.com.zonasulurgente.api.news.admin.AdminNewsRepository.Fields;
 import br.com.zonasulurgente.api.shared.web.ApiException;
@@ -33,11 +34,14 @@ public class AdminNewsService {
 	private final AdminNewsRepository repo;
 	private final JsonMapper json;
 	private final ApplicationEventPublisher events;
+	private final MediaProperties media;
 
-	public AdminNewsService(AdminNewsRepository repo, JsonMapper json, ApplicationEventPublisher events) {
+	public AdminNewsService(AdminNewsRepository repo, JsonMapper json, ApplicationEventPublisher events,
+			MediaProperties media) {
 		this.repo = repo;
 		this.json = json;
 		this.events = events;
+		this.media = media;
 	}
 
 	@Transactional(readOnly = true)
@@ -74,7 +78,8 @@ public class AdminNewsService {
 		checkPermissions(current, draft, intent, user);
 
 		BodySanitizer.Result body = BodySanitizer.sanitize(draft.body());
-		Map<String, String> errors = new LinkedHashMap<>(DraftValidator.validate(draft, intent, body.hasParagraph(), now));
+		Map<String, String> errors = new LinkedHashMap<>(DraftValidator.validate(draft, intent, body.hasParagraph(), now,
+				media::isOwnUrl));
 
 		// Referências por slug.
 		UUID categoryId = null;

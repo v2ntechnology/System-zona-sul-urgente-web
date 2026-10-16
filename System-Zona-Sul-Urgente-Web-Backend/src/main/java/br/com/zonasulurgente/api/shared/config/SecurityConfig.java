@@ -34,6 +34,8 @@ public class SecurityConfig {
 				.requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
 				.requestMatchers("/api/v1/openapi/**", "/api/v1/docs", "/api/v1/swagger-ui/**").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
+				// Fotos guardadas na pasta local (desenvolvimento; em produção vêm do R2).
+				.requestMatchers(HttpMethod.GET, "/media/**").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/v1/admin/auth/login", "/api/v1/admin/auth/mfa").permitAll()
 				.requestMatchers("/api/v1/admin/**").authenticated()
 				.anyRequest().denyAll())
