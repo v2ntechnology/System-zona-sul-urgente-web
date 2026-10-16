@@ -54,54 +54,13 @@ export const RESERVED_SLUGS = new Set([
   "zona",
 ]);
 
-type Section = NavItem & {
+/** Editoria no menu do site (montada pelo service a partir da taxonomia). */
+export type SiteSection = NavItem & {
   slug: string;
   /** Aparece na barra azul e na faixa do celular; as demais ficam só no menu ☰ e no rodapé. */
   inBar: boolean;
   children?: NavItem[];
 };
-
-const section = (
-  slug: string,
-  label: string,
-  inBar: boolean,
-  children?: [string, string][],
-): Section => ({
-  slug,
-  label,
-  inBar,
-  href: routes.category({ slug }),
-  children: children?.map(([childSlug, childLabel]) => ({
-    label: childLabel,
-    href: routes.category({ slug: childSlug, parent: { slug } }),
-  })),
-});
-
-/** Todas as editorias, na ordem do menu. Slugs batem com a taxonomia (ver teste). */
-export const allSections: Section[] = [
-  section("seguranca", "Segurança", true),
-  section("transito", "Trânsito", true),
-  section("cidade", "Cidade", true),
-  section("politica", "Política", true),
-  section("economia", "Economia", true),
-  section("esportes", "Esportes", true),
-  section("entretenimento", "Entretenimento", true, [
-    ["gastronomia", "Gastronomia"],
-    ["eventos", "Eventos"],
-  ]),
-  section("comunidade", "Comunidade", false),
-  section("classificados", "Classificados", false),
-  section("colunas", "Blogs e colunas", false, [
-    ["bairro-a-bairro", "Bairro a Bairro"],
-    ["plantao-seguranca", "Plantão Segurança"],
-    ["mar-e-areia", "Mar e Areia"],
-    ["bolso-carioca", "Bolso Carioca"],
-    ["arquibancada-sul", "Arquibancada Sul"],
-  ]),
-];
-
-/** Editorias principais (barra), como a CNN: as demais aparecem no menu ☰. */
-export const sections: NavItem[] = allSections.filter((s) => s.inBar);
 
 export const neighborhoods: NavItem[] = [
   "Botafogo",

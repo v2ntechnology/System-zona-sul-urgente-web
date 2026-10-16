@@ -1,4 +1,4 @@
-import type { Author, Category, City, Neighborhood, Tag, Zone } from "@/types/news";
+import type { Author, Category, City, Neighborhood, SectionColor, Tag, Zone } from "@/types/news";
 
 // Dados de exemplo (FE-009). Nunca importar em componentes: use os services.
 // Slugs de editorias e bairros batem com src/config/navigation.ts (há teste para isso).
@@ -24,6 +24,11 @@ const mainCategories: Category[] = [
   slug,
   name,
   description,
+  order: i + 1,
+  active: true,
+  // As 7 primeiras ficam na barra (padrão CNN); as demais, no menu ☰ e no rodapé.
+  inBar: i < 7,
+  color: slug === "colunas" ? undefined : (slug as SectionColor),
   // Links FICTÍCIOS de exemplo: trocar pelos canais reais de cada editoria.
   whatsappUrl: `https://whatsapp.com/channel/exemplo-${slug}`,
 }));
@@ -42,6 +47,8 @@ const subCategories: Category[] = [
   slug,
   name,
   description,
+  order: i + 1,
+  active: true,
   parent: ref(parent),
   whatsappUrl: `https://whatsapp.com/channel/exemplo-${slug}`,
 }));
@@ -94,6 +101,8 @@ const columnCategories: Category[] = columnsMock.map(
     description: `Coluna de ${author}: ${bio.toLowerCase()}.`,
     parent: ref("colunas"),
     columnist: { authorSlug, name: author, bio },
+    order: i + 1,
+    active: true,
   }),
 );
 
@@ -158,6 +167,9 @@ export const tags: Tag[] = [
   ["obras", "Obras"],
   ["energia", "Energia"],
   ["feira", "Feira"],
+  // Duplicados de propósito (criados por pessoas diferentes): exemplo para "Juntar" no painel.
+  ["chuvas", "Chuvas"],
+  ["onibus-2", "Onibus"],
 ].map(([slug, name], i) => ({ id: mockId(5, i + 1), slug, name }));
 
 function bySlug<T extends { slug: string }>(list: T[], slug: string): T {

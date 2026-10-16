@@ -4,7 +4,16 @@ import type { Permission } from "@/types/admin";
 export type AdminNavItem = {
   label: string;
   href: string;
-  icon: "dashboard" | "news" | "new" | "instagram" | "analytics" | "ads" | "users" | "design";
+  icon:
+    | "dashboard"
+    | "news"
+    | "new"
+    | "instagram"
+    | "taxonomy"
+    | "analytics"
+    | "ads"
+    | "users"
+    | "design";
   permission?: Permission;
   /** Contador de pendências (ex.: posts do Instagram esperando ação). */
   badge?: number;
@@ -17,6 +26,8 @@ export const adminRoutes = {
   newNews: "/admin/noticias/nova",
   editNews: (id: string) => `/admin/noticias/${id}`,
   instagram: "/admin/instagram",
+  taxonomy: "/admin/editorias",
+  tags: "/admin/editorias/topicos",
   analytics: "/admin/analytics",
   ads: "/admin/publicidade",
   advertisers: "/admin/publicidade/anunciantes",
@@ -36,6 +47,13 @@ export const adminNav: AdminNavItem[] = [
     href: adminRoutes.instagram,
     icon: "instagram",
     permission: "instagram.review",
+  },
+  {
+    label: "Editorias",
+    href: adminRoutes.taxonomy,
+    icon: "taxonomy",
+    // Repórter só gerencia tópicos; editorias exigem taxonomy.manage (a página confere).
+    permission: "tags.manage",
   },
   {
     label: "Analytics",
@@ -64,6 +82,8 @@ export const adminSegmentLabels: Record<string, string> = {
   analytics: "Analytics",
   publicidade: "Publicidade",
   anunciantes: "Anunciantes",
+  editorias: "Editorias",
+  topicos: "Tópicos",
   posicoes: "Posições",
   usuarios: "Usuários",
   "design-system": "Design system",

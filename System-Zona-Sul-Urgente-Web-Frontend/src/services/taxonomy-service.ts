@@ -1,3 +1,4 @@
+import { routes, type SiteSection } from "@/config/navigation";
 import { authors, categories, neighborhoods, tags } from "@/mocks/taxonomy";
 import type { Author, Category, Neighborhood, Tag } from "@/types/news";
 
@@ -27,4 +28,29 @@ export async function getAuthors(): Promise<Author[]> {
 
 export async function getTags(): Promise<Tag[]> {
   return tags;
+}
+
+/**
+ * Editorias do menu do site (barra, menu ☰ e rodapé), na ordem cadastrada no painel.
+ * Só as ativas; subeditorias (e colunas) aparecem como filhas da mãe.
+ */
+export async function getSiteSections(): Promise<SiteSection[]> {
+  const byOrder = (a: Category, b: Category) => (a.order ?? 999) - (b.order ?? 999);
+  const active = categories.filter((c) => c.active !== false);
+  return active
+    .filter((c) => !c.parent)
+    .sort(byOrder)
+    .map((root) => {
+      const children = active
+        .filter((c) => c.parent?.slug === root.slug)
+        .sort(byOrder)
+        .map((c) => ({ label: c.name, href: routes.category(c) }));
+      return {
+        slug: root.slug,
+        label: root.name,
+        href: routes.category(root),
+        inBar: Boolean(root.inBar),
+        ...(children.length > 0 && { children }),
+      };
+    });
 }

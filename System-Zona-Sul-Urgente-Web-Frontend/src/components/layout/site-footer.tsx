@@ -2,16 +2,16 @@ import Link from "next/link";
 
 import { BrandLogo } from "@/components/brand/brand-logo";
 import {
-  allSections,
   institutional,
   neighborhoods,
   type NavItem,
   routes,
+  type SiteSection,
 } from "@/config/navigation";
 import { siteConfig } from "@/config/site";
 
 // Rodapé (FE-007): editorias, bairros, institucional e redes. Fundo azul-escuro (branco: 10,8:1).
-export function SiteFooter() {
+export function SiteFooter({ sections }: { sections: SiteSection[] }) {
   return (
     <footer className="mt-12 bg-brand-blue-dark text-white">
       <div className="mx-auto grid max-w-site gap-10 px-4 py-10 md:grid-cols-[1fr_2fr]">
@@ -48,7 +48,7 @@ export function SiteFooter() {
 
         {/* Celular: Editorias e Institucional lado a lado, Bairros em 2 colunas abaixo. */}
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-[1fr_2fr_1fr]">
-          <FooterGroup title="Editorias" items={allSections} />
+          <FooterGroup title="Editorias" items={sections} />
           <FooterGroup
             title="Bairros"
             items={neighborhoods}

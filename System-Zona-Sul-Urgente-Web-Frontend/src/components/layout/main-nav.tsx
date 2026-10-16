@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { sections } from "@/config/navigation";
+import { useSections } from "@/components/layout/sections-context";
 import { cn } from "@/lib/utils";
 
 type MainNavProps = {
@@ -15,6 +15,7 @@ type MainNavProps = {
 // Lista de editorias. Client só para marcar a página atual (aria-current).
 export function MainNav({ className, variant }: MainNavProps) {
   const pathname = usePathname();
+  const sections = useSections().filter((s) => s.inBar);
 
   return (
     <nav aria-label="Editorias" className={className}>

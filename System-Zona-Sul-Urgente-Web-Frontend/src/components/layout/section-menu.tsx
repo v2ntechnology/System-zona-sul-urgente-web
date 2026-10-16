@@ -4,7 +4,7 @@ import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
-import { allSections } from "@/config/navigation";
+import { useSections } from "@/components/layout/sections-context";
 import { sectionStyle } from "@/lib/section-color";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 // rótulo em negrito e seta ▸ que expande as subeditorias.
 export function SectionMenu({ onNavigate }: { onNavigate: () => void }) {
   const [open, setOpen] = useState<string | null>(null);
+  const allSections = useSections();
 
   return (
     <nav aria-label="Todas as editorias">

@@ -24,7 +24,27 @@ export type Category = {
   whatsappUrl?: string;
   /** Quando a subeditoria é uma coluna (Blogs e colunas): quem assina. */
   columnist?: Columnist;
+  /** Posição no menu (menor primeiro). */
+  order?: number;
+  /** Aparece na barra principal (só editoria mãe). */
+  inBar?: boolean;
+  /** Desativada: some do menu e do editor, mas as matérias continuam no ar. */
+  active?: boolean;
+  /** Cor da paleta de seções (subeditoria herda da mãe). */
+  color?: SectionColor;
 };
+
+/** Cores da paleta de editorias (tokens --section-* em globals.css). */
+export type SectionColor =
+  | "seguranca"
+  | "transito"
+  | "cidade"
+  | "politica"
+  | "economia"
+  | "esportes"
+  | "entretenimento"
+  | "comunidade"
+  | "classificados";
 
 /** Colunista dono de uma coluna (subeditoria de "colunas"). */
 export type Columnist = {

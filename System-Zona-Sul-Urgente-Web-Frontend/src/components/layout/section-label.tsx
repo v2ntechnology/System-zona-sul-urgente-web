@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { allSections } from "@/config/navigation";
+import { useSections } from "@/components/layout/sections-context";
 
 // Nome da editoria ao lado do logo (como "CNN Nacional"): aparece na página da editoria
 // e nas matérias dela, porque a URL começa com o slug da editoria (/economia/...).
 // Oculto entre lg e xl, onde a barra já mostra as editorias (a atual fica sublinhada).
 export function SectionLabel() {
   const pathname = usePathname();
+  const sections = useSections();
   const slug = pathname.split("/")[1];
-  const section = allSections.find((s) => s.slug === slug);
+  const section = sections.find((s) => s.slug === slug);
   if (!section) return null;
 
   return (
