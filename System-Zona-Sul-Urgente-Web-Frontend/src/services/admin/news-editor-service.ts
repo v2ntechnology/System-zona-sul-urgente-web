@@ -2,11 +2,19 @@ import { emptyDraft } from "@/lib/editor/validate";
 import { escapeHtml } from "@/lib/html";
 import { adminNewsMock, draftContentMock, instagramPostsMock } from "@/mocks/admin";
 import { newsMock } from "@/mocks/news";
+import { adminGet } from "@/services/admin/admin-api";
+import { apiBaseUrl } from "@/services/api/client";
 import type { NewsDraft } from "@/types/admin";
 
-// Carrega notícias para o editor (FE-154). Depois: GET /api/v1/admin/news/{id}.
+// Carrega notícias para o editor (FE-154). Com API_URL: GET /api/v1/admin/news/{id}
+// (já no formato do editor, com a versão do bloqueio otimista); sem ela, dados de exemplo.
 
 export async function getDraftForEdit(id: string): Promise<NewsDraft | null> {
+  if (apiBaseUrl()) {
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+    const draft = await adminGet<NewsDraft>(`/news/${id}`);
+    return draft && { ...emptyDraft(), ...draft };
+  }
   const row = adminNewsMock.find((n) => n.id === id);
   if (!row) return null;
   const full = newsMock.find((n) => n.id === id);

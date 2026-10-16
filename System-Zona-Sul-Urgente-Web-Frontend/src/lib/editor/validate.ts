@@ -35,6 +35,9 @@ export function validateDraft(draft: NewsDraft, intent: SaveIntent, now = new Da
   else if (draft.tagSlugs.length + newTags.length > TAG_LIMITS.perNews)
     errors.newTags = `No máximo ${TAG_LIMITS.perNews} tópicos por matéria.`;
 
+  // Até o rascunho precisa de editoria: é ela que define o endereço da matéria (a API exige).
+  if (!draft.categorySlug) errors.categorySlug = "Escolha a editoria.";
+
   if (intent === "draft") return errors;
 
   if (title && title.length < LIMITS.title.min)
@@ -42,7 +45,6 @@ export function validateDraft(draft: NewsDraft, intent: SaveIntent, now = new Da
   if (draft.summary.trim().length < LIMITS.summary.min)
     errors.summary = `O resumo precisa de pelo menos ${LIMITS.summary.min} caracteres (aparece nos cards e no Google).`;
   if (!draft.body.some((b) => b.type === "paragraph")) errors.body = "Escreva o texto da matéria.";
-  if (!draft.categorySlug) errors.categorySlug = "Escolha a editoria.";
   if (draft.authorSlugs.length === 0) errors.authorSlugs = "Escolha pelo menos um autor.";
   if (!draft.image.url.trim()) errors["image.url"] = "Adicione a foto principal.";
   else if (!draft.image.alt.trim())

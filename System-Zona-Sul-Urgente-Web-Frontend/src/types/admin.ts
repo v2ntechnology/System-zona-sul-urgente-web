@@ -173,6 +173,8 @@ export type NewsDraft = {
   /** Legenda original do Instagram (somente leitura, auditoria). */
   instagramCaption?: string;
   updatedAt?: ISODateTime;
+  /** Bloqueio otimista: versão que o editor abriu (a API recusa se outra pessoa salvou depois). */
+  version?: number;
 };
 
 /** O que o botão pediu: salvar rascunho, mandar para revisão, publicar ou agendar. */
@@ -183,7 +185,15 @@ export type DraftErrors = Partial<
 >;
 
 export type SaveResult =
-  | { ok: true; id: UUID; status: NewsStatus; savedAt: ISODateTime; simulated: boolean }
+  | {
+      ok: true;
+      id: UUID;
+      status: NewsStatus;
+      savedAt: ISODateTime;
+      simulated: boolean;
+      version?: number;
+      slug?: string;
+    }
   | { ok: false; errors: DraftErrors; message: string };
 
 // ---------------------------------------------------------------- analytics (FE-156)

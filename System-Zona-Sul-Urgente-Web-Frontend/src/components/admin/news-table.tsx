@@ -3,8 +3,9 @@
 import { CameraIcon, EyeIcon, MoreHorizontalIcon, NewspaperIcon, PenLineIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
+import { changeNewsStateAction } from "@/app/admin/(painel)/noticias/actions";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { RelativeTime } from "@/components/news/relative-time";
 import {
@@ -51,8 +52,8 @@ const actionMessage: Record<Action, string> = {
   restore: "restaurada",
 };
 
-// Tabela da listagem administrativa (FE-153). Sem backend, as ações só atualizam a tela
-// (simulação); com a API, chamam /api/v1/admin/news/{id}/publish etc. e revalidam a lista.
+// Tabela da listagem administrativa (FE-153). As ações chamam a API (Server Action →
+// /api/v1/admin/news/{id}/publish etc.) e revalidam o site; sem backend, só simulam na tela.
 export function NewsTable({
   rows: initialRows,
   canPublish,
@@ -63,20 +64,31 @@ export function NewsTable({
   const [rows, setRows] = useState(initialRows);
   const [message, setMessage] = useState("");
   const [toDelete, setToDelete] = useState<AdminNewsRow | null>(null);
+  const [, startTransition] = useTransition();
 
   function apply(row: AdminNewsRow, action: Action) {
-    const now = new Date().toISOString();
-    setRows((current) =>
-      current.map((r) => {
-        if (r.id !== row.id) return r;
-        if (action === "publish")
-          return { ...r, status: "PUBLISHED", publishedAt: r.publishedAt ?? now, updatedAt: now };
-        if (action === "unpublish") return { ...r, status: "UNPUBLISHED", updatedAt: now };
-        if (action === "delete") return { ...r, deletedAt: now };
-        return { ...r, deletedAt: undefined, updatedAt: now };
-      }),
-    );
-    setMessage(`“${row.title}” ${actionMessage[action]} (simulação — sem backend conectado).`);
+    startTransition(async () => {
+      const result = await changeNewsStateAction(row.id, action);
+      const simulated = !result.ok && result.message === "simulated";
+      if (!result.ok && !simulated) {
+        setMessage(`Não deu para concluir: ${result.message}`);
+        return;
+      }
+      const now = new Date().toISOString();
+      setRows((current) =>
+        current.map((r) => {
+          if (r.id !== row.id) return r;
+          if (action === "publish")
+            return { ...r, status: "PUBLISHED", publishedAt: r.publishedAt ?? now, updatedAt: now };
+          if (action === "unpublish") return { ...r, status: "UNPUBLISHED", updatedAt: now };
+          if (action === "delete") return { ...r, deletedAt: now };
+          return { ...r, deletedAt: undefined, updatedAt: now };
+        }),
+      );
+      setMessage(
+        `“${row.title}” ${actionMessage[action]}${simulated ? " (simulação — sem backend conectado)" : ""}.`,
+      );
+    });
   }
 
   if (rows.length === 0) {

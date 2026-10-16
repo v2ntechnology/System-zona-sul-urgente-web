@@ -239,7 +239,12 @@ export function NewsEditor({ initial, options, permissions }: NewsEditorProps) {
         showErrors(result.errors);
         return;
       }
-      setDraft((current) => ({ ...current, id: result.id, status: result.status }));
+      setDraft((current) => ({
+        ...current,
+        id: result.id,
+        status: result.status,
+        version: result.version ?? current.version,
+      }));
       setDirty(false);
       setSavedAt(result.savedAt);
       try {

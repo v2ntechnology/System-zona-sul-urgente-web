@@ -94,7 +94,12 @@ describe("validateDraft", () => {
   const now = new Date("2026-10-15T15:00:00-03:00");
 
   it("rascunho só exige título", () => {
-    expect(validateDraft({ ...emptyDraft(), title: "Oi" }, "draft", now)).toEqual({});
+    expect(
+      validateDraft({ ...emptyDraft(), title: "Oi", categorySlug: "cidade" }, "draft", now),
+    ).toEqual({});
+    expect(
+      validateDraft({ ...emptyDraft(), title: "Oi" }, "draft", now).categorySlug,
+    ).toBeDefined();
     expect(validateDraft(emptyDraft(), "draft", now).title).toBeDefined();
   });
 

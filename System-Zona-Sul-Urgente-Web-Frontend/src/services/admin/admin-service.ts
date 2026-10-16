@@ -8,6 +8,7 @@ import { campaignsMock } from "@/mocks/ads";
 import { MOCK_NOW, newsMock, viewsBySlug } from "@/mocks/news";
 import { adminNewsMock, currentUserMock, instagramPostsMock } from "@/mocks/admin";
 import { percentChange } from "@/lib/chart";
+import { adminGet } from "@/services/admin/admin-api";
 import { authApi } from "@/services/admin/auth-api";
 import { getAnalytics } from "@/services/admin/analytics-service";
 import { apiBaseUrl } from "@/services/api/client";
@@ -20,8 +21,9 @@ import type {
   DashboardStats,
 } from "@/types/admin";
 
-// Camada de dados do painel (FE-152/153). Hoje lê mocks; depois chama /api/v1/admin/**
-// com o token da sessão (BFF, ARCHITECTURE §8). Mutações ficam em admin-actions.ts.
+// Camada de dados do painel (FE-152/153). Com API_URL, notícias e usuário vêm de
+// /api/v1/admin/** com o token da sessão (BFF, ARCHITECTURE §8); sem ela, dados de exemplo.
+// Instagram, analytics e publicidade ainda são exemplo (backends próprios: BE-013/015/016).
 
 export const ADMIN_PAGE_SIZE = 15;
 
@@ -45,20 +47,10 @@ export const getCurrentUser = cache(async (): Promise<AdminUser> => {
 });
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const dayStart = new Date(MOCK_NOW);
-  dayStart.setHours(0, 0, 0, 0);
-  const alive = adminNewsMock.filter((n) => !n.deletedAt);
   const today = await getAnalytics("hoje");
+  const editorial = apiBaseUrl() ? await editorialStatsFromApi() : editorialStatsFromMocks();
   return {
-    publishedToday: alive.filter(
-      (n) =>
-        n.status === "PUBLISHED" &&
-        n.publishedAt &&
-        Date.parse(n.publishedAt) >= dayStart.getTime(),
-    ).length,
-    drafts: alive.filter((n) => n.status === "DRAFT").length,
-    inReview: alive.filter((n) => n.status === "IN_REVIEW").length,
-    scheduled: alive.filter((n) => n.status === "SCHEDULED").length,
+    ...editorial,
     instagramNew: instagramPostsMock.filter((p) => p.status === "NEW").length,
     importErrors: instagramPostsMock.filter((p) => p.status === "ERROR").length,
     activeCampaigns: campaignsMock.filter((c) => c.status === "ACTIVE").length,
@@ -69,10 +61,56 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   };
 }
 
+/** Publicadas hoje, rascunhos, em revisão e agendadas (o resto do dashboard ainda é exemplo). */
+async function editorialStatsFromApi() {
+  const [counts, published] = await Promise.all([
+    countAdminNewsByStatus(),
+    listAdminNews({ status: "PUBLISHED", pageSize: 100 }),
+  ]);
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  return {
+    publishedToday: published.items.filter(
+      (n) => n.publishedAt && Date.parse(n.publishedAt) >= dayStart.getTime(),
+    ).length,
+    drafts: counts.DRAFT ?? 0,
+    inReview: counts.IN_REVIEW ?? 0,
+    scheduled: counts.SCHEDULED ?? 0,
+  };
+}
+
+function editorialStatsFromMocks() {
+  const dayStart = new Date(MOCK_NOW);
+  dayStart.setHours(0, 0, 0, 0);
+  const alive = adminNewsMock.filter((n) => !n.deletedAt);
+  return {
+    publishedToday: alive.filter(
+      (n) =>
+        n.status === "PUBLISHED" &&
+        n.publishedAt &&
+        Date.parse(n.publishedAt) >= dayStart.getTime(),
+    ).length,
+    drafts: alive.filter((n) => n.status === "DRAFT").length,
+    inReview: alive.filter((n) => n.status === "IN_REVIEW").length,
+    scheduled: alive.filter((n) => n.status === "SCHEDULED").length,
+  };
+}
+
 export async function listAdminNews(
   filter: AdminNewsFilter = {},
 ): Promise<AdminPage<AdminNewsRow>> {
   const pageSize = Math.min(Math.max(filter.pageSize ?? ADMIN_PAGE_SIZE, 1), 100);
+  if (apiBaseUrl()) {
+    const page = await adminGet<AdminPage<AdminNewsRow>>("/news", {
+      q: filter.query,
+      status: filter.status,
+      category: filter.categorySlug,
+      origin: filter.origin,
+      page: filter.page ?? 1,
+      pageSize,
+    });
+    return page ?? { items: [], total: 0, page: 1, pageCount: 1 };
+  }
   const terms = normalize(filter.query ?? "")
     .split(/\s+/)
     .filter(Boolean);
@@ -101,6 +139,7 @@ export async function listAdminNews(
 
 /** Contagem por status (abas da listagem). */
 export async function countAdminNewsByStatus(): Promise<Record<string, number>> {
+  if (apiBaseUrl()) return (await adminGet<Record<string, number>>("/news/counts")) ?? {};
   const counts: Record<string, number> = { ALL: 0, DELETED: 0 };
   for (const n of adminNewsMock) {
     if (n.deletedAt) {
@@ -115,11 +154,16 @@ export async function countAdminNewsByStatus(): Promise<Record<string, number>> 
 
 /** Últimas atualizações (dashboard). */
 export async function getRecentlyUpdated(limit = 6): Promise<AdminNewsRow[]> {
+  if (apiBaseUrl()) return (await listAdminNews({ pageSize: limit })).items;
   return adminNewsMock.filter((n) => !n.deletedAt).slice(0, limit);
 }
 
 /** Notícias esperando revisão de um editor (lateral da listagem), mais antigas primeiro. */
 export async function getReviewQueue(limit = 4): Promise<AdminNewsRow[]> {
+  if (apiBaseUrl()) {
+    const page = await listAdminNews({ status: "IN_REVIEW", pageSize: 50 });
+    return [...page.items].sort((a, b) => a.updatedAt.localeCompare(b.updatedAt)).slice(0, limit);
+  }
   return adminNewsMock
     .filter((n) => !n.deletedAt && n.status === "IN_REVIEW")
     .sort((a, b) => a.updatedAt.localeCompare(b.updatedAt))
