@@ -212,7 +212,8 @@ public class NewsReadService {
 	/**
 	 * Traduz um caminho na raiz (/{editoria}, /{editoria}/{sub}, /{editoria}/{slug},
 	 * /{editoria}/{sub}/{slug}) — mesma regra do resolveSectionPath do frontend. Endereço
-	 * antigo registrado em path_redirects vira redirecionamento (BE-020).
+	 * antigo registrado em path_redirects vira redirecionamento (BE-020), inclusive o que fica
+	 * abaixo dele.
 	 */
 	public Resolved resolve(List<String> segments) {
 		if (segments.isEmpty() || segments.size() > 3) {
@@ -223,6 +224,24 @@ public class NewsReadService {
 		if (redirect.isPresent()) {
 			return new ResolvedRedirect("redirect", redirect.get());
 		}
+		try {
+			return resolveCurrent(segments);
+		}
+		catch (NotFoundException notFound) {
+			// Editoria que mudou de endereço: o que ficava abaixo do antigo também redireciona
+			// (/esportes/materia → /esporte/materia). Só consulta quando o endereço atual não existe.
+			for (int size = segments.size() - 1; size >= 1; size--) {
+				String prefix = "/" + String.join("/", segments.subList(0, size));
+				Optional<String> moved = news.redirectFor(prefix);
+				if (moved.isPresent()) {
+					return new ResolvedRedirect("redirect", moved.get() + path.substring(prefix.length()));
+				}
+			}
+			throw notFound;
+		}
+	}
+
+	private Resolved resolveCurrent(List<String> segments) {
 		List<Category> categories = taxonomy.categories();
 		Category root = categories.stream()
 			.filter(c -> c.slug().equals(segments.get(0)) && c.parent() == null)

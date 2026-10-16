@@ -36,7 +36,8 @@ public class SecurityConfig {
 				.requestMatchers(HttpMethod.GET, "/api/v1/public/**").permitAll()
 				// Fotos guardadas na pasta local (desenvolvimento; em produção vêm do R2).
 				.requestMatchers(HttpMethod.GET, "/media/**").permitAll()
-				.requestMatchers(HttpMethod.POST, "/api/v1/admin/auth/login", "/api/v1/admin/auth/mfa").permitAll()
+				.requestMatchers(HttpMethod.POST, "/api/v1/admin/auth/login", "/api/v1/admin/auth/mfa",
+						"/api/v1/admin/auth/invite/check", "/api/v1/admin/auth/invite/accept").permitAll()
 				.requestMatchers("/api/v1/admin/**").authenticated()
 				.anyRequest().denyAll())
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

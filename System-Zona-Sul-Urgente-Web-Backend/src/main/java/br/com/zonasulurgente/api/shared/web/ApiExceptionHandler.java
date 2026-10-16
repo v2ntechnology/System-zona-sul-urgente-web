@@ -54,6 +54,16 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return body;
 	}
 
+	@ExceptionHandler(InvalidFieldsException.class)
+	ProblemDetail invalidFields(InvalidFieldsException ex) {
+		ProblemDetail body = problem(HttpStatus.BAD_REQUEST, "Dados inválidos", ex.getMessage());
+		body.setProperty("errors", ex.errors().entrySet().stream()
+			.map(e -> new FieldProblem(e.getKey(), e.getValue()))
+			.sorted(Comparator.comparing(FieldProblem::field))
+			.toList());
+		return body;
+	}
+
 	@ExceptionHandler(ApiException.class)
 	ProblemDetail api(ApiException ex) {
 		return problem(ex.status(), ex.title(), ex.getMessage());
