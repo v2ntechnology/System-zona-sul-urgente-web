@@ -122,3 +122,35 @@ export async function saveNewsAction(draft: NewsDraft, intent: SaveIntent): Prom
     simulated: true,
   };
 }
+
+export type UploadResult =
+  { ok: true; url: string; width: number; height: number } | { ok: false; message: string };
+
+/** Mesmo limite da API (BE-012); conferido aqui para não repassar um arquivo que ela recusaria. */
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Envio da foto principal (BE-012): repassa o arquivo para a API, que confere o tipo real,
+ * gera as versões (AVIF/WebP/og.jpg), remove os metadados (GPS) e guarda no R2.
+ * Sem API (modo de exemplo): "simulated" — o editor só mostra a prévia local.
+ */
+export async function uploadPhotoAction(formData: FormData): Promise<UploadResult> {
+  if (!apiBaseUrl()) return { ok: false, message: "simulated" };
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, message: "Escolha uma foto para enviar." };
+  }
+  if (file.size > MAX_PHOTO_BYTES) {
+    return { ok: false, message: "A foto pode ter no máximo 10 MB." };
+  }
+  const form = new FormData();
+  form.set("file", file, file.name);
+  // Fotos grandes levam alguns segundos para gerar todas as versões.
+  const result = await adminFetch<{ url: string; width: number; height: number }>("/media", {
+    method: "POST",
+    form,
+    timeoutMs: 60_000,
+  });
+  if (!result.ok) return { ok: false, message: result.message };
+  return { ok: true, ...result.data };
+}

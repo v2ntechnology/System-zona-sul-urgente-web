@@ -28,7 +28,7 @@ import {
   useTransition,
 } from "react";
 
-import { saveNewsAction } from "@/app/admin/(painel)/noticias/actions";
+import { saveNewsAction, uploadPhotoAction } from "@/app/admin/(painel)/noticias/actions";
 import { RichTextEditor } from "@/components/admin/editor/rich-text-editor";
 import { TagPicker } from "@/components/admin/editor/tag-picker";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -1059,10 +1059,18 @@ function AuthorAvatars({ names }: { names: string[] }) {
   );
 }
 
+/** HEIC (iPhone) às vezes chega sem tipo no navegador: aceita pela extensão. */
+const PHOTO_ACCEPT = "image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif";
+const MAX_PHOTO_MB = 10;
+
+function isPhoto(file: File) {
+  return file.type.startsWith("image/") || /\.(heic|heif)$/i.test(file.name);
+}
+
 /**
  * Foto principal, como a mídia do post: arraste/seleção do arquivo ou endereço da imagem.
- * Sem armazenamento de mídia ainda (BE-012), o arquivo escolhido só é exibido aqui
- * (endereço temporário do navegador); o envio de verdade entra com o backend.
+ * O arquivo é enviado na hora para a API (BE-012), que devolve o endereço definitivo; até lá
+ * aparece a prévia local. Sem API (modo de exemplo), fica só a prévia local.
  */
 function MediaPanel({
   image,
@@ -1082,9 +1090,44 @@ function MediaPanel({
   const [brokenUrl, setBrokenUrl] = useState<string | null>(null);
   const broken = hasImage && brokenUrl === image.url;
 
-  function pickFile(file: File | undefined) {
-    if (!file || !file.type.startsWith("image/")) return;
-    onChange({ ...image, url: URL.createObjectURL(file) });
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  // O envio leva alguns segundos: guarda a versão mais nova dos campos (texto alternativo,
+  // legenda...) para não desfazer o que a pessoa digitou enquanto isso.
+  const latest = useRef(image);
+  useEffect(() => {
+    latest.current = image;
+  }, [image]);
+
+  async function pickFile(file: File | undefined) {
+    if (!file || uploading) return;
+    if (!isPhoto(file)) {
+      setUploadError("Escolha uma foto (JPEG, PNG, WebP ou HEIC).");
+      return;
+    }
+    if (file.size > MAX_PHOTO_MB * 1024 * 1024) {
+      setUploadError(`A foto pode ter no máximo ${MAX_PHOTO_MB} MB.`);
+      return;
+    }
+    const preview = URL.createObjectURL(file);
+    setUploadError(null);
+    setUploading(true);
+    onChange({ ...latest.current, url: preview });
+    const form = new FormData();
+    form.set("file", file);
+    const result = await uploadPhotoAction(form).catch(() => ({
+      ok: false as const,
+      message: "Não foi possível enviar a foto. Tente de novo.",
+    }));
+    setUploading(false);
+    if (result.ok) {
+      onChange({ ...latest.current, url: result.url });
+      URL.revokeObjectURL(preview);
+    } else if (result.message !== "simulated") {
+      setUploadError(result.message);
+      onChange({ ...latest.current, url: "" });
+      URL.revokeObjectURL(preview);
+    }
   }
 
   return (
@@ -1100,7 +1143,7 @@ function MediaPanel({
         onDrop={(e) => {
           e.preventDefault();
           setDragging(false);
-          pickFile(e.dataTransfer.files[0]);
+          void pickFile(e.dataTransfer.files[0]);
         }}
         className={cn(
           "relative flex aspect-4/3 w-full flex-col items-center justify-center overflow-hidden rounded-xl border-2 border-dashed bg-background text-center outline-none sm:aspect-square lg:aspect-4/5",
@@ -1120,8 +1163,20 @@ function MediaPanel({
               src={image.url}
               alt=""
               onError={() => setBrokenUrl(image.url)}
-              className={cn("size-full object-contain", broken && "invisible")}
+              className={cn("size-full object-contain", (broken || uploading) && "opacity-40")}
             />
+            {uploading && (
+              <div
+                role="status"
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-sm font-semibold text-white"
+              >
+                <LoaderCircleIcon
+                  aria-hidden
+                  className="size-8 animate-spin motion-reduce:animate-none"
+                />
+                Enviando foto…
+              </div>
+            )}
             <div className="absolute right-2 bottom-2 flex gap-2">
               <button
                 type="button"
@@ -1163,15 +1218,24 @@ function MediaPanel({
         <input
           ref={fileRef}
           type="file"
-          accept="image/*"
+          accept={PHOTO_ACCEPT}
           className="sr-only"
           tabIndex={-1}
           aria-label="Escolher foto principal"
-          onChange={(e) => pickFile(e.target.files?.[0])}
+          onChange={(e) => {
+            void pickFile(e.target.files?.[0]);
+            // Permite escolher o mesmo arquivo de novo depois de um erro.
+            e.target.value = "";
+          }}
         />
       </div>
       {error && <FieldError id="erro-image-url">{error}</FieldError>}
-      {broken && !error && (
+      {uploadError && (
+        <p role="alert" className="text-xs font-medium text-destructive">
+          {uploadError}
+        </p>
+      )}
+      {broken && !error && !uploading && !uploadError && (
         <p role="alert" className="text-xs font-medium text-destructive">
           Não foi possível abrir uma imagem nesse endereço. Use o link do arquivo da foto: clique
           com o botão direito na imagem e escolha &ldquo;Copiar endereço da imagem&rdquo;.

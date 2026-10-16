@@ -19,7 +19,10 @@ export async function adminFetch<T>(
   init: {
     method?: "GET" | "POST" | "PUT" | "DELETE";
     body?: unknown;
+    /** Envio de arquivo (multipart); o fetch monta o boundary sozinho. */
+    form?: FormData;
     params?: Record<string, unknown>;
+    timeoutMs?: number;
   } = {},
 ): Promise<AdminResult<T>> {
   const base = apiBaseUrl();
@@ -37,13 +40,13 @@ export async function adminFetch<T>(
     response = await fetch(url, {
       method: init.method ?? "GET",
       cache: "no-store",
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(init.timeoutMs ?? 10_000),
       headers: {
         accept: "application/json",
         authorization: `Bearer ${token}`,
         ...(init.body !== undefined && { "content-type": "application/json" }),
       },
-      body: init.body === undefined ? undefined : JSON.stringify(init.body),
+      body: init.form ?? (init.body === undefined ? undefined : JSON.stringify(init.body)),
     });
   } catch {
     return {

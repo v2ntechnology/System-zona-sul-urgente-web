@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  experimental: {
+    // Envio de foto pelo editor (BE-012): até 10 MB + o envelope do multipart. O proxy (/admin)
+    // também guarda o corpo em memória e cortaria acima de 10 MB.
+    serverActions: { bodySizeLimit: "11mb" },
+    proxyClientMaxBodySize: "11mb",
+  },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

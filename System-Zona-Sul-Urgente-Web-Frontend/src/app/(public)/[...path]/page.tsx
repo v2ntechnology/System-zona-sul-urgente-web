@@ -6,6 +6,7 @@ import { CategoryView } from "@/components/category/category-view";
 import { LISTING_FIRST_PAGE } from "@/components/listing/news-listing";
 import { routes } from "@/config/navigation";
 import { siteConfig } from "@/config/site";
+import { shareImage } from "@/lib/media-url";
 import { getByCategory, getSectionPaths, resolveSectionPath } from "@/services/news-service";
 import { getSubcategories } from "@/services/taxonomy-service";
 
@@ -53,12 +54,13 @@ export async function generateMetadata({ params }: PageProps<"/[...path]">): Pro
   const description = news.seo?.description ?? news.summary;
   const images = news.image
     ? [
-        {
+        // Fotos enviadas pelo painel: og.jpg 1200×630 (WhatsApp/redes não lidam bem com WebP/AVIF).
+        shareImage({
           url: news.image.url,
           width: news.image.width,
           height: news.image.height,
           alt: news.image.alt,
-        },
+        }),
       ]
     : undefined;
   return {
