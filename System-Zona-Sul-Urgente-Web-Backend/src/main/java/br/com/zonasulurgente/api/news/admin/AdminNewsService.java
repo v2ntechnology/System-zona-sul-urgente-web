@@ -177,6 +177,23 @@ public class AdminNewsService {
 		return changeState(id, user, "RESTORED");
 	}
 
+	/**
+	 * Publicação automática (BE-010): agendadas cujo horário chegou vão ao ar com o horário
+	 * marcado. Sem usuário (ação do sistema); grava versão e avisa o site como as demais.
+	 */
+	@Transactional
+	public int publishDue() {
+		List<UUID> due = repo.dueScheduled(50);
+		for (UUID id : due) {
+			Current current = repo.current(id).orElseThrow();
+			repo.changeState(id, "status = 'PUBLISHED', published_at = coalesce(published_at, scheduled_for, now()), "
+					+ "scheduled_for = NULL", Map.of(), null);
+			repo.saveVersion(id, current.version() + 1, json.writeValueAsString(repo.draft(id).orElseThrow()), null);
+			events.publishEvent(new NewsChangedEvent(id, current.slug(), current.slug(), "PUBLISHED", current.status()));
+		}
+		return due.size();
+	}
+
 	// ---------------------------------------------------------------- internos
 
 	private SaveResult changeState(UUID id, AuthenticatedUser user, String action) {

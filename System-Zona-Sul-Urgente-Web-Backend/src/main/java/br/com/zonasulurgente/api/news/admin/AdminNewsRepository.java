@@ -319,6 +319,16 @@ class AdminNewsRepository {
 		}
 	}
 
+	/** Agendadas cujo horário chegou; outra instância não pega as mesmas (SKIP LOCKED). */
+	List<UUID> dueScheduled(int limit) {
+		return jdbc.sql("""
+				SELECT id FROM news WHERE status = 'SCHEDULED' AND deleted_at IS NULL AND scheduled_for <= now()
+				ORDER BY scheduled_for LIMIT :limit FOR UPDATE SKIP LOCKED""")
+			.param("limit", limit)
+			.query(UUID.class)
+			.list();
+	}
+
 	/** Troca de status/lixeira sem mudar o conteúdo (também conta versão). */
 	int changeState(UUID id, String setClause, Map<String, ?> params, UUID userId) {
 		var all = new HashMap<String, Object>(params);

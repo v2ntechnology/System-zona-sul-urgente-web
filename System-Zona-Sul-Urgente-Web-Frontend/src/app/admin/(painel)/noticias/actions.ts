@@ -14,8 +14,9 @@ import type { NewsStatus } from "@/types/news";
 type ApiSaved = { id: string; slug: string; status: NewsStatus; version: number; savedAt: string };
 
 /**
- * Atualiza o cache do site na hora (a ação roda no próprio Next). A API ainda vai avisar
- * por /api/revalidate (BE-011) para mudanças feitas fora do painel.
+ * Atualiza o cache do site na hora (a ação roda no próprio Next). A API também avisa por
+ * /api/revalidate (BE-011) — é o que cobre mudanças fora do painel, como a publicação
+ * automática dos agendados.
  */
 function refreshSite(slug: string, categorySlug?: string) {
   for (const tag of [

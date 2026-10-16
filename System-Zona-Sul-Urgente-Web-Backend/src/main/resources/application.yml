@@ -16,6 +16,11 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+  # Worker da fila e publicação dos agendados não esperam um pelo outro.
+  task:
+    scheduling:
+      pool:
+        size: 2
 
 logging:
   # requestId (X-Request-Id) em toda linha de log da requisição (BE-002).
@@ -26,6 +31,11 @@ zsu:
   auth:
     # Chave AES-256 (base64) dos segredos TOTP. Gere com: openssl rand -base64 32
     totp-key: ${TOTP_ENCRYPTION_KEY:}
+  # Revalidação do site após publicar/editar (BE-011). URL interna do Next + o mesmo
+  # REVALIDATE_SECRET do frontend. Vazios = desligada (o site atualiza quando o cache vence).
+  site:
+    revalidate-url: ${SITE_REVALIDATE_URL:}
+    revalidate-secret: ${REVALIDATE_SECRET:}
 
 server:
   port: ${PORT:8080}
@@ -63,6 +73,10 @@ spring:
 zsu:
   auth:
     totp-key: ${TOTP_ENCRYPTION_KEY:bG9jYWwtZGV2LW9ubHktdG90cC1rZXktMzJieXRlcyE=}
+  # next dev na porta 3000; o .env.local do frontend usa o mesmo segredo de desenvolvimento.
+  site:
+    revalidate-url: ${SITE_REVALIDATE_URL:http://localhost:3000}
+    revalidate-secret: ${REVALIDATE_SECRET:dev-only-revalidate-secret-nao-usar-em-producao}
 
 ---
 spring:

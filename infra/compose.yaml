@@ -30,6 +30,9 @@ services:
       DB_PASSWORD: zonasul
       # Stack local: carrega os dados de exemplo (db/seed). Nunca usar "local" em produção.
       SPRING_PROFILES_ACTIVE: local
+      # Revalidação do site após publicar (BE-011); mesmo segredo do serviço web.
+      SITE_REVALIDATE_URL: http://web:3000
+      REVALIDATE_SECRET: dev-only-revalidate-secret-nao-usar-em-producao
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
