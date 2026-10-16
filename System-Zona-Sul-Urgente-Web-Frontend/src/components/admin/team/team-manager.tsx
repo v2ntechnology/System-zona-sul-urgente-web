@@ -2,13 +2,24 @@
 
 import {
   AlertCircleIcon,
+  CopyIcon,
+  LinkIcon,
   MoreHorizontalIcon,
   ShieldAlertIcon,
   ShieldCheckIcon,
   UserPlusIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
+import type { ListResult } from "@/app/admin/(painel)/editorias/actions";
+import {
+  changeRoleAction,
+  type InviteResult,
+  inviteMemberAction,
+  reinviteMemberAction,
+  resetTwoFactorAction,
+  setMemberActiveAction,
+} from "@/app/admin/(painel)/equipe/actions";
 import { RelativeTime } from "@/components/news/relative-time";
 import {
   DropdownMenu,
@@ -37,7 +48,9 @@ type InviteForm = { name: string; email: string; role: Role | ""; createAuthor: 
 const emptyInvite: InviteForm = { name: "", email: "", role: "", createAuthor: true };
 
 // Equipe (FE-159): quem acessa o painel, com qual perfil e se tem 2FA. Regras: ninguém
-// altera o próprio acesso e sempre sobra um ADMIN ativo. Sem backend, tudo é simulado.
+// altera o próprio acesso e sempre sobra um ADMIN ativo (a API garante de novo). Convite por
+// link: ainda sem e-mail, o painel mostra o link para o administrador mandar à pessoa.
+// Sem backend, tudo é simulado.
 export function TeamManager({
   initial,
   currentUserId,
@@ -53,9 +66,42 @@ export function TeamManager({
   const [form, setForm] = useState(emptyInvite);
   const [errors, setErrors] = useState<Partial<Record<keyof InviteForm, string>>>({});
 
-  const ok = (text: string) =>
-    setMessage({ tone: "ok", text: `${text} (simulação — sem backend conectado).` });
+  const [link, setLink] = useState<{ name: string; url: string } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [pending, startTransition] = useTransition();
+
   const fail = (text: string) => setMessage({ tone: "error", text });
+
+  /** Grava na API e usa a lista devolvida; sem API ("simulated"), simula na tela. */
+  function persist(
+    call: () => Promise<ListResult<TeamMember>>,
+    simulate: () => void,
+    text: string,
+  ) {
+    startTransition(async () => {
+      const result = await call();
+      if (result.ok) {
+        setTeam(result.list);
+        setMessage({ tone: "ok", text });
+      } else if (result.message === "simulated") {
+        simulate();
+        setMessage({ tone: "ok", text: `${text} (simulação — sem backend conectado).` });
+      } else fail(result.message);
+    });
+  }
+
+  function showLink(result: Extract<InviteResult, { ok: true }>, name: string) {
+    setTeam(result.list);
+    setLink({ name, url: result.inviteUrl });
+    setCopied(false);
+    setMessage(null);
+  }
+
+  async function copyLink() {
+    if (!link) return;
+    await navigator.clipboard.writeText(link.url).catch(() => undefined);
+    setCopied(true);
+  }
 
   const counts = ROLES.map((role) => ({
     role,
@@ -68,8 +114,9 @@ export function TeamManager({
   function changeRole(member: TeamMember, role: Role) {
     const block = accessChangeBlock(currentUserId, member, { role }, team);
     if (block) return fail(block);
-    setTeam((list) => list.map((m) => (m.id === member.id ? { ...m, role } : m)));
-    ok(
+    persist(
+      () => changeRoleAction(member.id, role),
+      () => setTeam((list) => list.map((m) => (m.id === member.id ? { ...m, role } : m))),
       `${member.name} agora é ${roleLabels[role]}${TWO_FACTOR_ROLES.has(role) && !member.twoFactor ? "; vai precisar ativar o 2FA no próximo acesso" : ""}`,
     );
   }
@@ -77,19 +124,40 @@ export function TeamManager({
   function setDisabled(member: TeamMember, disable: boolean) {
     const block = accessChangeBlock(currentUserId, member, { disable }, team);
     if (disable && block) return fail(block);
-    setTeam((list) =>
-      list.map((m) => (m.id === member.id ? { ...m, status: disable ? "DISABLED" : "ACTIVE" } : m)),
-    );
-    ok(
+    persist(
+      () => setMemberActiveAction(member.id, !disable),
+      () =>
+        setTeam((list) =>
+          list.map((m) =>
+            m.id === member.id ? { ...m, status: disable ? "DISABLED" : "ACTIVE" } : m,
+          ),
+        ),
       disable
-        ? `${member.name} perdeu o acesso; as matérias dele continuam assinadas`
+        ? `${member.name} perdeu o acesso; as matérias assinadas continuam no ar`
         : `${member.name} voltou a ter acesso`,
     );
   }
 
   function reset2fa(member: TeamMember) {
-    setTeam((list) => list.map((m) => (m.id === member.id ? { ...m, twoFactor: false } : m)));
-    ok(`2FA de ${member.name} zerado: configura de novo no próximo acesso`);
+    persist(
+      () => resetTwoFactorAction(member.id),
+      () =>
+        setTeam((list) => list.map((m) => (m.id === member.id ? { ...m, twoFactor: false } : m))),
+      `2FA de ${member.name} zerado: configura de novo no próximo acesso`,
+    );
+  }
+
+  function reinvite(member: TeamMember) {
+    startTransition(async () => {
+      const result = await reinviteMemberAction(member.id);
+      if (result.ok) showLink(result, member.name);
+      else if (result.message === "simulated")
+        setMessage({
+          tone: "ok",
+          text: `Novo link de convite para ${member.name} (simulação — sem backend conectado).`,
+        });
+      else fail(result.message);
+    });
   }
 
   function invite(event: React.FormEvent) {
@@ -101,24 +169,39 @@ export function TeamManager({
       form.createAuthor && form.role !== "COMERCIAL"
         ? authorSlugFor(form.name, authorSlugs)
         : undefined;
-    setTeam((list) => [
-      ...list,
-      {
-        id: crypto.randomUUID(),
-        name: form.name.trim(),
-        email: form.email.trim().toLowerCase(),
-        role: form.role as Role,
-        status: "INVITED",
-        twoFactor: false,
-        invitedAt: new Date().toISOString(),
-        authorSlug,
-      },
-    ]);
-    ok(
-      `Convite enviado para ${form.email.trim()}${authorSlug ? `; autor “${form.name.trim()}” criado (/autor/${authorSlug})` : ""}`,
-    );
-    setForm(emptyInvite);
-    setInviting(false);
+    const input = {
+      name: form.name.trim(),
+      email: form.email.trim().toLowerCase(),
+      role: form.role as Role,
+      createAuthor: form.createAuthor,
+    };
+    startTransition(async () => {
+      const result = await inviteMemberAction(input);
+      if (result.ok) {
+        showLink(result, input.name);
+      } else if (result.message === "simulated") {
+        setTeam((list) => [
+          ...list,
+          {
+            id: crypto.randomUUID(),
+            ...input,
+            status: "INVITED",
+            twoFactor: false,
+            invitedAt: new Date().toISOString(),
+            authorSlug,
+          },
+        ]);
+        setMessage({
+          tone: "ok",
+          text: `Convite criado para ${input.email}${authorSlug ? `; autor “${input.name}” criado (/autor/${authorSlug})` : ""} (simulação — sem backend conectado).`,
+        });
+      } else {
+        if (result.errors) setErrors(result.errors);
+        return fail(result.message);
+      }
+      setForm(emptyInvite);
+      setInviting(false);
+    });
   }
 
   return (
@@ -155,6 +238,55 @@ export function TeamManager({
             até ativar.
           </span>
         </p>
+      )}
+
+      {link && (
+        <section
+          aria-labelledby="link-convite"
+          className="flex flex-col gap-3 rounded-xl border border-brand-blue/30 bg-brand-sky-light p-4"
+        >
+          <h2
+            id="link-convite"
+            className="flex items-center gap-2 text-sm font-semibold text-brand-blue"
+          >
+            <LinkIcon aria-hidden className="size-4" /> Convite de {link.name} criado
+          </h2>
+          <p className="text-sm">
+            Mande este link para a pessoa (WhatsApp, por exemplo). Ela cria a senha por ele. O link
+            vale 7 dias e funciona uma vez só; ele não aparece de novo aqui depois que você sair.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              readOnly
+              value={link.url}
+              aria-label="Link do convite"
+              onFocus={(e) => e.currentTarget.select()}
+              className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 font-mono text-xs"
+            />
+            <button
+              type="button"
+              onClick={copyLink}
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-brand-blue px-4 text-sm font-semibold text-white hover:bg-brand-blue-dark"
+            >
+              <CopyIcon aria-hidden className="size-4" /> {copied ? "Copiado" : "Copiar link"}
+            </button>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(`Seu acesso ao painel do Zona Sul Urgente: ${link.url}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-10 shrink-0 items-center justify-center rounded-full border border-brand-blue bg-background px-4 text-sm font-semibold text-brand-blue hover:bg-brand-sky-light"
+            >
+              Mandar no WhatsApp
+            </a>
+          </div>
+          <button
+            type="button"
+            onClick={() => setLink(null)}
+            className="self-start text-xs font-semibold text-brand-blue hover:underline"
+          >
+            Já mandei, fechar
+          </button>
+        </section>
       )}
 
       {message && (
@@ -273,8 +405,8 @@ export function TeamManager({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-52">
                   {member.status === "INVITED" && (
-                    <DropdownMenuItem onClick={() => ok(`Convite reenviado para ${member.email}`)}>
-                      Reenviar convite
+                    <DropdownMenuItem onClick={() => reinvite(member)}>
+                      Gerar novo link de convite
                     </DropdownMenuItem>
                   )}
                   {member.status === "ACTIVE" && member.twoFactor && (
@@ -309,9 +441,9 @@ export function TeamManager({
         >
           <SheetTitle className="font-heading text-lg font-bold">Convidar pessoa</SheetTitle>
           <SheetDescription>
-            A pessoa recebe um e-mail para criar a senha
+            Você recebe um link para mandar à pessoa; por ele, ela cria a senha
             {form.role && TWO_FACTOR_ROLES.has(form.role)
-              ? " e ativar a verificação em duas etapas"
+              ? " e, no primeiro acesso, ativa a verificação em duas etapas"
               : ""}
             .
           </SheetDescription>
@@ -391,11 +523,17 @@ export function TeamManager({
                 </span>
               </label>
             )}
+            {message?.tone === "error" && (
+              <p role="alert" className="text-sm font-medium text-destructive">
+                {message.text}
+              </p>
+            )}
             <button
               type="submit"
-              className="h-10 rounded-full bg-brand-blue text-sm font-semibold text-white hover:bg-brand-blue-dark"
+              disabled={pending}
+              className="h-10 rounded-full bg-brand-blue text-sm font-semibold text-white hover:bg-brand-blue-dark disabled:opacity-60"
             >
-              Enviar convite
+              {pending ? "Criando…" : "Criar convite"}
             </button>
           </form>
         </SheetContent>

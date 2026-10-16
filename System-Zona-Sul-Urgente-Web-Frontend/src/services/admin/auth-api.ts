@@ -85,4 +85,12 @@ export const authApi = {
     call<LoginResponse>("/mfa", { method: "POST", body: { challenge, code } }),
   logout: (token: string) => call<void>("/logout", { method: "POST", token }),
   me: (token: string) => call<Me>("/me", { method: "GET", token }),
+  /** Convite da equipe (FE-159): o token do link é a credencial. */
+  checkInvite: (token: string) =>
+    call<{ name: string; email: string }>("/invite/check", { method: "POST", body: { token } }),
+  acceptInvite: (token: string, password: string) =>
+    call<{ name: string; email: string }>("/invite/accept", {
+      method: "POST",
+      body: { token, password },
+    }),
 };

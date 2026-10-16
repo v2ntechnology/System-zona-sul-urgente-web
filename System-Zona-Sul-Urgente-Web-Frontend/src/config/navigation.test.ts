@@ -43,3 +43,16 @@ describe("navegação", () => {
     expect(routes.news({ slug: "x", category: { slug: "seguranca" } })).toBe("/seguranca/x");
   });
 });
+
+describe("endereços reservados iguais aos da API", () => {
+  it("RESERVED_SLUGS = ReservedSlugs.ALL do backend (a API recusa editoria com esses nomes)", async () => {
+    const { readFileSync, existsSync } = await import("node:fs");
+    const path =
+      "../System-Zona-Sul-Urgente-Web-Backend/src/main/java/br/com/zonasulurgente/api/taxonomy/admin/ReservedSlugs.java";
+    if (!existsSync(path)) return; // checkout só do frontend
+    const java = readFileSync(path, "utf8");
+    const set = java.slice(java.indexOf("Set.of("), java.indexOf(");", java.indexOf("Set.of(")));
+    const backend = [...set.matchAll(/"([a-z0-9-]+)"/g)].map((m) => m[1]).sort();
+    expect([...RESERVED_SLUGS].sort()).toEqual(backend);
+  });
+});

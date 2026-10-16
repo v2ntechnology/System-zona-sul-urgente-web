@@ -22,6 +22,8 @@ export type AdminNavItem = {
 export const adminRoutes = {
   dashboard: "/admin",
   login: "/admin/login",
+  /** Aceite do convite da equipe (link enviado pelo administrador). */
+  invite: (token: string) => `/admin/convite/${token}`,
   news: "/admin/noticias",
   newNews: "/admin/noticias/nova",
   editNews: (id: string) => `/admin/noticias/${id}`,

@@ -1,8 +1,10 @@
 "use client";
 
 import { AlertCircleIcon, KeyRoundIcon, PlusIcon, UserRoundIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
+import type { ListResult } from "@/app/admin/(painel)/editorias/actions";
+import { saveAuthorAction, setAuthorActiveAction } from "@/app/admin/(painel)/equipe/actions";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { authorSlugFor } from "@/lib/team/validate";
 import { cn } from "@/lib/utils";
@@ -21,14 +23,38 @@ const ROLE_SUGGESTIONS = [
 
 // Autores (FE-159): quem assina matérias. Os da equipe nascem junto com o convite; aqui
 // entram também os sem login (colaborador, agência, "Redação"). Desativar tira do editor,
-// mas o autor segue assinando as matérias antigas. Sem backend, é simulado.
+// mas o autor segue assinando as matérias antigas. Com a API, grava e mostra a lista
+// devolvida (o site é avisado pela API); sem backend, é simulado.
 export function AuthorsManager({ initial }: { initial: AuthorProfile[] }) {
   const [authors, setAuthors] = useState(initial);
   const [editing, setEditing] = useState<Draft | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof Draft, string>>>({});
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [pending, startTransition] = useTransition();
 
-  const say = (text: string) => setMessage(`${text} (simulação — sem backend conectado).`);
+  /** Grava na API e usa a lista devolvida; sem API ("simulated"), simula na tela. */
+  function persist(
+    call: () => Promise<ListResult<AuthorProfile>>,
+    simulate: () => void,
+    text: string,
+    done?: () => void,
+  ) {
+    startTransition(async () => {
+      const result = await call();
+      if (result.ok) {
+        setAuthors(result.list);
+        setMessage({ tone: "ok", text });
+        done?.();
+      } else if (result.message === "simulated") {
+        simulate();
+        setMessage({ tone: "ok", text: `${text} (simulação — sem backend conectado).` });
+        done?.();
+      } else {
+        if (result.errors) setErrors(result.errors);
+        setMessage({ tone: "error", text: result.message });
+      }
+    });
+  }
 
   function save(event: React.FormEvent) {
     event.preventDefault();
@@ -48,26 +74,34 @@ export function AuthorsManager({ initial }: { initial: AuthorProfile[] }) {
       bio: editing.bio.trim(),
       instagram: editing.instagram.trim().replace(/^@/, "") || undefined,
     };
-    if (editing.id) {
-      setAuthors((list) => list.map((a) => (a.id === editing.id ? { ...a, ...fields } : a)));
-      say(`“${fields.name}” atualizado`);
-    } else {
-      const slug = authorSlugFor(
-        fields.name,
-        authors.map((a) => a.slug),
-      );
-      setAuthors((list) => [
-        { id: crypto.randomUUID(), slug, active: true, newsCount: 0, ...fields },
-        ...list,
-      ]);
-      say(`“${fields.name}” criado; já aparece no editor de notícias (/autor/${slug})`);
-    }
-    setEditing(null);
+    const draft = editing;
+    const slug = authorSlugFor(
+      fields.name,
+      authors.map((a) => a.slug),
+    );
+    persist(
+      () => saveAuthorAction({ ...draft, ...fields, instagram: fields.instagram ?? "" }),
+      () =>
+        draft.id
+          ? setAuthors((list) => list.map((a) => (a.id === draft.id ? { ...a, ...fields } : a)))
+          : setAuthors((list) => [
+              { id: crypto.randomUUID(), slug, active: true, newsCount: 0, ...fields },
+              ...list,
+            ]),
+      draft.id
+        ? `“${fields.name}” atualizado`
+        : `“${fields.name}” criado; já aparece no editor de notícias`,
+      () => setEditing(null),
+    );
   }
 
   function toggle(author: AuthorProfile) {
-    setAuthors((list) => list.map((a) => (a.id === author.id ? { ...a, active: !a.active } : a)));
-    say(
+    persist(
+      () => setAuthorActiveAction(author.id, !author.active),
+      () =>
+        setAuthors((list) =>
+          list.map((a) => (a.id === author.id ? { ...a, active: !a.active } : a)),
+        ),
       author.active
         ? `“${author.name}” saiu do editor; continua assinando as ${author.newsCount} matérias antigas`
         : `“${author.name}” voltou ao editor`,
@@ -85,6 +119,7 @@ export function AuthorsManager({ initial }: { initial: AuthorProfile[] }) {
           type="button"
           onClick={() => {
             setErrors({});
+            setMessage(null);
             setEditing({ name: "", role: "Colaborador", bio: "", instagram: "" });
           }}
           className="inline-flex h-10 items-center gap-1.5 rounded-full bg-brand-blue px-4 text-sm font-semibold text-white hover:bg-brand-blue-dark"
@@ -95,10 +130,14 @@ export function AuthorsManager({ initial }: { initial: AuthorProfile[] }) {
       <p
         aria-live="polite"
         className={
-          message ? "rounded-md bg-brand-sky-light px-3 py-2 text-sm text-brand-blue" : "sr-only"
+          !message
+            ? "sr-only"
+            : message.tone === "ok"
+              ? "rounded-md bg-brand-sky-light px-3 py-2 text-sm text-brand-blue"
+              : "rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive"
         }
       >
-        {message}
+        {message?.text}
       </p>
 
       <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -158,6 +197,7 @@ export function AuthorsManager({ initial }: { initial: AuthorProfile[] }) {
                   type="button"
                   onClick={() => {
                     setErrors({});
+                    setMessage(null);
                     setEditing({
                       id: a.id,
                       name: a.name,
@@ -243,13 +283,19 @@ export function AuthorsManager({ initial }: { initial: AuthorProfile[] }) {
                 />
               </Field>
               <p className="text-xs text-muted-foreground">
-                A foto entra com o armazenamento de mídia (BE-012); até lá, aparecem as iniciais.
+                O envio da foto do autor entra numa próxima etapa; até lá, aparecem as iniciais.
               </p>
+              {message?.tone === "error" && (
+                <p role="alert" className="text-sm font-medium text-destructive">
+                  {message.text}
+                </p>
+              )}
               <button
                 type="submit"
-                className="h-10 rounded-full bg-brand-blue text-sm font-semibold text-white hover:bg-brand-blue-dark"
+                disabled={pending}
+                className="h-10 rounded-full bg-brand-blue text-sm font-semibold text-white hover:bg-brand-blue-dark disabled:opacity-60"
               >
-                Salvar
+                {pending ? "Salvando…" : "Salvar"}
               </button>
             </form>
           )}

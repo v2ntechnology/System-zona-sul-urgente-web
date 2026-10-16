@@ -11,7 +11,7 @@ export default async function TagsPage() {
   const [user, tags] = await Promise.all([getCurrentUser(), listTagsAdmin()]);
   return (
     <TagsManager
-      initial={tags.map((t) => ({ ...t, active: true }))}
+      initial={tags.map((t) => ({ ...t, active: t.active ?? true }))}
       canCreate={can(user.role, "tags.manage")}
     />
   );

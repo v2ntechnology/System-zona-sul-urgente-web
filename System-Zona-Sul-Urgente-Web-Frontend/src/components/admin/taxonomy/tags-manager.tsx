@@ -1,8 +1,14 @@
 "use client";
 
 import { AlertCircleIcon, CopyIcon, HashIcon, MergeIcon, SearchIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 
+import {
+  type ListResult,
+  mergeTagsAction,
+  renameTagAction,
+  setTagActiveAction,
+} from "@/app/admin/(painel)/editorias/actions";
 import { RelativeTime } from "@/components/news/relative-time";
 import {
   AlertDialog,
@@ -29,8 +35,8 @@ export type ManagedTag = {
 const normalize = (v: string) => v.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 // Tópicos (FE-158): buscar, renomear, desativar e juntar duplicados. Juntar move as
-// matérias para o tópico que fica e faz os endereços antigos redirecionarem. Sem backend,
-// é simulado na tela; com a API: PUT /tags/{id} e POST /tags/merge.
+// matérias para o tópico que fica e apaga os outros. Com a API, grava e mostra a lista
+// devolvida; sem backend, simula na tela.
 export function TagsManager({ initial, canCreate }: { initial: ManagedTag[]; canCreate: boolean }) {
   const [tags, setTags] = useState(initial);
   const [query, setQuery] = useState("");
@@ -40,9 +46,31 @@ export function TagsManager({ initial, canCreate }: { initial: ManagedTag[]; can
   const [renaming, setRenaming] = useState<{ id: string; name: string; error?: string } | null>(
     null,
   );
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [, startTransition] = useTransition();
 
-  const say = (text: string) => setMessage(`${text} (simulação — sem backend conectado).`);
+  /** Grava na API e usa a lista devolvida; sem API, simula. */
+  function persist(
+    call: () => Promise<ListResult<ManagedTag>>,
+    simulate: () => void,
+    text: string,
+    onError?: (result: { message: string; errors?: Record<string, string> }) => void,
+  ) {
+    startTransition(async () => {
+      const result = await call();
+      if (result.ok) {
+        setTags(result.list);
+        setMessage({ tone: "ok", text });
+      } else if (result.message === "simulated") {
+        simulate();
+        setMessage({ tone: "ok", text: `${text} (simulação — sem backend conectado).` });
+      } else if (onError) {
+        onError(result);
+      } else {
+        setMessage({ tone: "error", text: result.message });
+      }
+    });
+  }
   const groups = useMemo(() => duplicateGroups(tags.filter((t) => t.active)), [tags]);
   const visible = tags.filter(
     (t) =>
@@ -61,15 +89,21 @@ export function TagsManager({ initial, canCreate }: { initial: ManagedTag[]; can
     const target = merging.find((t) => t.id === keep)!;
     const others = merging.filter((t) => t.id !== keep);
     const total = merging.reduce((s, t) => s + t.newsCount, 0);
-    setTags((list) =>
-      list
-        .filter((t) => !others.some((o) => o.id === t.id))
-        .map((t) => (t.id === target.id ? { ...t, newsCount: total } : t)),
-    );
     setSelected([]);
     setMerging(null);
-    say(
-      `${others.map((o) => `“${o.name}”`).join(", ")} juntado em “${target.name}” (${total} matérias); endereços antigos redirecionam`,
+    persist(
+      () =>
+        mergeTagsAction(
+          target.id,
+          others.map((o) => o.id),
+        ),
+      () =>
+        setTags((list) =>
+          list
+            .filter((t) => !others.some((o) => o.id === t.id))
+            .map((t) => (t.id === target.id ? { ...t, newsCount: total } : t)),
+        ),
+      `${others.map((o) => `“${o.name}”`).join(", ")} juntado em “${target.name}”`,
     );
   }
 
@@ -78,16 +112,24 @@ export function TagsManager({ initial, canCreate }: { initial: ManagedTag[]; can
     const error = renameTagError(renaming.name, renaming.id, tags);
     if (error) return setRenaming({ ...renaming, error });
     const before = tags.find((t) => t.id === renaming.id)!;
-    setTags((list) =>
-      list.map((t) => (t.id === renaming.id ? { ...t, name: renaming.name.trim() } : t)),
+    const current = renaming;
+    persist(
+      () => renameTagAction(current.id, current.name.trim()),
+      () =>
+        setTags((list) =>
+          list.map((t) => (t.id === current.id ? { ...t, name: current.name.trim() } : t)),
+        ),
+      `“${before.name}” agora é “${current.name.trim()}”`,
+      // Erro do nome fica no próprio campo (a edição continua aberta).
+      (result) => setRenaming({ ...current, error: result.errors?.name ?? result.message }),
     );
     setRenaming(null);
-    say(`“${before.name}” agora é “${renaming.name.trim()}”`);
   }
 
   function toggleActive(tag: ManagedTag) {
-    setTags((list) => list.map((t) => (t.id === tag.id ? { ...t, active: !t.active } : t)));
-    say(
+    persist(
+      () => setTagActiveAction(tag.id, !tag.active),
+      () => setTags((list) => list.map((t) => (t.id === tag.id ? { ...t, active: !t.active } : t))),
       tag.active
         ? `“${tag.name}” desativado: some do editor, as matérias continuam com ele`
         : `“${tag.name}” reativado`,
@@ -171,10 +213,14 @@ export function TagsManager({ initial, canCreate }: { initial: ManagedTag[]; can
       <p
         aria-live="polite"
         className={
-          message ? "rounded-md bg-brand-sky-light px-3 py-2 text-sm text-brand-blue" : "sr-only"
+          !message
+            ? "sr-only"
+            : message.tone === "ok"
+              ? "rounded-md bg-brand-sky-light px-3 py-2 text-sm text-brand-blue"
+              : "rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive"
         }
       >
-        {message}
+        {message?.text}
       </p>
 
       <div className="overflow-x-auto rounded-xl border bg-background shadow-xs">
@@ -319,8 +365,7 @@ export function TagsManager({ initial, canCreate }: { initial: ManagedTag[]; can
           <AlertDialogHeader>
             <AlertDialogTitle>Juntar tópicos</AlertDialogTitle>
             <AlertDialogDescription>
-              As matérias de todos passam para o tópico escolhido, e os endereços dos outros
-              redirecionam para ele.
+              As matérias de todos passam para o tópico escolhido, e os outros deixam de existir.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <fieldset className="flex flex-col gap-2">

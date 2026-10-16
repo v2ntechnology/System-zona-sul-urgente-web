@@ -8,7 +8,12 @@ import { SESSION_COOKIE } from "@/lib/auth/cookies";
 export function proxy(request: NextRequest) {
   if (!process.env.API_URL) return NextResponse.next();
   const { pathname, search } = request.nextUrl;
-  if (pathname === "/admin/login" || request.cookies.has(SESSION_COOKIE)) {
+  // Login e aceite de convite são as únicas telas do painel abertas sem sessão.
+  if (
+    pathname === "/admin/login" ||
+    pathname.startsWith("/admin/convite/") ||
+    request.cookies.has(SESSION_COOKIE)
+  ) {
     return NextResponse.next();
   }
   const login = new URL("/admin/login", request.url);

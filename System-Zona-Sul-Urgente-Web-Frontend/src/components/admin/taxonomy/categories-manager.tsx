@@ -9,8 +9,15 @@ import {
   MoreHorizontalIcon,
   PlusIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
+import {
+  deleteCategoryAction,
+  type ListResult,
+  moveCategoryAction,
+  saveCategoryAction,
+  setCategoryActiveAction,
+} from "@/app/admin/(painel)/editorias/actions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,11 +64,12 @@ const emptyDraft: CategoryDraft = {
 };
 
 // Editorias (FE-158): ordem, barra, ativação e cadastro. A barra azul do topo da tela é
-// uma prévia do menu do site com as mudanças. Sem backend, tudo é simulado na tela; com a
-// API: POST/PUT /api/v1/admin/categories e revalidação do menu (tag de cache "taxonomy").
+// uma prévia do menu do site com as mudanças. Com a API, cada ação grava e a tela passa a
+// mostrar a lista devolvida por ela (a API avisa o site); sem backend, a mudança é simulada.
 export function CategoriesManager({ initial }: { initial: ManagedCategory[] }) {
   const [items, setItems] = useState(initial);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState<CategoryDraft | null>(null);
   const [errors, setErrors] = useState<CategoryErrors>({});
   const [slugTouched, setSlugTouched] = useState(false);
@@ -71,32 +79,63 @@ export function CategoriesManager({ initial }: { initial: ManagedCategory[] }) {
     items.filter((c) => c.parentSlug === slug).sort((a, b) => a.order - b.order);
   const bar = roots.filter((c) => c.active && c.inBar);
 
-  const say = (text: string) => setMessage(`${text} (simulação — sem backend conectado).`);
+  /**
+   * Grava na API e mostra a lista que ela devolve. Sem API ("simulated"), aplica a mudança
+   * só na tela. Erro: mensagem (e erros por campo no formulário).
+   */
+  function persist(
+    call: () => Promise<ListResult<ManagedCategory>>,
+    simulate: () => void,
+    text: string,
+    done?: () => void,
+  ) {
+    startTransition(async () => {
+      const result = await call();
+      if (result.ok) {
+        setItems(result.list);
+        setMessage({ tone: "ok", text });
+        done?.();
+      } else if (result.message === "simulated") {
+        simulate();
+        setMessage({ tone: "ok", text: `${text} (simulação — sem backend conectado).` });
+        done?.();
+      } else {
+        if (result.errors) setErrors(result.errors as CategoryErrors);
+        setMessage({ tone: "error", text: result.message });
+      }
+    });
+  }
 
   function move(item: ManagedCategory, direction: -1 | 1) {
     const siblings = (item.parentSlug ? childrenOf(item.parentSlug) : roots).map((c) => c.id);
     const index = siblings.indexOf(item.id);
     const target = siblings[index + direction];
     if (!target) return;
-    setItems((list) =>
-      list.map((c) =>
-        c.id === item.id
-          ? { ...c, order: list.find((x) => x.id === target)!.order }
-          : c.id === target
-            ? { ...c, order: item.order }
-            : c,
-      ),
+    persist(
+      () => moveCategoryAction(item.id, direction),
+      () =>
+        setItems((list) =>
+          list.map((c) =>
+            c.id === item.id
+              ? { ...c, order: list.find((x) => x.id === target)!.order }
+              : c.id === target
+                ? { ...c, order: item.order }
+                : c,
+          ),
+        ),
+      `“${item.name}” ${direction < 0 ? "subiu" : "desceu"} no menu`,
     );
-    say(`“${item.name}” ${direction < 0 ? "subiu" : "desceu"} no menu`);
   }
 
   function setActive(item: ManagedCategory, active: boolean) {
-    setItems((list) =>
-      list.map((c) =>
-        c.id === item.id || (!active && c.parentSlug === item.slug) ? { ...c, active } : c,
-      ),
-    );
-    say(
+    persist(
+      () => setCategoryActiveAction(item.id, active),
+      () =>
+        setItems((list) =>
+          list.map((c) =>
+            c.id === item.id || (!active && c.parentSlug === item.slug) ? { ...c, active } : c,
+          ),
+        ),
       active
         ? `“${item.name}” voltou ao menu`
         : `“${item.name}” saiu do menu; as ${item.newsCount} matérias continuam no ar`,
@@ -104,12 +143,16 @@ export function CategoriesManager({ initial }: { initial: ManagedCategory[] }) {
   }
 
   function remove(item: ManagedCategory) {
-    setItems((list) => list.filter((c) => c.id !== item.id));
-    say(`“${item.name}” excluída`);
+    persist(
+      () => deleteCategoryAction(item.id),
+      () => setItems((list) => list.filter((c) => c.id !== item.id)),
+      `“${item.name}” excluída`,
+    );
   }
 
   function open(item?: ManagedCategory, parentSlug = "") {
     setErrors({});
+    setMessage(null);
     setSlugTouched(Boolean(item));
     setEditing(
       item
@@ -163,40 +206,45 @@ export function CategoriesManager({ initial }: { initial: ManagedCategory[] }) {
       whatsappUrl: editing.whatsappUrl.trim(),
       description: editing.description.trim(),
     };
-    if (before) {
-      setItems((list) =>
-        list.map((c) =>
-          c.id === before.id
-            ? {
-                ...c,
-                ...fields,
-                previousSlug: before.slug !== fields.slug ? before.slug : c.previousSlug,
-              }
-            : c.parentSlug === before.slug
-              ? { ...c, parentSlug: fields.slug }
-              : c,
-        ),
-      );
-      say(
-        before.slug !== fields.slug
+    const draft = editing;
+    persist(
+      () => saveCategoryAction(draft),
+      () => {
+        if (before) {
+          setItems((list) =>
+            list.map((c) =>
+              c.id === before.id
+                ? {
+                    ...c,
+                    ...fields,
+                    previousSlug: before.slug !== fields.slug ? before.slug : c.previousSlug,
+                  }
+                : c.parentSlug === before.slug
+                  ? { ...c, parentSlug: fields.slug }
+                  : c,
+            ),
+          );
+        } else {
+          const siblings = fields.parentSlug ? childrenOf(fields.parentSlug) : roots;
+          setItems((list) => [
+            ...list,
+            {
+              id: crypto.randomUUID(),
+              ...fields,
+              active: true,
+              order: Math.max(0, ...siblings.map((c) => c.order)) + 1,
+              newsCount: 0,
+            },
+          ]);
+        }
+      },
+      before
+        ? before.slug !== fields.slug
           ? `“${fields.name}” salva; /${before.slug} agora redireciona para /${fields.slug}`
-          : `“${fields.name}” salva`,
-      );
-    } else {
-      const siblings = fields.parentSlug ? childrenOf(fields.parentSlug) : roots;
-      setItems((list) => [
-        ...list,
-        {
-          id: crypto.randomUUID(),
-          ...fields,
-          active: true,
-          order: Math.max(0, ...siblings.map((c) => c.order)) + 1,
-          newsCount: 0,
-        },
-      ]);
-      say(`“${fields.name}” criada`);
-    }
-    setEditing(null);
+          : `“${fields.name}” salva`
+        : `“${fields.name}” criada`,
+      () => setEditing(null),
+    );
   }
 
   const original = editing?.id ? items.find((c) => c.id === editing.id) : undefined;
@@ -241,11 +289,15 @@ export function CategoriesManager({ initial }: { initial: ManagedCategory[] }) {
       </div>
       <p
         aria-live="polite"
-        className={
-          message ? "rounded-md bg-brand-sky-light px-3 py-2 text-sm text-brand-blue" : "sr-only"
-        }
+        className={cn(
+          !message && "sr-only",
+          message?.tone === "ok" &&
+            "rounded-md bg-brand-sky-light px-3 py-2 text-sm text-brand-blue",
+          message?.tone === "error" &&
+            "rounded-md bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive",
+        )}
       >
-        {message}
+        {message?.text}
       </p>
 
       <ul className="flex flex-col gap-3">
@@ -450,11 +502,17 @@ export function CategoriesManager({ initial }: { initial: ManagedCategory[] }) {
                   className={cn(inputClass(errors.description), "h-auto py-2")}
                 />
               </Field>
+              {message?.tone === "error" && (
+                <p role="alert" className="text-sm font-medium text-destructive">
+                  {message.text}
+                </p>
+              )}
               <button
                 type="submit"
-                className="h-10 rounded-full bg-brand-blue text-sm font-semibold text-white hover:bg-brand-blue-dark"
+                disabled={pending}
+                className="h-10 rounded-full bg-brand-blue text-sm font-semibold text-white hover:bg-brand-blue-dark disabled:opacity-60"
               >
-                Salvar
+                {pending ? "Salvando…" : "Salvar"}
               </button>
             </form>
           )}

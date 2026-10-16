@@ -1,0 +1,52 @@
+import Image from "next/image";
+
+import { BrandLogo } from "@/components/brand/brand-logo";
+
+import loginPhoto from "./pao-de-acucar.jpg";
+
+/** Foto de fundo: Pão de Açúcar ao amanhecer, de Marcos Paulo Prado (enviada pela redação). */
+const LOGIN_PHOTO = {
+  src: loginPhoto,
+  credit: "Pão de Açúcar ao amanhecer · Foto: Marcos Paulo Prado",
+};
+
+// Telas de acesso do painel (login e aceite de convite), decisão 2026-10-15: foto da Zona
+// Sul de fundo e cartão branco com o conteúdo.
+export function AuthScreen({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative flex min-h-screen flex-1 items-center bg-brand-blue-dark px-4 py-10 sm:px-10 lg:px-20">
+      <Image
+        src={LOGIN_PHOTO.src}
+        alt=""
+        fill
+        preload
+        loading="eager"
+        sizes="100vw"
+        placeholder="blur"
+        className="object-cover object-[60%_50%]"
+      />
+      {/* Escurece a foto para o texto branco e o cartão terem contraste. */}
+      <div aria-hidden className="absolute inset-0 bg-brand-blue-dark/25" />
+
+      <main id="conteudo" className="relative z-10 w-full max-w-md">
+        <div className="rounded-2xl bg-background p-6 shadow-2xl sm:p-9">
+          <BrandLogo variant="masthead" className="mb-8 text-[0.7rem]" asLink={false} />
+          {children}
+        </div>
+      </main>
+
+      <div className="absolute right-6 bottom-6 z-10 hidden max-w-sm text-right text-white lg:block">
+        <p className="font-heading text-3xl leading-tight font-bold">
+          Notícias da Zona Sul,
+          <br />
+          <span className="text-brand-sky">em tempo real.</span>
+        </p>
+        <p className="mt-2 text-xs text-white/70">{LOGIN_PHOTO.credit}</p>
+      </div>
+      {/* Crédito da foto também no celular (o bloco acima só aparece em telas grandes). */}
+      <p className="absolute inset-x-0 bottom-3 z-10 px-4 text-center text-xs text-white/70 lg:hidden">
+        {LOGIN_PHOTO.credit}
+      </p>
+    </div>
+  );
+}
