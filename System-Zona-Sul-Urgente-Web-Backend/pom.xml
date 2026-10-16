@@ -17,6 +17,7 @@
 		<java.version>25</java.version>
 		<springdoc.version>3.1.1</springdoc.version>
 		<bouncycastle.version>1.86</bouncycastle.version>
+		<jsoup.version>1.23.2</jsoup.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -53,6 +54,12 @@
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
 
+		<!-- Sanitização do HTML dos parágrafos (allowlist: strong, em, a). -->
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>${jsoup.version}</version>
+		</dependency>
 		<!-- Argon2id (PasswordEncoder do Spring Security) depende do BouncyCastle. -->
 		<dependency>
 			<groupId>org.bouncycastle</groupId>

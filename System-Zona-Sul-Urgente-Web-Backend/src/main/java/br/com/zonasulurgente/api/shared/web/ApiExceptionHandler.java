@@ -44,6 +44,16 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return problem(HttpStatus.BAD_REQUEST, "Requisição inválida", ex.getMessage());
 	}
 
+	/** Campos do editor inválidos: mesmo formato dos erros de validação (field + message). */
+	@ExceptionHandler(br.com.zonasulurgente.api.news.admin.DraftValidationException.class)
+	ProblemDetail draftInvalid(br.com.zonasulurgente.api.news.admin.DraftValidationException ex) {
+		ProblemDetail body = problem(HttpStatus.BAD_REQUEST, "Dados inválidos", ex.getMessage());
+		body.setProperty("errors", ex.errors().entrySet().stream()
+			.map(e -> new FieldProblem(e.getKey(), e.getValue()))
+			.toList());
+		return body;
+	}
+
 	@ExceptionHandler(ApiException.class)
 	ProblemDetail api(ApiException ex) {
 		return problem(ex.status(), ex.title(), ex.getMessage());
