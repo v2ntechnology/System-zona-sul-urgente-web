@@ -31,7 +31,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/[...path]">): Promise<Metadata> {
   const { path } = await params;
   const resolved = await resolveSectionPath(path);
-  if (!resolved) return {};
+  if (!resolved || resolved.type === "redirect") return {};
 
   if (resolved.type === "category") {
     const { category } = resolved;
@@ -92,6 +92,7 @@ export default async function SectionPage({ params }: PageProps<"/[...path]">) {
   const { path } = await params;
   const resolved = await resolveSectionPath(path);
   if (!resolved) notFound();
+  if (resolved.type === "redirect") permanentRedirect(resolved.location);
 
   if (resolved.type === "news") {
     // Editoria mudou (ou URL veio torta): 308 para a URL atual, sem perder links antigos.

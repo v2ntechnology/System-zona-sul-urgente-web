@@ -9,6 +9,8 @@ export const cacheTags = {
   city: (slug: string) => `city:${slug}`,
   neighborhood: (slug: string) => `neighborhood:${slug}`,
   author: (slug: string) => `author:${slug}`,
+  /** Editorias, bairros, autores e tópicos (menu do site, painel FE-158). */
+  taxonomy: () => "taxonomy",
 } as const;
 
 // Limite do Next para tags (strings maiores nunca são associadas ao cache).
