@@ -1,8 +1,17 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { cache } from "react";
+
+import { adminRoutes } from "@/config/admin-navigation";
+import { SESSION_COOKIE } from "@/lib/auth/cookies";
 import { campaignsMock } from "@/mocks/ads";
 import { MOCK_NOW, newsMock, viewsBySlug } from "@/mocks/news";
 import { adminNewsMock, currentUserMock, instagramPostsMock } from "@/mocks/admin";
 import { percentChange } from "@/lib/chart";
+import { authApi } from "@/services/admin/auth-api";
 import { getAnalytics } from "@/services/admin/analytics-service";
+import { apiBaseUrl } from "@/services/api/client";
+import { ServiceError } from "@/services/errors";
 import type {
   AdminNewsFilter,
   AdminNewsRow,
@@ -16,10 +25,24 @@ import type {
 
 export const ADMIN_PAGE_SIZE = 15;
 
-/** Usuário logado. Sem login ainda (BE-006): usa o mock. */
-export async function getCurrentUser(): Promise<AdminUser> {
-  return currentUserMock;
-}
+/**
+ * Usuário logado. Com API (BE-006): lê o cookie de sessão e pergunta à API quem é (sessão
+ * vencida/revogada → tela de login). Sem API: usuária de exemplo. Lê cookie, então quem
+ * chama precisa estar dentro de um <Suspense> (o layout do painel já envolve tudo).
+ * React.cache: uma chamada à API por requisição, mesmo com vários componentes pedindo.
+ */
+export const getCurrentUser = cache(async (): Promise<AdminUser> => {
+  if (!apiBaseUrl()) return currentUserMock;
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!token) redirect(adminRoutes.login);
+  const me = await authApi.me(token);
+  if (!me.ok) {
+    if (me.status === 401) redirect(adminRoutes.login);
+    throw new ServiceError(me.message, "UNAVAILABLE");
+  }
+  const { id, name, email, role, authorSlug } = me.data;
+  return { id, name, email, role, authorSlug };
+});
 
 export async function getDashboardStats(): Promise<DashboardStats> {
   const dayStart = new Date(MOCK_NOW);

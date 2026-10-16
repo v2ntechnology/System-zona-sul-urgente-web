@@ -3,6 +3,7 @@
 import { writeFileSync } from "node:fs";
 import { newsMock, MOCK_NOW, viewsBySlug, featuredRank } from "@/mocks/news";
 import { categories, neighborhoods, authors, tags, city, zones } from "@/mocks/taxonomy";
+import { teamMock } from "@/mocks/admin";
 
 const q = (v: unknown) =>
   v === undefined || v === null ? "NULL" : `'${String(v).replace(/'/g, "''")}'`;
@@ -83,6 +84,17 @@ for (const n of newsMock) {
     L(
       `INSERT INTO news_stats (news_id, views_day, views_week, views_total) VALUES (${q(n.id)}, ${v.day}, ${v.week}, ${v.total}) ON CONFLICT DO NOTHING;`,
     );
+}
+L(``);
+L(`-- Equipe (FE-159). Sem senha aqui: no perfil local, a API define a senha de desenvolvimento`);
+L(
+  `-- das contas ativas ao subir (LocalDevUsers). Convidados ficam sem senha; desativados não entram.`,
+);
+for (const m of teamMock) {
+  const author = m.authorSlug ? authors.find((a) => a.slug === m.authorSlug)?.id : undefined;
+  L(
+    `INSERT INTO users (id, name, email, role_code, status, author_id) VALUES (${q(m.id)}, ${q(m.name)}, ${q(m.email)}, ${q(m.role)}, ${q(m.status)}, ${q(author)}) ON CONFLICT DO NOTHING;`,
+  );
 }
 writeFileSync(process.argv[2], out.join("\n") + "\n");
 console.log(

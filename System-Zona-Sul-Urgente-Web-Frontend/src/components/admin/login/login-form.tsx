@@ -10,7 +10,9 @@ import {
   ShieldCheckIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
+
+import { codeAction, loginAction } from "@/app/admin/login/actions";
 
 import { adminRoutes } from "@/config/admin-navigation";
 import { cn } from "@/lib/utils";
@@ -20,9 +22,11 @@ type Step = "credentials" | "code" | "forgot" | "sent";
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SIMULATED_DELAY = 600;
 
-// Formulário de login (só interface; BE-006 faz a autenticação). Dois passos: e-mail e
-// senha, depois o código de 6 dígitos do app autenticador — obrigatório para ADMIN,
-// EDITOR e COMERCIAL (ARCHITECTURE §8). Mensagens de erro nunca dizem se o e-mail existe.
+// Formulário de login (BE-006). Dois passos: e-mail e senha, depois o código de 6 dígitos do
+// app autenticador — obrigatório para ADMIN, EDITOR e COMERCIAL (ARCHITECTURE §8); no
+// primeiro acesso, mostra o QR code para cadastrar o app. Fala com a API pelas Server
+// Actions (tokens só em cookies HttpOnly). Sem API configurada, a action responde "demo" e
+// o formulário segue simulando. Mensagens de erro nunca dizem se o e-mail existe.
 export function LoginForm() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("credentials");
@@ -32,7 +36,17 @@ export function LoginForm() {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [demo, setDemo] = useState<boolean | null>(null);
+  const [setup, setSetup] = useState<{ secret: string; qrSvg: string } | null>(null);
+  const [pending, startTransition] = useTransition();
   const codeRef = useRef<HTMLInputElement>(null);
+
+  /** Volta para a página que a pessoa tentou abrir (o proxy manda ?next=). */
+  const next = () => new URLSearchParams(window.location.search).get("next") ?? "";
+  const goToCode = () => {
+    setStep("code");
+    requestAnimationFrame(() => codeRef.current?.focus());
+  };
 
   function wait(then: () => void) {
     setBusy(true);
@@ -45,11 +59,24 @@ export function LoginForm() {
   function submitCredentials(event: React.FormEvent) {
     event.preventDefault();
     if (!EMAIL.test(email.trim())) return setError("Informe um e-mail válido.");
-    if (password.length < 8) return setError("A senha tem pelo menos 8 caracteres.");
+    if (!password) return setError("Informe a senha.");
     setError(null);
-    wait(() => {
-      setStep("code");
-      requestAnimationFrame(() => codeRef.current?.focus());
+    const form = new FormData();
+    form.set("email", email.trim());
+    form.set("password", password);
+    form.set("next", next());
+    startTransition(async () => {
+      const result = await loginAction({ step: "credentials" }, form);
+      if (result.step === "demo") {
+        setDemo(true);
+        if (password.length < 8) return setError("A senha tem pelo menos 8 caracteres.");
+        return wait(goToCode);
+      }
+      setDemo(false);
+      if (result.step === "credentials") return setError(result.error ?? null);
+      setPassword("");
+      setSetup(result.setup ?? null);
+      goToCode();
     });
   }
 
@@ -57,7 +84,24 @@ export function LoginForm() {
     event.preventDefault();
     if (!/^\d{6}$/.test(code)) return setError("Digite os 6 números do app autenticador.");
     setError(null);
-    wait(() => router.push(adminRoutes.dashboard));
+    if (demo) return wait(() => router.push(adminRoutes.dashboard));
+    const form = new FormData();
+    form.set("code", code);
+    form.set("next", next());
+    startTransition(async () => {
+      // Sucesso: a action grava o cookie e redireciona (não volta aqui).
+      const result = await codeAction({ step: "code", email: email.trim() }, form);
+      if (result.step === "credentials") {
+        setCode("");
+        setSetup(null);
+        setStep("credentials");
+        return setError(result.error ?? null);
+      }
+      if (result.step === "code") {
+        setCode("");
+        setError(result.error ?? null);
+      }
+    });
   }
 
   function submitForgot(event: React.FormEvent) {
@@ -125,7 +169,7 @@ export function LoginForm() {
               Esqueci a senha
             </button>
           </div>
-          <Submit busy={busy}>Entrar</Submit>
+          <Submit busy={busy || pending}>Entrar</Submit>
         </form>
       )}
 
@@ -135,9 +179,30 @@ export function LoginForm() {
             <ShieldCheckIcon aria-hidden className="size-6" />
           </span>
           <Heading
-            title="Verificação em duas etapas"
-            subtitle={`Abra o app autenticador e digite o código de 6 números da conta ${email.trim()}.`}
+            title={setup ? "Ative a verificação em duas etapas" : "Verificação em duas etapas"}
+            subtitle={
+              setup
+                ? "Primeiro acesso: no app autenticador (Google Authenticator, Authy ou outro), leia o QR code e digite o código que aparecer."
+                : `Abra o app autenticador e digite o código de 6 números da conta ${email.trim()}.`
+            }
           />
+          {setup && (
+            <div className="flex flex-col items-center gap-2 rounded-xl border bg-muted/40 p-4">
+              {/* SVG gerado no servidor pela biblioteca qrcode (só caminhos, sem script). */}
+              <div
+                aria-label="QR code para cadastrar o app autenticador"
+                role="img"
+                className="size-44 rounded-lg bg-white p-2 [&_svg]:size-full"
+                dangerouslySetInnerHTML={{ __html: setup.qrSvg }}
+              />
+              <p className="text-center text-xs text-muted-foreground">
+                Não consegue ler? Digite a chave no app:
+              </p>
+              <code className="rounded-md bg-background px-2 py-1 font-mono text-sm tracking-wider break-all select-all">
+                {setup.secret.match(/.{1,4}/g)?.join(" ")}
+              </code>
+            </div>
+          )}
           <ErrorMessage error={error} />
           <Field label="Código" htmlFor="login-code">
             <input
@@ -151,7 +216,7 @@ export function LoginForm() {
               className={cn(inputClass, "text-center font-mono text-2xl tracking-[0.5em]")}
             />
           </Field>
-          <Submit busy={busy}>Confirmar</Submit>
+          <Submit busy={busy || pending}>Confirmar</Submit>
           <BackButton onClick={back("credentials")}>Voltar</BackButton>
         </form>
       )}
@@ -194,10 +259,12 @@ export function LoginForm() {
         </div>
       )}
 
-      <p className="border-t pt-4 text-xs text-muted-foreground">
-        Simulação: sem backend conectado (BE-006), qualquer e-mail e senha de 8+ caracteres e
-        qualquer código de 6 números entram no painel.
-      </p>
+      {demo && (
+        <p className="border-t pt-4 text-xs text-muted-foreground">
+          Simulação: sem a API configurada (API_URL), qualquer e-mail e senha de 8+ caracteres e
+          qualquer código de 6 números entram no painel.
+        </p>
+      )}
     </div>
   );
 }

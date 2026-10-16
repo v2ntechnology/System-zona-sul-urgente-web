@@ -16,8 +16,7 @@ const LOGIN_PHOTO = {
 };
 
 // Login do painel (decisão 2026-10-15): foto da Zona Sul de fundo e cartão branco.
-// Só a interface por enquanto; autenticação de verdade (sessão, 2FA, bloqueio por
-// tentativas) chega com o BE-006.
+// Autenticação real pela API (BE-006: sessão, 2FA, bloqueio por tentativas) via Server Actions.
 export default function LoginPage() {
   return (
     <div className="relative flex min-h-screen flex-1 items-center bg-brand-blue-dark px-4 py-10 sm:px-10 lg:px-20">

@@ -19,6 +19,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useState, useSyncExternalStore } from "react";
 
+import { logoutAction } from "@/app/admin/login/actions";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import {
   DropdownMenu,
@@ -194,7 +195,8 @@ function UserMenu({ user }: { user: NavbarProps["user"] }) {
           <PaletteIcon aria-hidden /> Design system
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem render={<Link href={adminRoutes.login} />} className="py-2">
+        {/* Encerra a sessão na API e apaga o cookie (Server Action). */}
+        <DropdownMenuItem onClick={() => logoutAction()} className="py-2">
           <LogOutIcon aria-hidden /> Sair
         </DropdownMenuItem>
       </DropdownMenuContent>

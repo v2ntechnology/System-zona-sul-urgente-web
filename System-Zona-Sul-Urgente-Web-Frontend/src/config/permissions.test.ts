@@ -37,3 +37,24 @@ describe("matriz de permissões", () => {
     expect(can("EDITOR", "users.manage")).toBe(false);
   });
 });
+
+describe("matriz igual à do backend", () => {
+  it("cada perfil tem as mesmas permissões que a migration V3 da API", async () => {
+    const { readFileSync, existsSync } = await import("node:fs");
+    const path =
+      "../System-Zona-Sul-Urgente-Web-Backend/src/main/resources/db/migration/V3__auth_rbac.sql";
+    if (!existsSync(path)) return; // checkout só do frontend
+    const sql = readFileSync(path, "utf8");
+    const { rolePermissions } = await import("@/config/permissions");
+    const known = new Set(Object.values(rolePermissions).flat());
+    const fromSql: Record<string, Set<string>> = {};
+    for (const [, role, permission] of sql.matchAll(/\('([A-Z]+)', '([a-z._]+)'\)/g)) {
+      (fromSql[role] ??= new Set()).add(permission);
+    }
+    fromSql.ADMIN = new Set(known); // ADMIN recebe todas (SELECT 'ADMIN', code FROM permissions)
+    for (const [role, permissions] of Object.entries(rolePermissions)) {
+      const backend = [...(fromSql[role] ?? [])].filter((p) => known.has(p as never)).sort();
+      expect([...permissions].sort(), role).toEqual(backend);
+    }
+  });
+});
