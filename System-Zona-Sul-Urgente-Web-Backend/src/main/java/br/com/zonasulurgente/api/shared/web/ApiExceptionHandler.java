@@ -44,6 +44,17 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 		return problem(HttpStatus.BAD_REQUEST, "Requisição inválida", ex.getMessage());
 	}
 
+	@ExceptionHandler(ApiException.class)
+	ProblemDetail api(ApiException ex) {
+		return problem(ex.status(), ex.title(), ex.getMessage());
+	}
+
+	/** @PreAuthorize negado dentro do MVC: mesmo 403 da política de segurança. */
+	@ExceptionHandler(org.springframework.security.authorization.AuthorizationDeniedException.class)
+	ProblemDetail denied() {
+		return problem(HttpStatus.FORBIDDEN, "Acesso negado", "Seu perfil não tem permissão para esta ação.");
+	}
+
 	@ExceptionHandler(Exception.class)
 	ProblemDetail unexpected(Exception ex) {
 		log.error("Erro inesperado", ex);

@@ -12,6 +12,10 @@ SPRING_PROFILES_ACTIVE=local ./mvnw spring-boot:run                    # http://
 ./mvnw verify                                                          # testes (Testcontainers, precisa de Docker)
 ```
 
+Login no painel (perfil `local`): as contas ativas da equipe de exemplo usam a senha `zonasul-local`
+(ex.: `ana.ribeiro@zonasulurgente.com.br`, repórter, entra direto; `juliana.prado@zonasulurgente.com.br`,
+administradora, cadastra o app autenticador pelo QR code no primeiro acesso).
+
 O perfil `local` carrega dados de exemplo (`src/main/resources/db/seed/R__seed_local.sql`), gerados a
 partir dos mocks do frontend: mesmos IDs, slugs e textos que o site mostra sem a API.
 

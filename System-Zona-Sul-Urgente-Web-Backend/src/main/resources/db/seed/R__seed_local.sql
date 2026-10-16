@@ -319,3 +319,14 @@ As imagens podem ser usadas pelas polícias mediante solicitação formal.', '01
 INSERT INTO news_authors (news_id, author_id, position) VALUES ('0192a1b2-000a-7000-8000-00000000001d', '0192a1b2-0004-7000-8000-000000000004', 0) ON CONFLICT DO NOTHING;
 INSERT INTO news_tags (news_id, tag_id) VALUES ('0192a1b2-000a-7000-8000-00000000001d', '0192a1b2-0005-7000-8000-000000000004') ON CONFLICT DO NOTHING;
 INSERT INTO news_stats (news_id, views_day, views_week, views_total) VALUES ('0192a1b2-000a-7000-8000-00000000001d', 30, 1300, 21000) ON CONFLICT DO NOTHING;
+
+-- Equipe (FE-159). Sem senha aqui: no perfil local, a API define a senha de desenvolvimento
+-- das contas ativas ao subir (LocalDevUsers). Convidados ficam sem senha; desativados não entram.
+INSERT INTO users (id, name, email, role_code, status, author_id) VALUES ('0192a1b2-0028-7000-8000-000000000001', 'Juliana Prado', 'juliana.prado@zonasulurgente.com.br', 'ADMIN', 'ACTIVE', '0192a1b2-0004-7000-8000-000000000003') ON CONFLICT DO NOTHING;
+INSERT INTO users (id, name, email, role_code, status, author_id) VALUES ('0192a1b2-0028-7000-8000-000000000002', 'Ana Ribeiro', 'ana.ribeiro@zonasulurgente.com.br', 'REPORTER', 'ACTIVE', '0192a1b2-0004-7000-8000-000000000001') ON CONFLICT DO NOTHING;
+INSERT INTO users (id, name, email, role_code, status, author_id) VALUES ('0192a1b2-0028-7000-8000-000000000003', 'Carlos Menezes', 'carlos.menezes@zonasulurgente.com.br', 'REPORTER', 'ACTIVE', '0192a1b2-0004-7000-8000-000000000002') ON CONFLICT DO NOTHING;
+INSERT INTO users (id, name, email, role_code, status, author_id) VALUES ('0192a1b2-0028-7000-8000-000000000004', 'Rafael Duarte', 'rafael.duarte@zonasulurgente.com.br', 'EDITOR', 'ACTIVE', '0192a1b2-0004-7000-8000-000000000004') ON CONFLICT DO NOTHING;
+INSERT INTO users (id, name, email, role_code, status, author_id) VALUES ('0192a1b2-0028-7000-8000-000000000005', 'Marina Teixeira', 'marina.teixeira@zonasulurgente.com.br', 'AUTOR', 'ACTIVE', '0192a1b2-0004-7000-8000-000000000006') ON CONFLICT DO NOTHING;
+INSERT INTO users (id, name, email, role_code, status, author_id) VALUES ('0192a1b2-0028-7000-8000-000000000006', 'Sandra Lopes', 'sandra.lopes@zonasulurgente.com.br', 'COMERCIAL', 'ACTIVE', NULL) ON CONFLICT DO NOTHING;
+INSERT INTO users (id, name, email, role_code, status, author_id) VALUES ('0192a1b2-0028-7000-8000-000000000007', 'Lucas Ferreira', 'lucas.ferreira@zonasulurgente.com.br', 'REPORTER', 'INVITED', NULL) ON CONFLICT DO NOTHING;
+INSERT INTO users (id, name, email, role_code, status, author_id) VALUES ('0192a1b2-0028-7000-8000-000000000008', 'Tiago Nunes', 'tiago.nunes@zonasulurgente.com.br', 'REPORTER', 'DISABLED', '0192a1b2-0004-7000-8000-00000000000b') ON CONFLICT DO NOTHING;

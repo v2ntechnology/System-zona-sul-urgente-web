@@ -22,6 +22,11 @@ logging:
   pattern:
     correlation: "[%X{requestId:-}] "
 
+zsu:
+  auth:
+    # Chave AES-256 (base64) dos segredos TOTP. Gere com: openssl rand -base64 32
+    totp-key: ${TOTP_ENCRYPTION_KEY:}
+
 server:
   port: ${PORT:8080}
   shutdown: graceful
@@ -53,6 +58,11 @@ spring:
   # Dados de exemplo (gerados dos mocks do frontend). Só neste perfil, nunca em produção.
   flyway:
     locations: classpath:db/migration,classpath:db/seed
+
+# Chave de desenvolvimento (só no perfil local). Em produção: TOTP_ENCRYPTION_KEY.
+zsu:
+  auth:
+    totp-key: ${TOTP_ENCRYPTION_KEY:bG9jYWwtZGV2LW9ubHktdG90cC1rZXktMzJieXRlcyE=}
 
 ---
 spring:
