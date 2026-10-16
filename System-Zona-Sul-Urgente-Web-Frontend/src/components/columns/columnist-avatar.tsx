@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { RemoteImage } from "@/components/media/remote-image";
 
 import { cn } from "@/lib/utils";
 import type { Columnist } from "@/types/news";
@@ -29,7 +29,7 @@ export function ColumnistAvatar({
       )}
     >
       {columnist.photo ? (
-        <Image
+        <RemoteImage
           src={columnist.photo.url}
           alt=""
           fill

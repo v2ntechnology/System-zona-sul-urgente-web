@@ -1077,6 +1077,10 @@ function MediaPanel({
   const [dragging, setDragging] = useState(false);
   const [showUrl, setShowUrl] = useState(false);
   const hasImage = /^(https?:|blob:)/.test(image.url);
+  // Endereço que o navegador não conseguiu abrir como imagem (ex.: a página da foto no
+  // Unsplash em vez do arquivo). Guardado por endereço: trocar o link limpa o aviso.
+  const [brokenUrl, setBrokenUrl] = useState<string | null>(null);
+  const broken = hasImage && brokenUrl === image.url;
 
   function pickFile(file: File | undefined) {
     if (!file || !file.type.startsWith("image/")) return;
@@ -1112,7 +1116,12 @@ function MediaPanel({
           <>
             {/* Prévia simples (sem otimização): o endereço ainda não foi validado pelo servidor. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image.url} alt="" className="size-full object-contain" />
+            <img
+              src={image.url}
+              alt=""
+              onError={() => setBrokenUrl(image.url)}
+              className={cn("size-full object-contain", broken && "invisible")}
+            />
             <div className="absolute right-2 bottom-2 flex gap-2">
               <button
                 type="button"
@@ -1162,6 +1171,12 @@ function MediaPanel({
         />
       </div>
       {error && <FieldError id="erro-image-url">{error}</FieldError>}
+      {broken && !error && (
+        <p role="alert" className="text-xs font-medium text-destructive">
+          Não foi possível abrir uma imagem nesse endereço. Use o link do arquivo da foto: clique
+          com o botão direito na imagem e escolha &ldquo;Copiar endereço da imagem&rdquo;.
+        </p>
+      )}
 
       {(showUrl || (image.url && !image.url.startsWith("blob:"))) && (
         <div className="flex flex-col gap-1">

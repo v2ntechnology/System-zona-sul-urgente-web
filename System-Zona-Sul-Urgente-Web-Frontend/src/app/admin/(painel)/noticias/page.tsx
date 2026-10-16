@@ -1,6 +1,6 @@
 import { HashIcon, LayoutGridIcon, ListIcon, NewspaperIcon, SearchIcon } from "lucide-react";
 import type { Metadata } from "next";
-import Image from "next/image";
+import { RemoteImage } from "@/components/media/remote-image";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -270,7 +270,7 @@ async function NewsList({ searchParams }: { searchParams: Promise<Params> }) {
                       className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-[color:var(--section)]/10"
                     >
                       {row.imageUrl ? (
-                        <Image
+                        <RemoteImage
                           src={row.imageUrl}
                           alt=""
                           fill

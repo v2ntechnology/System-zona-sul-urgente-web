@@ -1,6 +1,6 @@
 import { ArrowUpRightIcon, MapPinIcon, NewspaperIcon } from "lucide-react";
 import type { Metadata } from "next";
-import Image from "next/image";
+import { RemoteImage } from "@/components/media/remote-image";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -144,7 +144,7 @@ async function CampaignDetail({
                       maxHeight: 260,
                     }}
                   >
-                    <Image
+                    <RemoteImage
                       src={creative.imageUrl}
                       alt={creative.alt}
                       fill

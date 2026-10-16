@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+import { OPTIMIZED_IMAGE_PATTERNS } from "./src/lib/image-hosts";
+
 const nextConfig: NextConfig = {
   // Impede o `next dev` de criar AGENTS.md (regra do projeto: só .claude/).
   agentRules: false,
@@ -15,8 +17,9 @@ const nextConfig: NextConfig = {
     qualities: [75],
     formats: ["image/avif", "image/webp"],
     // Fotos dos dados de exemplo (FE-009). Em produção as imagens vêm do R2
-    // (media.<dominio>) por um loader próprio — ver ARCHITECTURE §18.
-    remotePatterns: [new URL("https://picsum.photos/**")],
+    // (media.<dominio>) por um loader próprio — ver ARCHITECTURE §18. Outros endereços
+    // são exibidos sem otimização pelo <RemoteImage>.
+    remotePatterns: OPTIMIZED_IMAGE_PATTERNS.map((p) => new URL(p)),
   },
   async headers() {
     return [

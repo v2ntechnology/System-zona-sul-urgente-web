@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { RemoteImage } from "@/components/media/remote-image";
 import Link from "next/link";
 
 import { SectionHeader } from "@/components/home/section-header";
@@ -76,7 +76,7 @@ function Thumb({
   return (
     <div className={cn("relative overflow-hidden bg-muted", className)}>
       {news.image && (
-        <Image
+        <RemoteImage
           src={news.image.url}
           alt={news.image.alt}
           fill

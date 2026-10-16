@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { RemoteImage } from "@/components/media/remote-image";
 
 import { Container } from "@/components/layout/container";
 import { cn } from "@/lib/utils";
@@ -52,7 +52,7 @@ export async function AdSlot({ slotKey, className, contained }: AdSlotProps) {
             rel="sponsored noopener noreferrer"
             className="block"
           >
-            <Image
+            <RemoteImage
               src={ad.image.url}
               alt={ad.image.alt}
               width={ad.image.width}

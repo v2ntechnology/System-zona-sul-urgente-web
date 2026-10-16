@@ -15,7 +15,7 @@ import {
   Trash2Icon,
 } from "lucide-react";
 import { Dialog } from "@base-ui/react/dialog";
-import Image from "next/image";
+import { RemoteImage } from "@/components/media/remote-image";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -381,7 +381,7 @@ function Thumbnail({ post }: { post: InstagramPost }) {
   return (
     <div className="relative size-14 shrink-0 overflow-hidden rounded-md bg-muted sm:size-24">
       {post.thumbnailUrl && (
-        <Image
+        <RemoteImage
           src={post.thumbnailUrl}
           alt=""
           fill
@@ -532,7 +532,7 @@ function GridTile({ post, onOpen }: { post: InstagramPost; onOpen: () => void })
       className="group relative block aspect-square w-full overflow-hidden bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       {post.thumbnailUrl && (
-        <Image
+        <RemoteImage
           src={post.thumbnailUrl}
           alt=""
           fill
@@ -578,7 +578,7 @@ function PostDetail({
     <>
       <div className="relative aspect-square w-full shrink-0 bg-foreground md:h-full md:w-auto">
         {post.thumbnailUrl && (
-          <Image
+          <RemoteImage
             src={post.thumbnailUrl}
             alt=""
             fill

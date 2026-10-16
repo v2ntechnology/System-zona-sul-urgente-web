@@ -1,5 +1,5 @@
 import { PlayIcon } from "lucide-react";
-import Image from "next/image";
+import { RemoteImage } from "@/components/media/remote-image";
 
 import type { MediaAsset, VideoEmbed } from "@/types/news";
 
@@ -8,7 +8,7 @@ export function ArticleFigure({ image, preload }: { image: MediaAsset; preload?:
   return (
     <figure className="flex flex-col gap-2">
       <div className="relative aspect-video overflow-hidden bg-muted">
-        <Image
+        <RemoteImage
           src={image.url}
           alt={image.alt}
           fill

@@ -1,7 +1,7 @@
 "use client";
 
 import { CameraIcon, EyeIcon, MoreHorizontalIcon, NewspaperIcon, PenLineIcon } from "lucide-react";
-import Image from "next/image";
+import { RemoteImage } from "@/components/media/remote-image";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
@@ -408,7 +408,7 @@ function Thumb({
       className={cn("relative overflow-hidden bg-[color:var(--section)]/10", className)}
     >
       {row.imageUrl ? (
-        <Image
+        <RemoteImage
           src={row.imageUrl}
           alt=""
           fill

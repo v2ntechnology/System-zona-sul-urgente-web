@@ -1,6 +1,6 @@
 import { SearchIcon } from "lucide-react";
 import type { Metadata } from "next";
-import Image from "next/image";
+import { RemoteImage } from "@/components/media/remote-image";
 import Link from "next/link";
 import { Suspense } from "react";
 
@@ -207,7 +207,7 @@ function SearchResult({ news, query }: { news: NewsSummary; query: string }) {
     <article className="group relative flex gap-4 py-5">
       <div className="relative aspect-video w-28 shrink-0 self-start overflow-hidden bg-muted sm:w-44">
         {news.image && (
-          <Image
+          <RemoteImage
             src={news.image.url}
             alt={news.image.alt}
             fill

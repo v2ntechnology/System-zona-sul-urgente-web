@@ -1,5 +1,5 @@
 import { PlayIcon } from "lucide-react";
-import Image from "next/image";
+import { RemoteImage } from "@/components/media/remote-image";
 import Link from "next/link";
 
 import { BrandLogo } from "@/components/brand/brand-logo";
@@ -90,7 +90,7 @@ function CardImage({
   return (
     <div className={cn("relative aspect-video overflow-hidden bg-muted", className)}>
       {news.image && (
-        <Image
+        <RemoteImage
           src={news.image.url}
           alt={news.image.alt}
           fill
@@ -265,7 +265,7 @@ export function NewsCardVideo({ news, className }: CardProps) {
     <article className={cn("group relative flex flex-col gap-3", className)}>
       <div className="relative aspect-video overflow-hidden rounded-md bg-brand-blue-dark ring-[3px] ring-brand-red ring-inset">
         {news.image && (
-          <Image
+          <RemoteImage
             src={news.image.url}
             alt={news.image.alt}
             fill

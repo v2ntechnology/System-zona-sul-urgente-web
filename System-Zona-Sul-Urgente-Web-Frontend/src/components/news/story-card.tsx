@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { RemoteImage } from "@/components/media/remote-image";
 
 import { routes } from "@/config/navigation";
 import { sectionStyle } from "@/lib/section-color";
@@ -10,7 +10,7 @@ export function StoryCard({ story, className }: { story: WebStory; className?: s
   return (
     <article className={cn("group relative w-44 shrink-0 snap-start sm:w-52", className)}>
       <div className="relative aspect-[9/16] overflow-hidden rounded-lg bg-brand-blue-dark">
-        <Image
+        <RemoteImage
           src={story.cover.url}
           alt={story.cover.alt}
           fill
