@@ -18,6 +18,7 @@ const ALL: Permission[] = [
   "analytics.view",
   "analytics.ads.view",
   "users.manage",
+  "authors.manage",
   "settings.manage",
   "audit.view",
 ];
@@ -35,6 +36,7 @@ export const rolePermissions: Record<Role, Permission[]> = {
     "instagram.review",
     "taxonomy.manage",
     "tags.manage",
+    "authors.manage",
     "analytics.view",
   ],
   REPORTER: [
@@ -62,6 +64,18 @@ export const roleLabels: Record<Role, string> = {
   COMERCIAL: "Comercial",
   AUTOR: "Autor/Colunista",
 };
+
+/** O que cada perfil faz, em uma linha (convite e troca de perfil). */
+export const roleDescriptions: Record<Role, string> = {
+  ADMIN: "Tudo, inclusive equipe, publicidade e configurações.",
+  EDITOR: "Publica, edita qualquer matéria, revisa o Instagram e cuida de editorias e autores.",
+  REPORTER: "Escreve e envia para revisão; marca urgente e revisa o Instagram.",
+  COMERCIAL: "Publicidade e matérias patrocinadas (publicadas por um editor).",
+  AUTOR: "Colunista ou colaborador: escreve só as próprias matérias.",
+};
+
+/** Perfis que exigem 2FA (ARCHITECTURE §8). */
+export const TWO_FACTOR_ROLES = new Set<Role>(["ADMIN", "EDITOR", "COMERCIAL"]);
 
 export function can(role: Role, permission: Permission): boolean {
   return rolePermissions[role].includes(permission);

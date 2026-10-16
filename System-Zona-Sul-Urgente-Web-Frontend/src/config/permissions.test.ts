@@ -30,4 +30,10 @@ describe("matriz de permissões", () => {
     expect(can("AUTOR", "tags.manage")).toBe(false);
     expect(can("COMERCIAL", "tags.manage")).toBe(false);
   });
+
+  it("autores: ADMIN e EDITOR; equipe: só ADMIN", () => {
+    expect(can("EDITOR", "authors.manage")).toBe(true);
+    expect(can("REPORTER", "authors.manage")).toBe(false);
+    expect(can("EDITOR", "users.manage")).toBe(false);
+  });
 });

@@ -1,6 +1,7 @@
 import type {
   AdminNewsRow,
   AdminUser,
+  TeamMember,
   InstagramImportStatus,
   InstagramMediaType,
 } from "@/types/admin";
@@ -308,3 +309,42 @@ export const instagramConnectionMock = {
   tokenExpiresAt: hoursAfter(41 * 24),
   publishRule: "DRAFT" as const,
 };
+
+// ---------------------------------------------------------------- equipe (FE-159)
+// Pessoas FICTÍCIAS. A primeira é a usuária logada (currentUserMock).
+
+const daysBefore = (d: number) => hoursBefore(d * 24);
+
+export const teamMock: TeamMember[] = [
+  {
+    id: currentUserMock.id,
+    name: currentUserMock.name,
+    email: currentUserMock.email,
+    role: currentUserMock.role,
+    status: "ACTIVE",
+    twoFactor: true,
+    lastLoginAt: hoursBefore(0.1),
+    authorSlug: "juliana-prado",
+  },
+  ...(
+    [
+      ["Ana Ribeiro", "ana.ribeiro", "REPORTER", "ACTIVE", false, 2, "ana-ribeiro"],
+      ["Carlos Menezes", "carlos.menezes", "REPORTER", "ACTIVE", true, 5, "carlos-menezes"],
+      ["Rafael Duarte", "rafael.duarte", "EDITOR", "ACTIVE", false, 26, "rafael-duarte"],
+      ["Marina Teixeira", "marina.teixeira", "AUTOR", "ACTIVE", false, 70, "marina-teixeira"],
+      ["Sandra Lopes", "sandra.lopes", "COMERCIAL", "ACTIVE", true, 30, undefined],
+      ["Lucas Ferreira", "lucas.ferreira", "REPORTER", "INVITED", false, undefined, undefined],
+      ["Tiago Nunes", "tiago.nunes", "REPORTER", "DISABLED", false, 24 * 40, "tiago-nunes"],
+    ] as const
+  ).map(([name, user, role, status, twoFactor, lastLoginHours, authorSlug], i) => ({
+    id: mockId(40, i + 2),
+    name,
+    email: `${user}@zonasulurgente.com.br`,
+    role,
+    status,
+    twoFactor,
+    lastLoginAt: lastLoginHours === undefined ? undefined : hoursBefore(lastLoginHours),
+    invitedAt: status === "INVITED" ? daysBefore(2) : undefined,
+    authorSlug,
+  })),
+];

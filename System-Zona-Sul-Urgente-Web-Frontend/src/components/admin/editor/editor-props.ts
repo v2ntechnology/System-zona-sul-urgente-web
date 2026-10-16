@@ -19,12 +19,17 @@ export async function loadEditorProps(): Promise<{
   ]);
   return {
     options: {
-      categories: categories.map((c) => ({
-        slug: c.slug,
-        name: c.name,
-        parentName: c.parent?.name,
-      })),
-      authors: authors.map((a) => ({ slug: a.slug, name: a.name })),
+      // Só itens ativos (desativados continuam nas matérias antigas, mas não são oferecidos).
+      categories: categories
+        .filter((c) => c.active !== false)
+        .map((c) => ({
+          slug: c.slug,
+          name: c.name,
+          parentName: c.parent?.name,
+        })),
+      authors: authors
+        .filter((a) => a.active !== false)
+        .map((a) => ({ slug: a.slug, name: a.name })),
       neighborhoods: neighborhoods.map((n) => ({ slug: n.slug, name: n.name })),
       tags: tags.map((t) => ({ slug: t.slug, name: t.name })),
     },

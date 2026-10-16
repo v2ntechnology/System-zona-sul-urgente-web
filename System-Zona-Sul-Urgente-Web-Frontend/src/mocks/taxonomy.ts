@@ -144,7 +144,15 @@ export const neighborhoods: Neighborhood[] = [
   zone: zones[0],
 }));
 
-// Repórteres fictícios.
+// Repórteres e colunistas fictícios.
+const authorBios: Record<string, string> = {
+  "ana-ribeiro": "Cobre segurança e cidade em Copacabana e Leme.",
+  "carlos-menezes": "Repórter de comunidade e serviços públicos.",
+  "juliana-prado": "Editora-chefe do Zona Sul Urgente.",
+  "rafael-duarte": "Trânsito, mobilidade e esporte de praia.",
+  redacao: "Textos assinados pela equipe do Zona Sul Urgente.",
+};
+
 export const authors: Author[] = [
   ["ana-ribeiro", "Ana Ribeiro", "Repórter"],
   ["carlos-menezes", "Carlos Menezes", "Repórter"],
@@ -152,7 +160,18 @@ export const authors: Author[] = [
   ["rafael-duarte", "Rafael Duarte", "Repórter"],
   ["redacao", "Redação Zona Sul Urgente", "Redação"],
   ...columnsMock.map(([, , slug, name]) => [slug, name, "Colunista"]),
-].map(([slug, name, role], i) => ({ id: mockId(4, i + 1), slug, name, role }));
+  // Ex-repórter: desativado (some do editor), mas continuaria assinando matérias antigas.
+  ["tiago-nunes", "Tiago Nunes", "Repórter"],
+].map(([slug, name, role], i) => ({
+  id: mockId(4, i + 1),
+  slug,
+  name,
+  role,
+  bio:
+    authorBios[slug] ??
+    (role === "Colunista" ? `Colunista do Zona Sul Urgente.` : "Ex-repórter do Zona Sul Urgente."),
+  active: slug !== "tiago-nunes",
+}));
 
 export const tags: Tag[] = [
   ["chuva", "Chuva"],

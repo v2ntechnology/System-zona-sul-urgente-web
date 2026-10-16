@@ -30,6 +30,7 @@ export type Permission =
   | "analytics.view"
   | "analytics.ads.view"
   | "users.manage"
+  | "authors.manage"
   | "settings.manage"
   | "audit.view";
 
@@ -302,4 +303,39 @@ export type CampaignDraft = {
   creatives: Partial<
     Record<AdSlotKey, { url: string; width: number; height: number; alt: string }>
   >;
+};
+
+// ---------------------------------------------------------------- equipe e autores (FE-159)
+
+export type MemberStatus = "ACTIVE" | "INVITED" | "DISABLED";
+
+/** Pessoa com acesso ao painel — GET /api/v1/admin/users. */
+export type TeamMember = {
+  id: UUID;
+  name: string;
+  email: string;
+  role: Role;
+  status: MemberStatus;
+  /** App autenticador configurado. Obrigatório para ADMIN, EDITOR e COMERCIAL. */
+  twoFactor: boolean;
+  lastLoginAt?: ISODateTime;
+  invitedAt?: ISODateTime;
+  /** Autor vinculado (assinatura nas matérias). */
+  authorSlug?: string;
+};
+
+/** Quem assina matérias — com login (equipe) ou sem (colaborador, "Redação", agência). */
+export type AuthorProfile = {
+  id: UUID;
+  slug: string;
+  name: string;
+  /** Cargo no crédito: "Repórter", "Colunista"... */
+  role: string;
+  bio: string;
+  photoUrl?: string;
+  instagram?: string;
+  active: boolean;
+  newsCount: number;
+  /** Pessoa da equipe dona deste perfil (sem = autor sem login). */
+  member?: { id: UUID; name: string };
 };

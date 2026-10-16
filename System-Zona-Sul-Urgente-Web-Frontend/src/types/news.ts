@@ -69,6 +69,9 @@ export type Author = {
   role: string;
   avatar?: MediaAsset;
   bio?: string;
+  /** Desativado: some do editor, mas segue assinando as matérias antigas. */
+  active?: boolean;
+  instagram?: string;
 };
 
 // ---------------------------------------------------------------- localização

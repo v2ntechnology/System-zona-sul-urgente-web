@@ -34,7 +34,8 @@ export const adminRoutes = {
   adSlots: "/admin/publicidade/posicoes",
   newCampaign: "/admin/publicidade/campanhas/nova",
   campaign: (id: string) => `/admin/publicidade/campanhas/${id}`,
-  users: "/admin/usuarios",
+  team: "/admin/equipe",
+  authors: "/admin/equipe/autores",
   designSystem: "/admin/design-system",
 } as const;
 
@@ -62,7 +63,13 @@ export const adminNav: AdminNavItem[] = [
     permission: "analytics.view",
   },
   { label: "Publicidade", href: adminRoutes.ads, icon: "ads", permission: "ads.manage" },
-  { label: "Usuários", href: adminRoutes.users, icon: "users", permission: "users.manage" },
+  {
+    label: "Equipe",
+    href: adminRoutes.team,
+    icon: "users",
+    // Editor cuida dos autores; a aba Equipe (acessos) é só do ADMIN (a página confere).
+    permission: "authors.manage",
+  },
 ];
 
 export const newNewsItem: AdminNavItem = {
@@ -85,7 +92,8 @@ export const adminSegmentLabels: Record<string, string> = {
   editorias: "Editorias",
   topicos: "Tópicos",
   posicoes: "Posições",
-  usuarios: "Usuários",
+  equipe: "Equipe",
+  autores: "Autores",
   "design-system": "Design system",
 };
 
