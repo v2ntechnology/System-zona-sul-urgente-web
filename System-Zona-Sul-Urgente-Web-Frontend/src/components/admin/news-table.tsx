@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { adminRoutes } from "@/config/admin-navigation";
 import { routes } from "@/config/navigation";
+import { formatShortDateTime } from "@/lib/format";
 import { sectionStyle } from "@/lib/section-color";
 import { cn } from "@/lib/utils";
 import type { AdminNewsRow } from "@/types/admin";
@@ -185,9 +186,7 @@ export function NewsTable({
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap text-muted-foreground">
                   {row.scheduledFor ? (
-                    <>
-                      para <RelativeTime iso={row.scheduledFor} />
-                    </>
+                    <ScheduledFor iso={row.scheduledFor} />
                   ) : (
                     <RelativeTime iso={row.updatedAt} />
                   )}
@@ -448,9 +447,7 @@ function Byline({ row, onDark }: { row: AdminNewsRow; onDark?: boolean }) {
       <span aria-hidden>·</span>
       <span className="shrink-0">
         {row.scheduledFor ? (
-          <>
-            para <RelativeTime iso={row.scheduledFor} />
-          </>
+          <ScheduledFor iso={row.scheduledFor} />
         ) : (
           <RelativeTime iso={row.deletedAt ?? row.updatedAt} />
         )}
@@ -566,5 +563,17 @@ function HeroCard({ row, actions }: { row: AdminNewsRow; actions: React.ReactNod
         <Byline row={row} onDark />
       </div>
     </article>
+  );
+}
+
+/**
+ * Horário marcado sempre como data e hora ("para 16/10 às 11:46"): o relativo virava
+ * "para há 1 min" quando o horário passava e a publicação automática ainda não tinha rodado.
+ */
+function ScheduledFor({ iso }: { iso: string }) {
+  return (
+    <time dateTime={iso} className="tabular-nums">
+      para {formatShortDateTime(iso)}
+    </time>
   );
 }
