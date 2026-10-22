@@ -11,7 +11,11 @@ const nextConfig: NextConfig = {
   // Fixado no build (inline): o painel inteiro decide igual, nas partes estáticas e nas
   // dinâmicas. Sem isso, páginas estáticas leriam o valor do build e as dinâmicas o do
   // servidor — o painel ficaria meio aberto, meio fechado.
-  env: { ADMIN_PREVIEW: process.env.ADMIN_PREVIEW ?? "" },
+  // MOCK_NOW=build (demonstração sem API): o "agora" dos dados de exemplo vira o momento do build.
+  env: {
+    ADMIN_PREVIEW: process.env.ADMIN_PREVIEW ?? "",
+    MOCK_NOW: process.env.MOCK_NOW === "build" ? new Date().toISOString() : "",
+  },
   images: {
     // Next 16 exige a lista de qualidades permitidas.
     qualities: [75],

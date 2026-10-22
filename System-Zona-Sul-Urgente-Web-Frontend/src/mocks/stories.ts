@@ -1,6 +1,6 @@
 import type { MediaAsset, WebStory } from "@/types/news";
 
-import { newsMock } from "@/mocks/news";
+import { MOCK_NOW, newsMock } from "@/mocks/news";
 import { findCategory, mockId } from "@/mocks/taxonomy";
 
 // Web Stories de exemplo (FE-009). Fotos verticais do picsum com semente fixa.
@@ -86,7 +86,7 @@ const seeds: Seed[] = [
   },
 ];
 
-const NOW = new Date("2026-10-15T15:00:00-03:00").getTime();
+const NOW = MOCK_NOW.getTime();
 
 export const storiesMock: WebStory[] = seeds.map((seed, i) => {
   const news = newsMock.find((n) => n.slug === seed.newsSlug);

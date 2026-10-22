@@ -21,8 +21,11 @@ const HOUR_WEIGHT = [
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 
-/** Meia-noite de hoje em Brasília. */
-export const TODAY_START = new Date("2026-10-15T00:00:00-03:00");
+/** Meia-noite de hoje em Brasília (UTC-3, sem horário de verão). */
+const BRASILIA_OFFSET = 3 * HOUR;
+export const TODAY_START = new Date(
+  Math.floor((MOCK_NOW.getTime() - BRASILIA_OFFSET) / DAY) * DAY + BRASILIA_OFFSET,
+);
 
 /** Visualizações por dia (61 dias até hoje; hoje é parcial). Crescimento leve + fim de semana fraco. */
 export const dailyViewsMock: { at: string; views: number }[] = (() => {

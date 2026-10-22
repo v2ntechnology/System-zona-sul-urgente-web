@@ -13,8 +13,11 @@ import {
 // Nunca importar em componentes: use os services.
 // Fotos: picsum.photos com semente fixa (sempre a mesma foto por notícia, mas genérica).
 
-/** "Agora" fixo dos mocks, para os dados não mudarem a cada build. */
-export const MOCK_NOW = new Date("2026-10-15T15:00:00-03:00");
+/**
+ * "Agora" dos mocks: fixo, para os dados não mudarem a cada build. Com `MOCK_NOW=build`
+ * (demonstração), o next.config fixa aqui o momento do build e as notícias parecem recentes.
+ */
+export const MOCK_NOW = new Date(process.env.MOCK_NOW || "2026-10-15T15:00:00-03:00");
 
 type Seed = {
   slug: string;

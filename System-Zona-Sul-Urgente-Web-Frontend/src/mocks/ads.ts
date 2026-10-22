@@ -1,5 +1,6 @@
 import type { AdSlot, AdSlotKey, Advertisement } from "@/types/news";
 
+import { MOCK_NOW } from "@/mocks/news";
 import { mockId } from "@/mocks/taxonomy";
 
 // Dados de exemplo (FE-009). Tamanhos no padrão IAB; o primeiro de cada slot reserva o espaço.
@@ -80,8 +81,8 @@ export const adsMock: Advertisement[] = [
       alt: "Anúncio: Academia Orla Fit, primeira semana grátis",
     },
     clickUrl: "https://example.com/orla-fit",
-    startsAt: "2026-10-01T00:00:00-03:00",
-    endsAt: "2026-10-31T23:59:59-03:00",
+    startsAt: new Date(MOCK_NOW.getTime() - 14 * 86_400_000).toISOString(),
+    endsAt: new Date(MOCK_NOW.getTime() + 16 * 86_400_000).toISOString(),
   },
 ];
 
