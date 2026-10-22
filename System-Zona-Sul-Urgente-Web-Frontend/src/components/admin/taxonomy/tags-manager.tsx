@@ -223,7 +223,7 @@ export function TagsManager({ initial, canCreate }: { initial: ManagedTag[]; can
         {message?.text}
       </p>
 
-      <div className="overflow-x-auto rounded-xl border bg-background shadow-xs">
+      <div className="relative overflow-x-auto rounded-xl border bg-background shadow-xs">
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/60 text-left text-xs text-muted-foreground uppercase">
             <tr>

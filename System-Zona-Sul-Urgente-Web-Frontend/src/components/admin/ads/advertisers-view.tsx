@@ -86,7 +86,7 @@ export function AdvertisersView({ advertisers: initial }: { advertisers: Adverti
         {message}
       </p>
 
-      <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {advertisers.map((a) => {
           const initials = a.name
             .split(" ")

@@ -134,7 +134,7 @@ async function Report({ searchParams }: { searchParams: Promise<Params> }) {
 
       <div className="grid gap-6 xl:grid-cols-3">
         <Panel title="Mais lidas no período" className="xl:col-span-2">
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/60 text-left text-xs text-muted-foreground uppercase">
                 <tr>
@@ -212,7 +212,7 @@ async function Report({ searchParams }: { searchParams: Promise<Params> }) {
 
       {ads ? (
         <Panel title="Publicidade: desempenho por posição">
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/60 text-left text-xs text-muted-foreground uppercase">
                 <tr>

@@ -29,15 +29,16 @@ function ActiveTabs({ label, tabs }: { label: string; tabs: SectionTab[] }) {
 
 function TabsList({ label, tabs, active }: { label: string; tabs: SectionTab[]; active?: string }) {
   return (
-    <nav aria-label={label} className="border-b">
-      <ul className="-mb-px flex gap-1">
+    // Rola de lado quando as abas não cabem (celular estreito), como o FilterTabs.
+    <nav aria-label={label} className="-mx-1 [scrollbar-width:none] overflow-x-auto border-b">
+      <ul className="flex gap-1 px-1">
         {tabs.map((tab) => (
           <li key={tab.href}>
             <Link
               href={tab.href}
               aria-current={tab.href === active ? "page" : undefined}
               className={cn(
-                "inline-flex border-b-2 px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition",
+                "-mb-px inline-flex border-b-2 px-3 py-2.5 text-sm font-semibold whitespace-nowrap transition",
                 tab.href === active
                   ? "border-brand-red text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground",

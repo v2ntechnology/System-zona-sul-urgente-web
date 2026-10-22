@@ -140,7 +140,7 @@ export function AuthorsManager({ initial }: { initial: AuthorProfile[] }) {
         {message?.text}
       </p>
 
-      <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {authors.map((a) => {
           const initials = a.name
             .split(" ")

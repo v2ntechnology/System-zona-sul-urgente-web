@@ -131,7 +131,7 @@ export function NewsTable({
       {/* Lista — desktop: tabela. */}
       <div
         className={cn(
-          "hidden overflow-x-auto rounded-lg border bg-background",
+          "relative hidden overflow-x-auto rounded-lg border bg-background",
           view === "list" && "lg:block",
         )}
       >
@@ -379,7 +379,8 @@ function CardsView({ rows, hero, actions }: CardsViewProps) {
   return (
     <div className="flex flex-col gap-5">
       {lead && <HeroCard row={lead} actions={actions(lead)} />}
-      <ul className="grid gap-5 sm:grid-cols-2 2xl:grid-cols-3">
+      {/* grid-cols-1: sem ele, a coluna cresce até o conteúdo do card e a página rola de lado. */}
+      <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 2xl:grid-cols-3">
         {rest.map((row) =>
           row ? (
             <li key={row.id}>

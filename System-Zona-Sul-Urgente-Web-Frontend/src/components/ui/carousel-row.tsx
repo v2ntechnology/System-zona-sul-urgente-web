@@ -66,7 +66,9 @@ export function CarouselRow({
       <div
         ref={trackRef}
         className={cn(
-          "-mx-4 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-5 overflow-x-auto px-4 pb-2",
+          // `relative`: elementos absolutos dos itens (ex.: sr-only) ficam presos à trilha.
+          // Sem isso eles escapam do overflow e a página inteira rola de lado no celular.
+          "relative -mx-4 flex snap-x snap-mandatory scroll-px-4 [scrollbar-width:none] gap-5 overflow-x-auto px-4 pb-2",
           trackClassName,
         )}
       >
