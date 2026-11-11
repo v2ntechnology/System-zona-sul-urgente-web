@@ -33,6 +33,11 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  {
+    // Testes de ponta a ponta (Playwright): o `use` das fixtures não é o hook do React.
+    files: ["e2e/**"],
+    rules: { "react-hooks/rules-of-hooks": "off" },
+  },
   // Desliga regras de estilo que conflitam com o Prettier (deve ficar por último).
   prettier,
   // Override default ignores of eslint-config-next.
@@ -42,6 +47,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Saídas do Playwright (QA-002).
+    "test-results/**",
+    "playwright-report/**",
+    "blob-report/**",
   ]),
 ]);
 

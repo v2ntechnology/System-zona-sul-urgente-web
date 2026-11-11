@@ -400,6 +400,8 @@ export function NewsEditor({ initial, options, permissions }: NewsEditorProps) {
             type="button"
             onClick={() => setPreview((v) => !v)}
             aria-pressed={preview}
+            // No celular o texto some (só o ícone): o nome acessível vem daqui.
+            aria-label={preview ? "Editar" : "Pré-visualizar"}
             className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-muted-foreground hover:bg-muted hover:text-foreground aria-pressed:bg-muted aria-pressed:text-foreground"
           >
             {preview ? (
