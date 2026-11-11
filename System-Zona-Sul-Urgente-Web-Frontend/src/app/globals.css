@@ -116,6 +116,14 @@
   --brand-sky: #38b8ff;
   --brand-sky-light: #e3f4ff;
 
+  /* Mascote do microfone (páginas de erro e "em construção"): metal da cabeça, grade, rosto. */
+  --mascot-metal: #e6ebf2;
+  --mascot-metal-shade: #b3bfd1;
+  --mascot-grille: #8796ad;
+  --mascot-ink: #13233d;
+  --mascot-blush: #ff9aa8;
+  --mascot-shadow: rgb(1 36 79 / 0.16);
+
   --background: #ffffff;
   --foreground: #111111;
   --card: #ffffff;
@@ -251,6 +259,89 @@ html {
 }
 html::-webkit-scrollbar {
   display: none;
+}
+
+/* Mascote do microfone: flutua, pisca, solta ondas de som. Parado com "reduzir movimento". */
+@keyframes mascot-float {
+  50% {
+    transform: translateY(-8px);
+  }
+}
+@keyframes mascot-shadow {
+  50% {
+    transform: scaleX(0.82);
+    opacity: 0.6;
+  }
+}
+@keyframes mascot-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+@keyframes mascot-wave {
+  0% {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+@keyframes mascot-scratch {
+  50% {
+    transform: rotate(-10deg);
+  }
+}
+@keyframes mascot-bob {
+  50% {
+    transform: translateY(-6px) rotate(8deg);
+  }
+}
+.mascot-float {
+  animation: mascot-float 3.2s ease-in-out infinite;
+}
+.mascot-shadow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mascot-shadow 3.2s ease-in-out infinite;
+}
+.mascot-blink {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mascot-blink 4.5s infinite;
+}
+.mascot-wave {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mascot-wave 2.4s ease-out infinite;
+}
+.mascot-wave-late {
+  animation-delay: 1.2s;
+}
+.mascot-scratch {
+  transform-box: view-box;
+  transform-origin: 136px 168px;
+  animation: mascot-scratch 1.6s ease-in-out infinite;
+}
+.mascot-bob {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: mascot-bob 2.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mascot,
+  .mascot * {
+    animation: none !important;
+  }
 }
 
 /* Faixa de urgentes: letreiro contínuo (a lista vem duplicada no HTML). */

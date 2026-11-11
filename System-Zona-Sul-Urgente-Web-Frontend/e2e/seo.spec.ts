@@ -14,7 +14,12 @@ test.describe("status HTTP", () => {
   test("404 mostra a página de não encontrado", async ({ page }) => {
     const response = await page.goto("/editoria-que-nao-existe");
     expect(response?.status()).toBe(404);
-    await expect(page.getByRole("heading", { name: "Página não encontrada" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Ops! Essa notícia sumiu do mapa" }),
+    ).toBeVisible();
+    // Mascote (SVG com nome acessível) e caminho de volta.
+    await expect(page.getByRole("img", { name: /Microfone do Zona Sul Urgente/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Voltar para a página inicial" })).toBeVisible();
   });
 
   test("matéria na editoria errada redireciona com 308 para a URL certa", async ({ request }) => {

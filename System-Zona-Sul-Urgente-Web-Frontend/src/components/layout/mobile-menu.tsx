@@ -39,7 +39,7 @@ export function MobileMenu() {
         side="left"
         initialFocus={topRef}
         // X de fechar fica sobre a faixa azul: branco para ter contraste.
-        className="gap-0 overflow-y-auto p-0 [&>[data-slot=sheet-close]]:text-white [&>[data-slot=sheet-close]]:hover:bg-white/10"
+        className="[scrollbar-width:none] gap-0 overflow-y-auto p-0 [&::-webkit-scrollbar]:hidden [&>[data-slot=sheet-close]]:text-white [&>[data-slot=sheet-close]]:hover:bg-white/10"
       >
         <div ref={topRef} tabIndex={-1} className="bg-masthead p-4 outline-none">
           <SheetTitle className="sr-only">Menu</SheetTitle>

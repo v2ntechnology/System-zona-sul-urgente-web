@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
+import { ComingSoon } from "@/components/admin/coming-soon";
 import { BrandLogo } from "@/components/brand/brand-logo";
+import { MicMascot, type MascotMood } from "@/components/brand/mic-mascot";
 import { Kicker, SponsoredBadge, UrgentBadge } from "@/components/news/news-badges";
 import { Button } from "@/components/ui/button";
 
@@ -111,6 +113,28 @@ export default function DesignSystemPage() {
           </div>
           <BrandLogo variant="badge" className="text-[0.6rem]" />
         </div>
+      </Section>
+
+      <Section title="Mascote (páginas de erro e em construção)">
+        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {(
+            [
+              ["lost", "Perdido (404)"],
+              ["error", "Deu erro"],
+              ["building", "Em construção"],
+              ["sleepy", "Cochilando"],
+            ] as [MascotMood, string][]
+          ).map(([mood, label]) => (
+            <li
+              key={mood}
+              className="flex flex-col items-center gap-2 rounded-lg bg-brand-sky-light p-4"
+            >
+              <MicMascot mood={mood} className="w-28" />
+              <span className="text-sm font-semibold">{label}</span>
+            </li>
+          ))}
+        </ul>
+        <ComingSoon title="Exemplo: área ainda não construída" item="FE-000" />
       </Section>
 
       <Section title="Cores">

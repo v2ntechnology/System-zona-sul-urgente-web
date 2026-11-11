@@ -1,6 +1,6 @@
 "use client";
 
-import { XIcon } from "lucide-react";
+import { Loader2Icon, XIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // Abre os Web Stories dentro do site com o player oficial do AMP (amp-story-player), como a
@@ -24,6 +24,21 @@ declare global {
 }
 
 let playerScript: Promise<void> | null = null;
+let warmed = false;
+
+/** Abre a conexão com o CDN do AMP e baixa o player antes do clique (abre na hora). */
+function warmUp() {
+  if (warmed) return;
+  warmed = true;
+  for (const rel of ["preconnect", "dns-prefetch"]) {
+    const link = document.createElement("link");
+    link.rel = rel;
+    link.href = "https://cdn.ampproject.org";
+    if (rel === "preconnect") link.crossOrigin = "anonymous";
+    document.head.append(link);
+  }
+  loadPlayerAssets().catch(() => {});
+}
 
 function loadPlayerAssets(): Promise<void> {
   if (window.AmpStoryPlayer) return Promise.resolve();
@@ -52,8 +67,27 @@ type StoryPlayerProps = {
 
 export function StoryPlayer({ stories, children }: StoryPlayerProps) {
   const [openUrl, setOpenUrl] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
   const mountRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
+
+  // A faixa de stories chegou perto da tela: baixa o player com antecedência.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || !("IntersectionObserver" in window)) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          warmUp();
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "400px" },
+    );
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, []);
 
   const close = useCallback(() => {
     setOpenUrl(null);
@@ -74,6 +108,7 @@ export function StoryPlayer({ stories, children }: StoryPlayerProps) {
     if (!link) return;
     event.preventDefault();
     triggerRef.current = link;
+    setReady(false);
     setOpenUrl(link.dataset.storyUrl ?? null);
   }
 
@@ -112,7 +147,10 @@ export function StoryPlayer({ stories, children }: StoryPlayerProps) {
         player.addEventListener("amp-story-player-close", close);
         // O player identifica cada story pela URL absoluta do <a> (a.href).
         const target = new URL(openUrl, window.location.href).href;
-        const showClicked = () => player.show(target, null, { animate: false });
+        const showClicked = () => {
+          player.show(target, null, { animate: false });
+          if (!cancelled) setReady(true);
+        };
         if (player.isReady) showClicked();
         else player.addEventListener("ready", showClicked, { once: true });
       })
@@ -130,7 +168,12 @@ export function StoryPlayer({ stories, children }: StoryPlayerProps) {
   }, [openUrl, stories, close]);
 
   return (
-    <div onClickCapture={onClickCapture}>
+    <div
+      ref={rootRef}
+      onClickCapture={onClickCapture}
+      onPointerOver={warmUp}
+      onFocusCapture={warmUp}
+    >
       {children}
       {openUrl && (
         <div
@@ -140,9 +183,14 @@ export function StoryPlayer({ stories, children }: StoryPlayerProps) {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
           onClick={(event) => event.target === event.currentTarget && close()}
         >
+          {!ready && (
+            <p className="absolute inset-0 flex items-center justify-center gap-2 text-sm text-white/80">
+              <Loader2Icon aria-hidden className="size-5 animate-spin" /> Abrindo webstory…
+            </p>
+          )}
           <div
             ref={mountRef}
-            className="h-full w-full sm:h-[min(90vh,800px)] sm:w-[calc(min(90vh,800px)*9/16)] sm:overflow-hidden sm:rounded-xl"
+            className="relative h-full w-full sm:h-[min(90vh,800px)] sm:w-[calc(min(90vh,800px)*9/16)] sm:overflow-hidden sm:rounded-xl"
           />
           <button
             type="button"

@@ -6,10 +6,12 @@ import { cn } from "@/lib/utils";
 import type { WebStory } from "@/types/news";
 
 // Card vertical de Web Story (estilo CNN). Link com <a>: a story é uma página AMP fora do app.
+// O card inteiro é clicável: o after:inset-0 do link se estica até a caixa da foto (relative).
+// Por isso o bloco do texto NÃO é posicionado (fica no fim por flex; z-index vale em item flex).
 export function StoryCard({ story, className }: { story: WebStory; className?: string }) {
   return (
     <article className={cn("group relative w-44 shrink-0 snap-start sm:w-52", className)}>
-      <div className="relative aspect-[9/16] overflow-hidden rounded-lg bg-brand-blue-dark">
+      <div className="relative flex aspect-[9/16] flex-col justify-end overflow-hidden rounded-lg bg-brand-blue-dark ring-brand-sky ring-offset-2 has-[a:focus-visible]:ring-2">
         <RemoteImage
           src={story.cover.url}
           alt={story.cover.alt}
@@ -24,7 +26,7 @@ export function StoryCard({ story, className }: { story: WebStory; className?: s
             <span key={i} className="h-0.5 flex-1 rounded-full bg-white/70" />
           ))}
         </div>
-        <div className="absolute inset-x-0 bottom-0 flex flex-col gap-2 p-4">
+        <div className="z-10 flex flex-col gap-2 p-4">
           <span
             style={sectionStyle(story.category)}
             className="self-start bg-[color:var(--section)] px-1.5 py-0.5 text-[0.625rem] font-bold tracking-wide text-white uppercase"
@@ -35,7 +37,7 @@ export function StoryCard({ story, className }: { story: WebStory; className?: s
             <a
               href={routes.story(story.slug)}
               data-story-url={routes.story(story.slug)}
-              className="group-hover:underline after:absolute after:inset-0"
+              className="outline-none group-hover:underline after:absolute after:inset-0"
             >
               {story.title}
             </a>
