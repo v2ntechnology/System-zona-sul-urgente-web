@@ -1,3 +1,4 @@
+import { CookieConsent } from "@/components/layout/cookie-consent";
 import { SectionsProvider } from "@/components/layout/sections-context";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -15,6 +16,7 @@ export default async function PublicLayout({ children }: LayoutProps<"/">) {
         {children}
       </main>
       <SiteFooter sections={sections} />
+      <CookieConsent />
     </SectionsProvider>
   );
 }

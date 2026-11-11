@@ -61,7 +61,7 @@ export async function AdSlot({ slotKey, className, contained }: AdSlotProps) {
             />
           </a>
         ) : ad?.type === "ADSENSE" ? (
-          // Integração AdSense entra com o consentimento de cookies (ARCHITECTURE §16).
+          // Bloco do AdSense: o script só carrega após o aceite de cookies (CookieConsent, FE-122).
           <div data-ad-unit={ad.adUnitId} className="size-full" />
         ) : (
           <span className="px-2 text-center text-xs text-muted-foreground">

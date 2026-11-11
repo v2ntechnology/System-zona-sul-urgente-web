@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { BrandLogo } from "@/components/brand/brand-logo";
+import { CookiePreferencesButton } from "@/components/layout/cookie-consent";
 import {
   institutional,
   neighborhoods,
@@ -59,9 +60,10 @@ export function SiteFooter({ sections }: { sections: SiteSection[] }) {
         </div>
       </div>
       <div className="border-t border-white/15">
-        <p className="mx-auto max-w-site px-4 py-4 text-xs text-white/70">
-          © {siteConfig.name}. Todos os direitos reservados.
-        </p>
+        <div className="mx-auto flex max-w-site flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-4 text-xs text-white/70">
+          <p>© {siteConfig.name}. Todos os direitos reservados.</p>
+          <CookiePreferencesButton className="underline-offset-2 hover:text-white hover:underline" />
+        </div>
       </div>
     </footer>
   );
