@@ -83,7 +83,10 @@ async function Profile({ searchParams }: { searchParams: Promise<Params> }) {
   if (!can(user.role, "instagram.review")) notFound();
 
   const pending = (counts.NEW ?? 0) + (counts.ERROR ?? 0) + (counts.CHANGED_AT_SOURCE ?? 0);
-  const tokenWarning = connection.tokenDaysLeft < 10;
+  const tokenWarning = connection !== null && connection.tokenDaysLeft < 10;
+  // Sem conexão pela API da Meta (BE-013), o perfil é o do site e os posts entram à mão.
+  const username =
+    connection?.username ?? siteConfig.social.instagram.replace(/^.*instagram\.com\/|\/$/g, "");
   const href = (overrides: { status?: string; visao?: string }) => {
     const qs = new URLSearchParams(
       Object.entries({ status, visao: view === "list" ? "fila" : undefined, ...overrides }).filter(
@@ -102,10 +105,16 @@ async function Profile({ searchParams }: { searchParams: Promise<Params> }) {
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <h1 className="text-xl font-normal">{connection.username}</h1>
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800">
-              <span aria-hidden className="size-1.5 rounded-full bg-emerald-600" /> Conectada
-            </span>
+            <h1 className="text-xl font-normal">{username}</h1>
+            {connection ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800">
+                <span aria-hidden className="size-1.5 rounded-full bg-emerald-600" /> Conectada
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900">
+                <span aria-hidden className="size-1.5 rounded-full bg-amber-600" /> Não conectada
+              </span>
+            )}
             <a
               href={siteConfig.social.instagram}
               target="_blank"
@@ -131,31 +140,40 @@ async function Profile({ searchParams }: { searchParams: Promise<Params> }) {
           </ul>
           <div className="flex flex-col gap-0.5 text-sm">
             <p className="font-semibold">Zona Sul Urgente</p>
-            <p className="flex items-start gap-1.5 text-muted-foreground">
-              <RefreshCwIcon aria-hidden className="mt-1 size-3.5 shrink-0" />
-              <span>
-                Verifica posts novos a cada {connection.pollMinutes} min · última{" "}
-                <RelativeTime iso={connection.lastCheckAt} />
-              </span>
-            </p>
-            <p
-              className={cn(
-                "flex items-start gap-1.5",
-                tokenWarning ? "font-semibold text-red-700" : "text-muted-foreground",
-              )}
-            >
-              {tokenWarning ? (
-                <AlertTriangleIcon aria-hidden className="mt-1 size-3.5 shrink-0" />
-              ) : (
-                <KeyRoundIcon aria-hidden className="mt-1 size-3.5 shrink-0" />
-              )}
-              <span>Acesso válido por {connection.tokenDaysLeft} dias (renova sozinho)</span>
-            </p>
-            <p className="text-muted-foreground">
-              {connection.publishRule === "DRAFT"
-                ? "Cada post vira uma notícia em rascunho automaticamente."
-                : "Urgentes publicam sozinhas; o resto vira rascunho."}
-            </p>
+            {connection ? (
+              <>
+                <p className="flex items-start gap-1.5 text-muted-foreground">
+                  <RefreshCwIcon aria-hidden className="mt-1 size-3.5 shrink-0" />
+                  <span>
+                    Verifica posts novos a cada {connection.pollMinutes} min · última{" "}
+                    <RelativeTime iso={connection.lastCheckAt} />
+                  </span>
+                </p>
+                <p
+                  className={cn(
+                    "flex items-start gap-1.5",
+                    tokenWarning ? "font-semibold text-red-700" : "text-muted-foreground",
+                  )}
+                >
+                  {tokenWarning ? (
+                    <AlertTriangleIcon aria-hidden className="mt-1 size-3.5 shrink-0" />
+                  ) : (
+                    <KeyRoundIcon aria-hidden className="mt-1 size-3.5 shrink-0" />
+                  )}
+                  <span>Acesso válido por {connection.tokenDaysLeft} dias (renova sozinho)</span>
+                </p>
+                <p className="text-muted-foreground">
+                  {connection.publishRule === "DRAFT"
+                    ? "Cada post vira uma notícia em rascunho automaticamente."
+                    : "Urgentes publicam sozinhas; o resto vira rascunho."}
+                </p>
+              </>
+            ) : (
+              <p className="text-muted-foreground">
+                A conta ainda não está ligada pela API da Meta. Adicione posts pelo botão “Adicionar
+                post”: a IA transforma cada um em rascunho de notícia.
+              </p>
+            )}
           </div>
         </div>
       </header>

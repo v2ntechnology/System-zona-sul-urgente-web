@@ -8,7 +8,9 @@ import {
   FileTextIcon,
   GalleryHorizontalIcon,
   GitCompareIcon,
+  Loader2Icon,
   PlayIcon,
+  PlusIcon,
   RotateCwIcon,
   SparklesIcon,
   XIcon,
@@ -17,7 +19,14 @@ import {
 import { Dialog } from "@base-ui/react/dialog";
 import { RemoteImage } from "@/components/media/remote-image";
 import Link from "next/link";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createContext, useContext, useState, useTransition } from "react";
+
+import {
+  addInstagramPost,
+  runInstagramAction,
+  type InstagramAction,
+} from "@/app/admin/(painel)/instagram/actions";
 
 import {
   InstagramStatusBadge,
@@ -37,7 +46,10 @@ import { cn } from "@/lib/utils";
 import { diffWords } from "@/lib/word-diff";
 import type { InstagramImportStatus, InstagramPost } from "@/types/admin";
 
-type Action = "generate" | "ignore" | "reprocess" | "acknowledge" | "restore";
+type Action = InstagramAction;
+
+/** Post com ação em andamento (a IA leva alguns segundos): botões dele ficam desativados. */
+const BusyContext = createContext<string | null>(null);
 
 const actionResult: Record<Action, { status: InstagramImportStatus; message: string }> = {
   generate: { status: "IMPORTED", message: "enviado para a IA gerar o rascunho" },
@@ -48,12 +60,13 @@ const actionResult: Record<Action, { status: InstagramImportStatus; message: str
 };
 
 const button =
-  "inline-flex h-8 items-center gap-1.5 rounded-md border bg-background px-3 text-xs font-semibold transition hover:border-brand-blue hover:text-brand-blue";
+  "inline-flex h-8 items-center gap-1.5 rounded-md border bg-background px-3 text-xs font-semibold transition hover:border-brand-blue hover:text-brand-blue disabled:pointer-events-none disabled:opacity-60";
 const primaryButton =
-  "inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground transition hover:bg-brand-blue-dark";
+  "inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground transition hover:bg-brand-blue-dark disabled:pointer-events-none disabled:opacity-70";
 
-// Fila de importação (FE-155). Sem backend, as ações só atualizam a tela (simulação); com a
-// API: POST /api/v1/admin/instagram/posts/{id}/{generate|ignore|reprocess|acknowledge}.
+// Fila de importação (FE-155). Com a API, as ações vão para actions.ts (POST
+// /api/v1/admin/instagram/posts/{id}/...) e "Gerar" cria a notícia em rascunho com a IA; sem
+// backend, só atualizam a tela (simulação).
 export function InstagramQueue({
   posts: initialPosts,
   userName,
@@ -69,8 +82,11 @@ export function InstagramQueue({
   const [comparing, setComparing] = useState<InstagramPost | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const opened = posts.find((p) => p.id === openId) ?? null;
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [, startTransition] = useTransition();
+  const router = useRouter();
 
-  function apply(post: InstagramPost, action: Action) {
+  function simulate(post: InstagramPost, action: Action) {
     const result = actionResult[action];
     setPosts((current) =>
       current.map((p) =>
@@ -84,20 +100,36 @@ export function InstagramQueue({
           : p,
       ),
     );
-    setComparing(null);
     setMessage(`Post ${result.message} (simulação — sem backend conectado).`);
   }
 
-  if (posts.length === 0) {
-    return (
-      <p className="rounded-lg border bg-background px-4 py-12 text-center text-sm text-muted-foreground">
-        Nenhum post neste filtro.
-      </p>
-    );
+  function apply(post: InstagramPost, action: Action) {
+    if (busyId) return;
+    const ai = action === "generate" || action === "reprocess";
+    setBusyId(post.id);
+    setComparing(null);
+    setMessage(ai ? "Gerando o rascunho com a IA… pode levar alguns segundos." : "");
+    startTransition(async () => {
+      const result = await runInstagramAction(post.id, action);
+      setBusyId(null);
+      if (!result.ok && result.message === "simulated") return simulate(post, action);
+      if (!result.ok) return setMessage(result.message);
+      setPosts((current) => current.map((p) => (p.id === post.id ? result.post : p)));
+      setMessage(doneMessage(action, result.post));
+      router.refresh(); // contagens do cabeçalho e do menu
+    });
+  }
+
+  function added(post: InstagramPost) {
+    setPosts((current) => [post, ...current.filter((p) => p.id !== post.id)]);
+    setMessage("Post adicionado à fila. Clique em “Gerar agora” para a IA escrever o rascunho.");
+    router.refresh();
   }
 
   return (
-    <>
+    <BusyContext.Provider value={busyId}>
+      <AddPostForm onAdded={added} />
+
       <p
         aria-live="polite"
         className={
@@ -107,7 +139,11 @@ export function InstagramQueue({
         {message}
       </p>
 
-      {view === "grid" ? (
+      {posts.length === 0 ? (
+        <p className="rounded-lg border bg-background px-4 py-12 text-center text-sm text-muted-foreground">
+          Nenhum post neste filtro.
+        </p>
+      ) : view === "grid" ? (
         <ul className="grid grid-cols-3 gap-1 sm:gap-1.5">
           {posts.map((post) => (
             <li key={post.id}>
@@ -151,7 +187,126 @@ export function InstagramQueue({
           {comparing && <Comparison post={comparing} onAction={apply} />}
         </SheetContent>
       </Sheet>
-    </>
+    </BusyContext.Provider>
+  );
+}
+
+function doneMessage(action: Action, post: InstagramPost): string {
+  if (action === "generate" || action === "reprocess") {
+    return post.status === "ERROR"
+      ? `A IA não conseguiu gerar o rascunho: ${post.error ?? "erro desconhecido"}`
+      : "Rascunho criado. Abra a notícia para revisar antes de publicar.";
+  }
+  return {
+    ignore: "Post ignorado.",
+    restore: "Post voltou para a fila.",
+    acknowledge: "Marcado como revisado.",
+  }[action];
+}
+
+const field =
+  "w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:opacity-60";
+
+/**
+ * Post colado à mão (link + legenda) enquanto a conta não está conectada pela API da Meta. Sem
+ * backend, entra só na tela.
+ */
+function AddPostForm({ onAdded }: { onAdded: (post: InstagramPost) => void }) {
+  const [open, setOpen] = useState(false);
+  const [url, setUrl] = useState("");
+  const [caption, setCaption] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [pending, startTransition] = useTransition();
+
+  function submit(event: React.FormEvent) {
+    event.preventDefault();
+    startTransition(async () => {
+      const result = await addInstagramPost({ url, caption });
+      if (!result.ok && result.message === "simulated") {
+        onAdded({
+          id: `simulado-${Date.now()}`,
+          caption,
+          permalink: url,
+          mediaType: "IMAGE",
+          mediaCount: 1,
+          postedAt: new Date().toISOString(),
+          status: "NEW",
+        });
+      } else if (!result.ok) {
+        return setErrors(result.errors ?? { form: result.message });
+      } else {
+        onAdded(result.post);
+      }
+      setUrl("");
+      setCaption("");
+      setErrors({});
+      setOpen(false);
+    });
+  }
+
+  if (!open) {
+    return (
+      <button type="button" className={cn(button, "self-start")} onClick={() => setOpen(true)}>
+        <PlusIcon aria-hidden className="size-3.5" /> Adicionar post
+      </button>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      className="flex flex-col gap-3 rounded-lg border bg-background p-4 shadow-xs"
+      aria-label="Adicionar post do Instagram"
+    >
+      <p className="text-sm text-muted-foreground">
+        Enquanto a conta não está conectada, cole o link e a legenda de um post. A IA transforma em
+        rascunho de notícia.
+      </p>
+      <label className="flex flex-col gap-1.5 text-sm font-semibold">
+        Link do post
+        <input
+          type="url"
+          required
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://www.instagram.com/p/..."
+          className={cn(field, "h-10", errors.url && "border-destructive")}
+          disabled={pending}
+          aria-invalid={Boolean(errors.url)}
+        />
+        {errors.url && <span className="text-xs font-normal text-destructive">{errors.url}</span>}
+      </label>
+      <label className="flex flex-col gap-1.5 text-sm font-semibold">
+        Legenda
+        <textarea
+          required
+          rows={6}
+          maxLength={2200}
+          value={caption}
+          onChange={(e) => setCaption(e.target.value)}
+          className={cn(field, "py-2 font-normal", errors.caption && "border-destructive")}
+          disabled={pending}
+          aria-invalid={Boolean(errors.caption)}
+        />
+        {errors.caption && (
+          <span className="text-xs font-normal text-destructive">{errors.caption}</span>
+        )}
+      </label>
+      {errors.form && <p className="text-sm text-destructive">{errors.form}</p>}
+      <div className="flex gap-2">
+        <button type="submit" className={primaryButton} disabled={pending}>
+          {pending ? (
+            <Loader2Icon aria-hidden className="size-3.5 animate-spin" />
+          ) : (
+            <PlusIcon aria-hidden className="size-3.5" />
+          )}
+          Adicionar à fila
+        </button>
+        <button type="button" className={button} onClick={() => setOpen(false)} disabled={pending}>
+          Cancelar
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -238,8 +393,16 @@ function Actions({
   onAction: (post: InstagramPost, action: Action) => void;
   onCompare: () => void;
 }) {
+  const busyId = useContext(BusyContext);
+  const busy = busyId === post.id;
+  const disabled = busyId !== null;
   const ignore = (
-    <button type="button" className={button} onClick={() => onAction(post, "ignore")}>
+    <button
+      type="button"
+      className={button}
+      disabled={disabled}
+      onClick={() => onAction(post, "ignore")}
+    >
       <BanIcon aria-hidden className="size-3.5" /> Ignorar
     </button>
   );
@@ -256,9 +419,15 @@ function Actions({
           <button
             type="button"
             className={primaryButton}
+            disabled={disabled}
             onClick={() => onAction(post, "generate")}
           >
-            <SparklesIcon aria-hidden className="size-3.5" /> Gerar agora
+            {busy ? (
+              <Loader2Icon aria-hidden className="size-3.5 animate-spin" />
+            ) : (
+              <SparklesIcon aria-hidden className="size-3.5" />
+            )}
+            {busy ? "Gerando rascunho…" : "Gerar agora"}
           </button>
           {ignore}
         </>
@@ -269,9 +438,15 @@ function Actions({
           <button
             type="button"
             className={primaryButton}
+            disabled={disabled}
             onClick={() => onAction(post, "reprocess")}
           >
-            <RotateCwIcon aria-hidden className="size-3.5" /> Reprocessar
+            {busy ? (
+              <Loader2Icon aria-hidden className="size-3.5 animate-spin" />
+            ) : (
+              <RotateCwIcon aria-hidden className="size-3.5" />
+            )}
+            {busy ? "Gerando rascunho…" : "Reprocessar"}
           </button>
           <Link href={adminRoutes.newNews} className={button}>
             <FileTextIcon aria-hidden className="size-3.5" /> Criar manualmente
@@ -285,14 +460,24 @@ function Actions({
           <button type="button" className={primaryButton} onClick={onCompare}>
             <GitCompareIcon aria-hidden className="size-3.5" /> Ver o que mudou
           </button>
-          <button type="button" className={button} onClick={() => onAction(post, "acknowledge")}>
+          <button
+            type="button"
+            className={button}
+            disabled={disabled}
+            onClick={() => onAction(post, "acknowledge")}
+          >
             <CheckIcon aria-hidden className="size-3.5" /> Marcar como revisado
           </button>
         </>
       );
     case "IGNORED":
       return (
-        <button type="button" className={button} onClick={() => onAction(post, "restore")}>
+        <button
+          type="button"
+          className={button}
+          disabled={disabled}
+          onClick={() => onAction(post, "restore")}
+        >
           <RotateCwIcon aria-hidden className="size-3.5" /> Importar mesmo assim
         </button>
       );

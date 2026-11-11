@@ -72,6 +72,19 @@ public class AdminNewsService {
 	/** Cria (id nulo) ou atualiza uma notícia a partir do editor. */
 	@Transactional
 	public SaveResult save(UUID id, NewsDraft draft, String intent, AuthenticatedUser user) {
+		return save(id, draft, intent, user, "MANUAL");
+	}
+
+	/**
+	 * Rascunho novo vindo de outra origem (Instagram, BE-013): mesmas regras e permissões do editor, só muda
+	 * a origem gravada.
+	 */
+	@Transactional
+	public SaveResult createDraft(NewsDraft draft, String origin, AuthenticatedUser user) {
+		return save(null, draft, "draft", user, origin);
+	}
+
+	private SaveResult save(UUID id, NewsDraft draft, String intent, AuthenticatedUser user, String origin) {
 		OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
 		Current current = id == null ? null
 				: repo.current(id).orElseThrow(() -> new NotFoundException("Notícia não encontrada."));
@@ -132,7 +145,7 @@ public class AdminNewsService {
 				json.writeValueAsString(body.blocks()), body.text(), categoryId, place == null ? null : place[1],
 				place == null ? null : place[0], imageId, status, draft.isUrgent(), draft.isSponsored(),
 				draft.sponsorName(), seo.title(), seo.description(), Math.max(1, Math.round(body.words() / 200f)),
-				publishedAt, scheduledFor, current == null ? "MANUAL" : null);
+				publishedAt, scheduledFor, current == null ? origin : null);
 
 		UUID newsId;
 		int version;

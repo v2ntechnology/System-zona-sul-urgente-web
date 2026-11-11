@@ -58,6 +58,8 @@ zsu:
     gemini:
       api-key: ${GEMINI_API_KEY:}
       model: ${GEMINI_MODEL:gemini-3.7-flash}
+      # Usado quando o principal não responde (tempo esgotado ou sobrecarga). Vazio = sem reserva.
+      fallback-model: ${GEMINI_FALLBACK_MODEL:gemini-3.5-flash-lite}
 
 server:
   port: ${PORT:8080}

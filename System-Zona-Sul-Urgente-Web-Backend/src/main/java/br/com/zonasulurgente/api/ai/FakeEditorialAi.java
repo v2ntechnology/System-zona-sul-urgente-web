@@ -33,7 +33,7 @@ class FakeEditorialAi implements EditorialAiProvider {
 		String category = context.categories().isEmpty() ? null : context.categories().getFirst().slug();
 		String lower = text.toLowerCase(Locale.ROOT);
 		return new AiDraft(title, "", cut(first, SUMMARY_MAX), paragraphs, category, null, List.of(),
-				lower.contains("urgente"), lower.contains("publi"));
+				lower.contains("urgente"), lower.contains("publi"), name());
 	}
 
 	private static String cut(String value, int max) {

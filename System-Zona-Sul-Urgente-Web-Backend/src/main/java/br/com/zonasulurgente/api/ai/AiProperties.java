@@ -19,14 +19,17 @@ public record AiProperties(
 	 * API Interactions do Gemini ({@code POST /v1beta/interactions}). A geração 2.5 está sendo desativada
 	 * (dez/2026): usar a família 3.x. Em 2026-11-10, no plano grátis, o 3.8-flash não respondia (travava) e o
 	 * 3.6/3.5-flash davam 503; o 3.7-flash respondeu em ~7 s com o melhor texto. {@code apiRevision} fixa o
-	 * formato da API.
+	 * formato da API. Minutos depois o 3.7-flash também travou e só os Flash-Lite respondiam: por isso o
+	 * {@code fallbackModel}, usado quando o principal não responde (tempo esgotado ou sobrecarga). Vazio =
+	 * sem reserva. {@code timeout} vale por modelo.
 	 */
 	public record Gemini(
 			@DefaultValue("") String apiKey,
 			@DefaultValue("gemini-3.7-flash") String model,
+			@DefaultValue("gemini-3.5-flash-lite") String fallbackModel,
 			@DefaultValue("https://generativelanguage.googleapis.com") String baseUrl,
 			@DefaultValue("2026-05-20") String apiRevision,
-			@DefaultValue("60s") Duration timeout) {
+			@DefaultValue("30s") Duration timeout) {
 	}
 
 }

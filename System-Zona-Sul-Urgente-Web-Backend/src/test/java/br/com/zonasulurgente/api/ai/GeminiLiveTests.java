@@ -21,6 +21,7 @@ class GeminiLiveTests {
 	void draftsARealPost() {
 		var config = new AiProperties.Gemini(System.getenv("GEMINI_API_KEY"),
 				System.getenv().getOrDefault("GEMINI_MODEL", "gemini-3.7-flash"),
+				System.getenv().getOrDefault("GEMINI_FALLBACK_MODEL", "gemini-3.5-flash-lite"),
 				"https://generativelanguage.googleapis.com", "2026-05-20", Duration.ofSeconds(90));
 		var ai = new GeminiEditorialAi(config, JsonMapper.builder().build());
 		var context = new EditorialContext(
@@ -40,7 +41,7 @@ class GeminiLiveTests {
 
 		AiDraft draft = ai.draftFromPost(post, context);
 
-		System.out.println("== " + ai.name());
+		System.out.println("== " + draft.generatedBy());
 		System.out.println("titulo: " + draft.title());
 		System.out.println("subtitulo: " + draft.subtitle());
 		System.out.println("resumo: " + draft.summary());

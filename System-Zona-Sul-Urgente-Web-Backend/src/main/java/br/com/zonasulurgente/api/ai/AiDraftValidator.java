@@ -25,7 +25,7 @@ final class AiDraftValidator {
 	private AiDraftValidator() {
 	}
 
-	static AiDraft validate(JsonNode out, EditorialContext context) {
+	static AiDraft validate(JsonNode out, EditorialContext context, String generatedBy) {
 		if (out == null || !out.isObject()) {
 			throw new AiOutputException("a resposta não é um objeto JSON");
 		}
@@ -49,7 +49,7 @@ final class AiDraftValidator {
 				known(out, "bairro", context.neighborhoods()),
 				tags(out.path("topicos")),
 				out.path("urgente").asBoolean(false),
-				out.path("publicidade").asBoolean(false));
+				out.path("publicidade").asBoolean(false), generatedBy);
 	}
 
 	private static String required(JsonNode out, String field, int max) {

@@ -6,10 +6,13 @@ import {
   type InstagramPostMock,
 } from "@/mocks/admin";
 import { MOCK_NOW, newsMock } from "@/mocks/news";
+import { adminFetch, adminGet } from "@/services/admin/admin-api";
+import { apiBaseUrl } from "@/services/api/client";
 import type { InstagramConnection, InstagramImportStatus, InstagramPost } from "@/types/admin";
 
-// Fila de importação do Instagram (FE-155). Depois: GET /api/v1/admin/instagram/posts e
-// /connection; as ações (reprocessar, ignorar, sincronizar) viram POSTs na mesma rota.
+// Fila de importação do Instagram (FE-155). Com API_URL: GET /api/v1/admin/instagram/posts,
+// /posts/counts e /connection; as ações ficam em app/admin/(painel)/instagram/actions.ts.
+// Sem API: dados de exemplo.
 
 /** Ordem das abas: o que pede ação primeiro. */
 export const INSTAGRAM_STATUSES: InstagramImportStatus[] = [
@@ -22,19 +25,27 @@ export const INSTAGRAM_STATUSES: InstagramImportStatus[] = [
 ];
 
 export async function listInstagramPosts(status?: InstagramImportStatus): Promise<InstagramPost[]> {
+  if (apiBaseUrl()) return (await adminGet<InstagramPost[]>("/instagram/posts", { status })) ?? [];
   return instagramPostsMock
     .filter((p) => !status || p.status === status)
     .sort((a, b) => b.postedAt.localeCompare(a.postedAt))
     .map(toPost);
 }
 
+/** Também alimenta o número no menu: erro (ex.: perfil sem instagram.review) vira zero. */
 export async function countInstagramPostsByStatus(): Promise<Record<string, number>> {
+  if (apiBaseUrl()) {
+    const result = await adminFetch<Record<string, number>>("/instagram/posts/counts");
+    return result.ok ? result.data : { ALL: 0 };
+  }
   const counts: Record<string, number> = { ALL: instagramPostsMock.length };
   for (const p of instagramPostsMock) counts[p.status] = (counts[p.status] ?? 0) + 1;
   return counts;
 }
 
-export async function getInstagramConnection(): Promise<InstagramConnection> {
+/** null = conta ainda não conectada pela API da Meta (os posts entram por "Adicionar post"). */
+export async function getInstagramConnection(): Promise<InstagramConnection | null> {
+  if (apiBaseUrl()) return adminGet<InstagramConnection>("/instagram/connection");
   return {
     ...instagramConnectionMock,
     tokenDaysLeft: Math.floor(

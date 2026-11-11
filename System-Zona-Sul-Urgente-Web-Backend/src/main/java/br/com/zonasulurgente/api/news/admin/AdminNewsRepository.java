@@ -145,7 +145,8 @@ class AdminNewsRepository {
 	Optional<NewsDraft.Out> draft(UUID id) {
 		return jdbc.sql("""
 				SELECT n.*, n.body::text AS body_json, c.slug AS c_slug, nb.slug AS nb_slug,
-				       m.url AS m_url, m.alt AS m_alt, m.caption AS m_caption, m.credit AS m_credit
+				       m.url AS m_url, m.alt AS m_alt, m.caption AS m_caption, m.credit AS m_credit,
+				       (SELECT ip.caption FROM instagram_posts ip WHERE ip.news_id = n.id) AS ig_caption
 				FROM news n
 				JOIN categories c ON c.id = n.category_id
 				LEFT JOIN neighborhoods nb ON nb.id = n.neighborhood_id
@@ -165,7 +166,7 @@ class AdminNewsRepository {
 						scheduled == null ? ""
 								: scheduled.atZoneSameInstant(DraftValidator.BRASILIA).toLocalDateTime().toString()
 									.substring(0, 16),
-						rs.getString("origin"), null, rs.getObject("updated_at", OffsetDateTime.class),
+						rs.getString("origin"), rs.getString("ig_caption"), rs.getObject("updated_at", OffsetDateTime.class),
 						rs.getInt("version"));
 			})
 			.optional();

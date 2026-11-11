@@ -6,7 +6,7 @@ package br.com.zonasulurgente.api.ai;
  */
 public interface EditorialAiProvider {
 
-	/** Fornecedor e modelo, para log e auditoria (ex.: "gemini:gemini-3.7-flash"). */
+	/** Fornecedor e modelo principal, para log (quem escreveu cada rascunho: {@link AiDraft#generatedBy()}). */
 	String name();
 
 	/**
