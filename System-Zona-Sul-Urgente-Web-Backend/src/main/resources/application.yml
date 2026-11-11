@@ -51,6 +51,13 @@ zsu:
   site:
     revalidate-url: ${SITE_REVALIDATE_URL:}
     revalidate-secret: ${REVALIDATE_SECRET:}
+  # Primeiro administrador de um servidor novo (sem Admin ativo): cria o convite e mostra o link no log.
+  # Vazio = desligado. Com um Admin ativo, é ignorado.
+  bootstrap:
+    admin:
+      email: ${ZSU_BOOTSTRAP_ADMIN_EMAIL:}
+      name: ${ZSU_BOOTSTRAP_ADMIN_NAME:Administrador Zona Sul}
+      site-url: ${ZSU_SITE_URL:}
   # IA editorial (BE-014). provider: "gemini" ou "fake" (sem rede, para testes e dev sem chave).
   # Plano grátis do Gemini: só conteúdo público (ARCHITECTURE §6).
   ai:
