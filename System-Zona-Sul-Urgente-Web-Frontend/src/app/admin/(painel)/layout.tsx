@@ -35,6 +35,7 @@ async function Painel({ children }: { children: React.ReactNode }) {
         items={items}
         newNews={can(user.role, "news.create") ? newNewsItem : undefined}
         user={{ name: user.name, roleLabel: roleLabels[user.role] }}
+        showProject={process.env.NODE_ENV === "development" && user.role === "ADMIN"}
       />
       <main
         id="conteudo"

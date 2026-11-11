@@ -3,6 +3,7 @@
 import {
   BarChart3Icon,
   CameraIcon,
+  ClipboardListIcon,
   ExternalLinkIcon,
   FolderTreeIcon,
   LayoutDashboardIcon,
@@ -44,12 +45,15 @@ const icons = {
   ads: MegaphoneIcon,
   users: UsersIcon,
   design: PaletteIcon,
+  project: ClipboardListIcon,
 };
 
 type NavbarProps = {
   items: AdminNavItem[];
   newNews?: AdminNavItem;
   user: { name: string; roleLabel: string };
+  /** Painel do projeto (plano/backlog): só em `next dev` e para Administrador. */
+  showProject?: boolean;
 };
 
 // Navegação do painel (decisão 2026-10-15): pílula no topo (desktop) e barra inferior fixa
@@ -80,7 +84,13 @@ const subscribeScroll = (onChange: () => void) => {
   return () => window.removeEventListener("scroll", onChange);
 };
 
-function NavbarView({ items, newNews, user, active }: NavbarProps & { active?: string }) {
+function NavbarView({
+  items,
+  newNews,
+  user,
+  showProject,
+  active,
+}: NavbarProps & { active?: string }) {
   const scrolled = useSyncExternalStore(
     subscribeScroll,
     () => window.scrollY > 8,
@@ -119,12 +129,12 @@ function NavbarView({ items, newNews, user, active }: NavbarProps & { active?: s
                 <PlusIcon aria-hidden className="size-4" /> {newNews.label}
               </Link>
             )}
-            <UserMenu user={user} />
+            <UserMenu user={user} showProject={showProject} />
           </div>
         </div>
       </header>
 
-      <MobileTabBar items={items} newNews={newNews} active={active} />
+      <MobileTabBar items={items} newNews={newNews} showProject={showProject} active={active} />
     </>
   );
 }
@@ -157,7 +167,7 @@ function PillLink({ item, current }: { item: AdminNavItem; current: boolean }) {
   );
 }
 
-function UserMenu({ user }: { user: NavbarProps["user"] }) {
+function UserMenu({ user, showProject }: Pick<NavbarProps, "user" | "showProject">) {
   const initials = user.name
     .split(" ")
     .map((p) => p[0])
@@ -194,6 +204,11 @@ function UserMenu({ user }: { user: NavbarProps["user"] }) {
         <DropdownMenuItem render={<Link href={adminRoutes.designSystem} />} className="py-2">
           <PaletteIcon aria-hidden /> Design system
         </DropdownMenuItem>
+        {showProject && (
+          <DropdownMenuItem render={<Link href={adminRoutes.project} />} className="py-2">
+            <ClipboardListIcon aria-hidden /> Projeto (plano e backlog)
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         {/* Encerra a sessão na API e apaga o cookie (Server Action). */}
         <DropdownMenuItem onClick={() => logoutAction()} className="py-2">
@@ -208,10 +223,12 @@ function UserMenu({ user }: { user: NavbarProps["user"] }) {
 function MobileTabBar({
   items,
   newNews,
+  showProject,
   active,
 }: {
   items: AdminNavItem[];
   newNews?: AdminNavItem;
+  showProject?: boolean;
   active?: string;
 }) {
   const [moreOpen, setMoreOpen] = useState(false);
@@ -279,6 +296,9 @@ function MobileTabBar({
                 href: adminRoutes.designSystem,
                 icon: "design" as const,
               },
+              ...(showProject
+                ? [{ label: "Projeto", href: adminRoutes.project, icon: "project" as const }]
+                : []),
             ].map((item) => {
               const Icon = icons[item.icon];
               return (

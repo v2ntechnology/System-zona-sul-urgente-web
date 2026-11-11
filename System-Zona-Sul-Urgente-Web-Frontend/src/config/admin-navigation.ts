@@ -39,6 +39,8 @@ export const adminRoutes = {
   team: "/admin/equipe",
   authors: "/admin/equipe/autores",
   designSystem: "/admin/design-system",
+  /** Painel do projeto (plano, board, histórico, documentos); só em `next dev`. */
+  project: "/admin/projeto",
 } as const;
 
 /** Itens da navbar (desktop) e da barra inferior (celular). "Nova notícia" é o botão de destaque. */
@@ -97,6 +99,7 @@ export const adminSegmentLabels: Record<string, string> = {
   equipe: "Equipe",
   autores: "Autores",
   "design-system": "Design system",
+  projeto: "Projeto",
 };
 
 /** Trilha: rótulos e links que dependem do caminho inteiro (ex.: "nova" de campanha). */
