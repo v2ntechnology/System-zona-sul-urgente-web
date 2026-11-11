@@ -14,6 +14,10 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.zonasulurgente.api.audit.AuditAction;
+import br.com.zonasulurgente.api.audit.AuditDiff;
+import br.com.zonasulurgente.api.audit.AuditEvent;
+import br.com.zonasulurgente.api.audit.AuditLog;
 import br.com.zonasulurgente.api.shared.web.ApiException;
 import br.com.zonasulurgente.api.shared.web.InvalidFieldsException;
 import br.com.zonasulurgente.api.shared.web.NotFoundException;
@@ -44,10 +48,12 @@ public class CategoryAdminService {
 
 	private final JdbcClient jdbc;
 	private final SiteRefresh site;
+	private final AuditLog audit;
 
-	CategoryAdminService(JdbcClient jdbc, SiteRefresh site) {
+	CategoryAdminService(JdbcClient jdbc, SiteRefresh site, AuditLog audit) {
 		this.jdbc = jdbc;
 		this.site = site;
+		this.audit = audit;
 	}
 
 	@Transactional(readOnly = true)
@@ -79,12 +85,15 @@ public class CategoryAdminService {
 			.mapToInt(Row::order)
 			.max()
 			.orElse(0) + 10;
-		jdbc.sql("""
+		UUID id = jdbc.sql("""
 				INSERT INTO categories (slug, name, description, parent_id, color, in_bar, sort_order, whatsapp_url)
-				VALUES (:slug, :name, :description, :parent, :color, :inBar, :order, :whatsapp)""")
+				VALUES (:slug, :name, :description, :parent, :color, :inBar, :order, :whatsapp) RETURNING id""")
 			.params(fields(input, parent))
 			.param("order", order)
-			.update();
+			.query(UUID.class)
+			.single();
+		audit.record(AuditEvent.of(AuditAction.CREATE, "category", id, trim(input.name()))
+			.withDiff(AuditDiff.created(auditFields(input, parent))));
 		// Endereço novo que já foi de outra editoria: deixa de redirecionar.
 		jdbc.sql("DELETE FROM path_redirects WHERE old_path = :path").param("path", path(input.slug(), parent)).update();
 		site.taxonomy();
@@ -104,6 +113,7 @@ public class CategoryAdminService {
 		String oldPath = path(before.slug(), before.parentSlug());
 		String newPath = path(input.slug(), parent);
 		String oldSlug = before.slug();
+		AdminCategory old = find(id);
 		jdbc.sql("""
 				UPDATE categories SET slug = :slug, name = :name, description = :description, parent_id = :parent,
 				  color = :color, in_bar = :inBar, whatsapp_url = :whatsapp, updated_at = now() WHERE id = :id""")
@@ -113,6 +123,9 @@ public class CategoryAdminService {
 		if (!oldPath.equals(newPath)) {
 			redirect(oldPath, newPath);
 		}
+		audit.record(AuditEvent.of(AuditAction.UPDATE, "category", id, trim(input.name()))
+			.withDiff(AuditDiff.between(auditFields(old), auditFields(input, parent)))
+			.detail("redirectFrom", oldPath.equals(newPath) ? null : oldPath));
 		// Nome, cor e endereço aparecem nas páginas das matérias (selo, migalhas, links).
 		site.publishedNews("n.category_id IN (SELECT id FROM categories WHERE id = :id OR parent_id = :id)",
 				Map.of("id", id), "category:" + oldSlug, "category:" + input.slug().strip());
@@ -141,6 +154,8 @@ public class CategoryAdminService {
 				.param("id", siblings.get(i).id())
 				.update();
 		}
+		audit.record(AuditEvent.of(AuditAction.UPDATE, "category", id, find(id).name())
+			.withDiff(AuditDiff.field("position", index + 1, target + 1)));
 		site.taxonomy();
 		return list();
 	}
@@ -161,6 +176,8 @@ public class CategoryAdminService {
 			.param("active", active)
 			.param("id", id)
 			.update();
+		audit.record(AuditEvent.of(active ? AuditAction.ACTIVATE : AuditAction.DEACTIVATE, "category", id,
+				find(id).name()).withDiff(AuditDiff.field("active", item.active(), active)));
 		site.taxonomy("category:" + item.slug());
 		return list();
 	}
@@ -181,7 +198,10 @@ public class CategoryAdminService {
 			throw new ApiException(HttpStatus.CONFLICT, "Editoria em uso",
 					"Só dá para excluir editoria sem matérias e sem subeditorias. Desative em vez de excluir.");
 		}
+		AdminCategory old = find(id);
 		jdbc.sql("DELETE FROM categories WHERE id = :id").param("id", id).update();
+		audit.record(AuditEvent.of(AuditAction.DELETE, "category", id, old.name())
+			.withDiff(AuditDiff.between(auditFields(old), Map.of())));
 		site.taxonomy("category:" + item.slug());
 		return list();
 	}
@@ -251,6 +271,35 @@ public class CategoryAdminService {
 					rs.getObject("parent_id", UUID.class), rs.getString("parent_slug"), rs.getBoolean("in_bar"),
 					rs.getBoolean("active"), rs.getInt("sort_order")))
 			.list();
+	}
+
+	private AdminCategory find(UUID id) {
+		return list().stream().filter(c -> c.id().equals(id)).findFirst().orElseThrow();
+	}
+
+	/** Campos da editoria no diff da auditoria. */
+	private static Map<String, Object> auditFields(String name, String slug, String parentSlug, String color,
+			boolean inBar, String whatsappUrl, String description) {
+		Map<String, Object> m = new java.util.LinkedHashMap<>();
+		m.put("name", name);
+		m.put("slug", slug);
+		m.put("parentSlug", parentSlug);
+		m.put("color", color);
+		m.put("inBar", inBar);
+		m.put("whatsappUrl", whatsappUrl);
+		m.put("description", description);
+		return m;
+	}
+
+	private static Map<String, Object> auditFields(AdminCategory c) {
+		return auditFields(c.name(), c.slug(), c.parentSlug(), c.color(), c.inBar(), c.whatsappUrl(), c.description());
+	}
+
+	private static Map<String, Object> auditFields(AdminCategory.Input in, Row parent) {
+		Map<String, Object> f = fields(in, parent);
+		return auditFields((String) f.get("name"), (String) f.get("slug"), parent == null ? null : parent.slug(),
+				(String) f.get("color"), (Boolean) f.get("inBar"), (String) f.get("whatsapp"),
+				(String) f.get("description"));
 	}
 
 	private static Row parentOf(AdminCategory.Input in, List<Row> all) {

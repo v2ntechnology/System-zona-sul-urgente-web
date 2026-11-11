@@ -8,17 +8,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.jsoup.Jsoup;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.zonasulurgente.api.audit.AuditAction;
+import br.com.zonasulurgente.api.audit.AuditDiff;
+import br.com.zonasulurgente.api.audit.AuditEvent;
+import br.com.zonasulurgente.api.audit.AuditLog;
 import br.com.zonasulurgente.api.auth.application.AuthenticatedUser;
 import br.com.zonasulurgente.api.media.MediaProperties;
 import br.com.zonasulurgente.api.news.admin.AdminNewsRepository.Current;
 import br.com.zonasulurgente.api.news.admin.AdminNewsRepository.Fields;
 import br.com.zonasulurgente.api.shared.web.ApiException;
 import br.com.zonasulurgente.api.shared.web.NotFoundException;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -26,7 +32,8 @@ import tools.jackson.databind.json.JsonMapper;
  * mexe nas próprias; publicar/agendar/despublicar exige news.publish; urgente, patrocinada e
  * tópico novo têm permissão própria. Cada salvamento grava uma versão completa; o bloqueio
  * otimista impede sobrescrever a edição de outra pessoa. Após o commit sai um
- * {@link NewsChangedEvent} (revalidação do site, BE-011).
+ * {@link NewsChangedEvent} (revalidação do site, BE-011). Toda mudança entra na auditoria (BE-008)
+ * na mesma transação, com o diff dos campos do editor.
  */
 @Service
 public class AdminNewsService {
@@ -35,13 +42,15 @@ public class AdminNewsService {
 	private final JsonMapper json;
 	private final ApplicationEventPublisher events;
 	private final MediaProperties media;
+	private final AuditLog audit;
 
 	public AdminNewsService(AdminNewsRepository repo, JsonMapper json, ApplicationEventPublisher events,
-			MediaProperties media) {
+			MediaProperties media, AuditLog audit) {
 		this.repo = repo;
 		this.json = json;
 		this.events = events;
 		this.media = media;
+		this.audit = audit;
 	}
 
 	@Transactional(readOnly = true)
@@ -147,6 +156,7 @@ public class AdminNewsService {
 				draft.sponsorName(), seo.title(), seo.description(), Math.max(1, Math.round(body.words() / 200f)),
 				publishedAt, scheduledFor, current == null ? origin : null);
 
+		NewsDraft.Out before = current == null ? null : repo.draft(current.id()).orElseThrow();
 		UUID newsId;
 		int version;
 		if (current == null) {
@@ -169,7 +179,14 @@ public class AdminNewsService {
 		}
 		repo.replaceAuthors(newsId, authorSlugs.stream().distinct().map(authors::get).toList());
 		repo.replaceTags(newsId, tagIds);
-		repo.saveVersion(newsId, version, json.writeValueAsString(repo.draft(newsId).orElseThrow()), user.id());
+		NewsDraft.Out after = repo.draft(newsId).orElseThrow();
+		repo.saveVersion(newsId, version, json.writeValueAsString(after), user.id());
+		AuditAction action = current == null ? AuditAction.CREATE
+				: "PUBLISHED".equals(status) && !"PUBLISHED".equals(current.status()) ? AuditAction.PUBLISH
+						: AuditAction.UPDATE;
+		audit.record(auditEvent(action, before, after).detail("intent", intent)
+			.detail("origin", current == null ? origin : null)
+			.detail("version", version), AuditLog.Actor.of(user));
 		events.publishEvent(new NewsChangedEvent(newsId, slug, current == null ? null : current.slug(), status,
 				current == null ? null : current.status()));
 		return new SaveResult(newsId, slug, status, version, now);
@@ -204,9 +221,13 @@ public class AdminNewsService {
 		List<UUID> due = repo.dueScheduled(50);
 		for (UUID id : due) {
 			Current current = repo.current(id).orElseThrow();
+			NewsDraft.Out before = repo.draft(id).orElseThrow();
 			repo.changeState(id, "status = 'PUBLISHED', published_at = coalesce(published_at, scheduled_for, now()), "
 					+ "scheduled_for = NULL", Map.of(), null);
-			repo.saveVersion(id, current.version() + 1, json.writeValueAsString(repo.draft(id).orElseThrow()), null);
+			NewsDraft.Out after = repo.draft(id).orElseThrow();
+			repo.saveVersion(id, current.version() + 1, json.writeValueAsString(after), null);
+			audit.recordSystem(auditEvent(AuditAction.PUBLISH, before, after).detail("scheduled", true)
+				.detail("version", current.version() + 1));
 			events.publishEvent(new NewsChangedEvent(id, current.slug(), current.slug(), "PUBLISHED", current.status()));
 		}
 		return due.size();
@@ -216,6 +237,7 @@ public class AdminNewsService {
 
 	private SaveResult changeState(UUID id, AuthenticatedUser user, String action) {
 		Current current = repo.current(id).orElseThrow(() -> new NotFoundException("Notícia não encontrada."));
+		NewsDraft.Out before = repo.draft(id).orElseThrow();
 		String status = current.status();
 		switch (action) {
 			case "PUBLISHED" -> {
@@ -238,10 +260,61 @@ public class AdminNewsService {
 			default -> throw new IllegalArgumentException(action);
 		}
 		int version = current.version() + 1;
-		repo.saveVersion(id, version, json.writeValueAsString(repo.draft(id).orElseThrow()), user.id());
+		NewsDraft.Out after = repo.draft(id).orElseThrow();
+		repo.saveVersion(id, version, json.writeValueAsString(after), user.id());
+		AuditAction auditAction = switch (action) {
+			case "PUBLISHED" -> AuditAction.PUBLISH;
+			case "UNPUBLISHED" -> AuditAction.UNPUBLISH;
+			case "DELETED" -> AuditAction.DELETE;
+			default -> AuditAction.RESTORE;
+		};
+		audit.record(auditEvent(auditAction, before, after).detail("version", version), AuditLog.Actor.of(user));
 		events.publishEvent(new NewsChangedEvent(id, current.slug(), current.slug(),
 				"DELETED".equals(action) ? "DELETED" : status, current.status()));
 		return new SaveResult(id, current.slug(), status, version, OffsetDateTime.now(ZoneOffset.UTC));
+	}
+
+	private AuditEvent auditEvent(AuditAction action, NewsDraft.Out before, NewsDraft.Out after) {
+		return AuditEvent.of(action, "news", after.id(), after.title())
+			.withDiff(AuditDiff.between(before == null ? Map.of() : snapshot(before), snapshot(after)));
+	}
+
+	/** Campos do editor que entram no diff da auditoria (o corpo vai como texto corrido, truncado). */
+	private Map<String, Object> snapshot(NewsDraft.Out d) {
+		Map<String, Object> m = new LinkedHashMap<>();
+		m.put("title", d.title());
+		m.put("subtitle", d.subtitle());
+		m.put("summary", d.summary());
+		m.put("body", bodyText(d.body()));
+		m.put("status", d.status());
+		m.put("scheduledFor", d.scheduledFor());
+		m.put("categorySlug", d.categorySlug());
+		m.put("authorSlugs", d.authorSlugs());
+		m.put("neighborhoodSlug", d.neighborhoodSlug());
+		m.put("tagSlugs", d.tagSlugs());
+		m.put("imageUrl", d.image() == null ? null : d.image().url());
+		m.put("isUrgent", d.isUrgent());
+		m.put("isSponsored", d.isSponsored());
+		m.put("sponsorName", d.sponsorName());
+		m.put("seoTitle", d.seo() == null ? null : d.seo().title());
+		m.put("seoDescription", d.seo() == null ? null : d.seo().description());
+		return m;
+	}
+
+	private String bodyText(String body) {
+		if (body == null) {
+			return null;
+		}
+		StringBuilder text = new StringBuilder();
+		for (JsonNode block : json.readTree(body)) {
+			for (String field : List.of("html", "text", "caption")) {
+				String value = block.path(field).asString("");
+				if (!value.isBlank()) {
+					text.append(text.isEmpty() ? "" : " ").append(Jsoup.parse(value).text());
+				}
+			}
+		}
+		return text.toString();
 	}
 
 	private void checkPermissions(Current current, NewsDraft draft, String intent, AuthenticatedUser user) {

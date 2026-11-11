@@ -10,6 +10,10 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.zonasulurgente.api.audit.AuditAction;
+import br.com.zonasulurgente.api.audit.AuditDiff;
+import br.com.zonasulurgente.api.audit.AuditEvent;
+import br.com.zonasulurgente.api.audit.AuditLog;
 import br.com.zonasulurgente.api.news.admin.TagKeys;
 import br.com.zonasulurgente.api.shared.web.InvalidFieldsException;
 import br.com.zonasulurgente.api.shared.web.NotFoundException;
@@ -31,10 +35,12 @@ public class AuthorService {
 
 	private final JdbcClient jdbc;
 	private final SiteRefresh site;
+	private final AuditLog audit;
 
-	AuthorService(JdbcClient jdbc, SiteRefresh site) {
+	AuthorService(JdbcClient jdbc, SiteRefresh site, AuditLog audit) {
 		this.jdbc = jdbc;
 		this.site = site;
+		this.audit = audit;
 	}
 
 	@Transactional(readOnly = true)
@@ -67,7 +73,7 @@ public class AuthorService {
 	/** Cria o autor e devolve o id (convite da equipe com "criar autor"). */
 	@Transactional
 	public UUID insert(String name, String role, String bio, String instagram) {
-		return jdbc.sql("""
+		UUID id = jdbc.sql("""
 				INSERT INTO authors (slug, name, role, bio, instagram) VALUES (:slug, :name, :role, :bio, :instagram)
 				RETURNING id""")
 			.param("slug", uniqueSlug(name))
@@ -77,12 +83,16 @@ public class AuthorService {
 			.param("instagram", instagram(instagram))
 			.query(UUID.class)
 			.single();
+		audit.record(AuditEvent.of(AuditAction.CREATE, "author", id, name)
+			.withDiff(AuditDiff.created(fields(name, role, bio, instagram))));
+		return id;
 	}
 
 	@Transactional
 	public List<AuthorProfile> update(UUID id, AuthorProfile.Input input) {
 		requireAuthor(id);
 		validate(input);
+		AuthorProfile before = find(id);
 		jdbc.sql("UPDATE authors SET name = :name, role = :role, bio = :bio, instagram = :instagram WHERE id = :id")
 			.param("name", input.name().strip())
 			.param("role", input.role().strip())
@@ -92,15 +102,36 @@ public class AuthorService {
 			.update();
 		// A assinatura aparece nas matérias.
 		site.publishedNews("n.id IN (SELECT news_id FROM news_authors WHERE author_id = :id)", Map.of("id", id));
+		audit.record(AuditEvent.of(AuditAction.UPDATE, "author", id, input.name().strip())
+			.withDiff(AuditDiff.between(fields(before.name(), before.role(), before.bio(), before.instagram()),
+					fields(input.name(), input.role(), input.bio(), input.instagram()))));
 		return list();
 	}
 
 	@Transactional
 	public List<AuthorProfile> setActive(UUID id, boolean active) {
 		requireAuthor(id);
+		AuthorProfile before = find(id);
 		jdbc.sql("UPDATE authors SET active = :active WHERE id = :id").param("active", active).param("id", id).update();
 		site.taxonomy();
+		audit.record(AuditEvent.of(active ? AuditAction.ACTIVATE : AuditAction.DEACTIVATE, "author", id, before.name())
+			.withDiff(AuditDiff.field("active", before.active(), active)));
 		return list();
+	}
+
+	private AuthorProfile find(UUID id) {
+		return list().stream().filter(a -> a.id().equals(id)).findFirst()
+			.orElseThrow(() -> new NotFoundException("Autor não encontrado."));
+	}
+
+	/** Campos do autor no diff da auditoria (já normalizados como são gravados). */
+	private static Map<String, Object> fields(String name, String role, String bio, String instagram) {
+		Map<String, Object> m = new LinkedHashMap<>();
+		m.put("name", name == null ? null : name.strip());
+		m.put("role", role == null ? null : role.strip());
+		m.put("bio", blankToNull(bio));
+		m.put("instagram", instagram(instagram));
+		return m;
 	}
 
 	private void validate(AuthorProfile.Input in) {

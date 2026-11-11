@@ -141,6 +141,14 @@ class ScheduledPublishingTests {
 		mvc.perform(get("/api/v1/public/news/{slug}", slug)).andExpect(status().isOk());
 		assertThat(news.publishDue()).as("não publica duas vezes").isZero();
 
+		// Auditoria: publicação do sistema (sem pessoa nem IP).
+		assertThat(jdbc.sql("""
+				SELECT a.origin || '|' || coalesce(a.actor_id::text, '-') || '|' || coalesce(a.ip, '-') || '|'
+				       || (a.diff -> 'status' ->> 'to') || '|' || (a.details ->> 'scheduled')
+				FROM audit_logs a JOIN news n ON n.id::text = a.entity_id
+				WHERE n.slug = :slug AND a.action = 'PUBLISH'""").param("slug", slug).query(String.class).single())
+			.isEqualTo("SYSTEM|-|-|PUBLISHED|true");
+
 		// O job de revalidação avisa o site com as tags da matéria.
 		received.clear();
 		assertThat(worker.runOnce()).isEqualTo(1);

@@ -9,6 +9,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.zonasulurgente.api.audit.AuditAction;
+import br.com.zonasulurgente.api.audit.AuditDiff;
+import br.com.zonasulurgente.api.audit.AuditEvent;
+import br.com.zonasulurgente.api.audit.AuditLog;
 import br.com.zonasulurgente.api.auth.application.Tokens;
 import br.com.zonasulurgente.api.shared.web.ApiException;
 import br.com.zonasulurgente.api.shared.web.InvalidFieldsException;
@@ -31,10 +35,12 @@ public class InvitationService {
 
 	private final JdbcClient jdbc;
 	private final PasswordEncoder passwords;
+	private final AuditLog audit;
 
-	InvitationService(JdbcClient jdbc, PasswordEncoder passwords) {
+	InvitationService(JdbcClient jdbc, PasswordEncoder passwords, AuditLog audit) {
 		this.jdbc = jdbc;
 		this.passwords = passwords;
+		this.audit = audit;
 	}
 
 	@Transactional(readOnly = true)
@@ -63,6 +69,9 @@ public class InvitationService {
 			.param("id", p.userId())
 			.update();
 		jdbc.sql("UPDATE user_invitations SET used_at = now() WHERE id = :id").param("id", p.id()).update();
+		// A própria pessoa aceita (ainda sem sessão). Só a troca de estado; a senha nunca.
+		audit.record(AuditEvent.of(AuditAction.INVITE_ACCEPT, "user", p.userId(), p.name())
+			.withDiff(AuditDiff.field("status", "INVITED", "ACTIVE")), new AuditLog.Actor(p.userId(), p.name()));
 		return new Invitation(p.name(), p.email());
 	}
 

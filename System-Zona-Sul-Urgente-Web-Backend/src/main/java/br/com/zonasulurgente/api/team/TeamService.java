@@ -15,6 +15,10 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.zonasulurgente.api.audit.AuditAction;
+import br.com.zonasulurgente.api.audit.AuditDiff;
+import br.com.zonasulurgente.api.audit.AuditEvent;
+import br.com.zonasulurgente.api.audit.AuditLog;
 import br.com.zonasulurgente.api.auth.application.AuthenticatedUser;
 import br.com.zonasulurgente.api.auth.application.Tokens;
 import br.com.zonasulurgente.api.auth.infrastructure.AuthRepository;
@@ -26,7 +30,7 @@ import br.com.zonasulurgente.api.shared.web.NotFoundException;
  * Equipe do painel (FE-159). Regras de src/lib/team/validate.ts: ninguém mexe no próprio
  * acesso e sempre sobra um Administrador ativo. Trocar perfil, desativar e zerar o 2FA
  * derrubam as sessões da pessoa. Convite por link (sem e-mail ainda): a API devolve o token
- * e o painel monta o link para o administrador mandar.
+ * e o painel monta o link para o administrador mandar. Tudo vai para a auditoria (BE-008), nunca o token.
  */
 @Service
 public class TeamService {
@@ -48,11 +52,13 @@ public class TeamService {
 	private final JdbcClient jdbc;
 	private final AuthRepository auth;
 	private final AuthorService authors;
+	private final AuditLog audit;
 
-	TeamService(JdbcClient jdbc, AuthRepository auth, AuthorService authors) {
+	TeamService(JdbcClient jdbc, AuthRepository auth, AuthorService authors, AuditLog audit) {
 		this.jdbc = jdbc;
 		this.auth = auth;
 		this.authors = authors;
+		this.audit = audit;
 	}
 
 	@Transactional(readOnly = true)
@@ -105,6 +111,12 @@ public class TeamService {
 			.param("author", authorId)
 			.query(UUID.class)
 			.single();
+		Map<String, Object> created = new LinkedHashMap<>();
+		created.put("name", name);
+		created.put("email", email);
+		created.put("role", in.role());
+		created.put("authorId", authorId);
+		audit.record(AuditEvent.of(AuditAction.INVITE, "user", userId, name).withDiff(AuditDiff.created(created)));
 		return newInvitation(userId, actor);
 	}
 
@@ -116,6 +128,7 @@ public class TeamService {
 			throw new ApiException(HttpStatus.CONFLICT, "Convite já aceito",
 					member.name() + " já tem acesso; não precisa de convite.");
 		}
+		audit.record(AuditEvent.of(AuditAction.INVITE, "user", id, member.name()).detail("reinvite", true));
 		return newInvitation(id, actor);
 	}
 
@@ -131,6 +144,8 @@ public class TeamService {
 			.param("id", id)
 			.update();
 		auth.revokeAllSessions(id);
+		audit.record(AuditEvent.of(AuditAction.ROLE_CHANGE, "user", id, member.name())
+			.withDiff(AuditDiff.field("role", member.role(), role)));
 		return list();
 	}
 
@@ -155,15 +170,21 @@ public class TeamService {
 			auth.revokeAllSessions(id);
 			jdbc.sql("DELETE FROM user_invitations WHERE user_id = :id AND used_at IS NULL").param("id", id).update();
 		}
-		return list();
+		List<TeamMember> team = list();
+		String status = team.stream().filter(m -> m.id().equals(id)).findFirst().orElseThrow().status();
+		audit.record(AuditEvent.of(active ? AuditAction.ACTIVATE : AuditAction.DEACTIVATE, "user", id, member.name())
+			.withDiff(AuditDiff.field("status", member.status(), status)));
+		return team;
 	}
 
 	/** Celular perdido/trocado: configura o app autenticador de novo no próximo acesso. */
 	@Transactional
 	public List<TeamMember> resetTwoFactor(UUID id) {
-		member(id);
+		TeamMember member = member(id);
 		jdbc.sql("DELETE FROM user_totp WHERE user_id = :id").param("id", id).update();
 		auth.revokeAllSessions(id);
+		audit.record(AuditEvent.of(AuditAction.MFA_RESET, "user", id, member.name())
+			.withDiff(AuditDiff.field("twoFactor", member.twoFactor(), false)));
 		return list();
 	}
 

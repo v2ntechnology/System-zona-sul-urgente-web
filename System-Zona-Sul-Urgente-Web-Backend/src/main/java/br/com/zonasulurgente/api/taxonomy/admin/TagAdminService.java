@@ -13,6 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import br.com.zonasulurgente.api.news.admin.TagKeys;
+import br.com.zonasulurgente.api.audit.AuditAction;
+import br.com.zonasulurgente.api.audit.AuditDiff;
+import br.com.zonasulurgente.api.audit.AuditEvent;
+import br.com.zonasulurgente.api.audit.AuditLog;
 import br.com.zonasulurgente.api.shared.web.ApiException;
 import br.com.zonasulurgente.api.shared.web.InvalidFieldsException;
 import br.com.zonasulurgente.api.shared.web.NotFoundException;
@@ -31,10 +35,12 @@ public class TagAdminService {
 
 	private final JdbcClient jdbc;
 	private final SiteRefresh site;
+	private final AuditLog audit;
 
-	TagAdminService(JdbcClient jdbc, SiteRefresh site) {
+	TagAdminService(JdbcClient jdbc, SiteRefresh site, AuditLog audit) {
 		this.jdbc = jdbc;
 		this.site = site;
+		this.audit = audit;
 	}
 
 	@Transactional(readOnly = true)
@@ -77,7 +83,9 @@ public class TagAdminService {
 		if (error != null) {
 			throw new InvalidFieldsException(Map.of("name", error));
 		}
+		String old = name(id);
 		jdbc.sql("UPDATE tags SET name = :name WHERE id = :id").param("name", clean).param("id", id).update();
+		audit.record(AuditEvent.of(AuditAction.UPDATE, "tag", id, clean).withDiff(AuditDiff.field("name", old, clean)));
 		site.publishedNews("n.id IN (SELECT news_id FROM news_tags WHERE tag_id = :id)", Map.of("id", id));
 		return list();
 	}
@@ -86,7 +94,10 @@ public class TagAdminService {
 	@Transactional
 	public List<AdminTag> setActive(UUID id, boolean active) {
 		requireTag(id);
+		boolean was = jdbc.sql("SELECT active FROM tags WHERE id = :id").param("id", id).query(Boolean.class).single();
 		jdbc.sql("UPDATE tags SET active = :active WHERE id = :id").param("active", active).param("id", id).update();
+		audit.record(AuditEvent.of(active ? AuditAction.ACTIVATE : AuditAction.DEACTIVATE, "tag", id, name(id))
+			.withDiff(AuditDiff.field("active", was, active)));
 		site.taxonomy();
 		return list();
 	}
@@ -114,9 +125,17 @@ public class TagAdminService {
 			.param("keep", keepId)
 			.param("ids", merged)
 			.update();
+		List<String> mergedNames = jdbc.sql("SELECT name FROM tags WHERE id IN (:ids) ORDER BY name")
+			.param("ids", merged).query(String.class).list();
 		jdbc.sql("DELETE FROM news_tags WHERE tag_id IN (:ids)").param("ids", merged).update();
 		jdbc.sql("DELETE FROM tags WHERE id IN (:ids)").param("ids", merged).update();
+		audit.record(AuditEvent.of(AuditAction.MERGE, "tag", keepId, name(keepId)).detail("merged", mergedNames)
+			.detail("mergedIds", merged.stream().map(UUID::toString).toList()));
 		return list();
+	}
+
+	private String name(UUID id) {
+		return jdbc.sql("SELECT name FROM tags WHERE id = :id").param("id", id).query(String.class).single();
 	}
 
 	private void requireTag(UUID id) {

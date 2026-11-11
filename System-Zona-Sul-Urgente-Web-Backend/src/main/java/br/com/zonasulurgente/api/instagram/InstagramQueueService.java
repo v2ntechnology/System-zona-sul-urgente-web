@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.util.HtmlUtils;
 
@@ -21,6 +22,10 @@ import br.com.zonasulurgente.api.ai.AiDraft;
 import br.com.zonasulurgente.api.ai.EditorialAiProvider;
 import br.com.zonasulurgente.api.ai.EditorialContext;
 import br.com.zonasulurgente.api.ai.SourcePost;
+import br.com.zonasulurgente.api.audit.AuditAction;
+import br.com.zonasulurgente.api.audit.AuditDiff;
+import br.com.zonasulurgente.api.audit.AuditEvent;
+import br.com.zonasulurgente.api.audit.AuditLog;
 import br.com.zonasulurgente.api.auth.application.AuthenticatedUser;
 import br.com.zonasulurgente.api.news.admin.AdminNewsService;
 import br.com.zonasulurgente.api.news.admin.NewsDraft;
@@ -32,6 +37,7 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * Fila do Instagram (FE-155): importação manual (enquanto não há app da Meta), geração do rascunho pela IA
  * (BE-014) e as ações de revisão. 1 post → no máximo 1 notícia, sempre em rascunho (ARCHITECTURE §6).
+ * Importação, geração pela IA (AI_GENERATION, com o modelo) e ignorar/restaurar vão para a auditoria (BE-008).
  */
 @Service
 public class InstagramQueueService {
@@ -52,14 +58,16 @@ public class InstagramQueueService {
 	private final AdminNewsService news;
 	private final TransactionTemplate tx;
 	private final JsonMapper json;
+	private final AuditLog audit;
 
 	public InstagramQueueService(InstagramRepository repo, EditorialAiProvider ai, AdminNewsService news,
-			TransactionTemplate tx, JsonMapper json) {
+			TransactionTemplate tx, JsonMapper json, AuditLog audit) {
 		this.repo = repo;
 		this.ai = ai;
 		this.news = news;
 		this.tx = tx;
 		this.json = json;
+		this.audit = audit;
 	}
 
 	public List<InstagramPostView> list(String status) {
@@ -71,6 +79,7 @@ public class InstagramQueueService {
 	}
 
 	/** Post colado no painel (link + legenda). O código do link vira o ID (deduplicação). */
+	@Transactional
 	public InstagramPostView importManual(String url, String caption, OffsetDateTime postedAt,
 			AuthenticatedUser user) {
 		Map<String, String> errors = new java.util.LinkedHashMap<>();
@@ -99,6 +108,9 @@ public class InstagramQueueService {
 		}
 		repo.insertManual(code, text, permalink, "p".equals(kind) ? "IMAGE" : "VIDEO",
 				postedAt == null ? OffsetDateTime.now(ZoneOffset.UTC) : postedAt, user.id());
+		audit.record(AuditEvent.of(AuditAction.INSTAGRAM_IMPORT, "instagram_post", code, permalink)
+			.withDiff(AuditDiff.created(Map.of("permalink", permalink, "caption", text)))
+			.detail("source", "MANUAL"), AuditLog.Actor.of(user));
 		return repo.view(code).orElseThrow();
 	}
 
@@ -130,11 +142,18 @@ public class InstagramQueueService {
 				throw new ApiException(HttpStatus.CONFLICT, "Rascunho já gerado",
 						"Outra pessoa gerou o rascunho deste post agora há pouco.");
 			}
+			// Entidade = a notícia gerada (a linha do tempo dela mostra CREATE + AI_GENERATION).
+			audit.record(AuditEvent.of(AuditAction.AI_GENERATION, "news", newsId, draft.title())
+				.detail("model", draft.generatedBy())
+				.detail("instagramPostId", id)
+				.detail("permalink", post.permalink())
+				.detail("advertising", draft.advertising() ? true : null), AuditLog.Actor.of(user));
 		});
 		log.info("Post {} virou rascunho ({})", id, draft.generatedBy());
 		return repo.view(id).orElseThrow();
 	}
 
+	@Transactional
 	public InstagramPostView ignore(String id, AuthenticatedUser user) {
 		InstagramRepository.Current post = current(id);
 		if (post.newsId() != null) {
@@ -142,16 +161,22 @@ public class InstagramQueueService {
 					"Edite ou exclua a notícia pelo editor.");
 		}
 		repo.setStatus(id, "IGNORED", "Ignorado por " + user.name() + ".");
+		audit.record(AuditEvent.of(AuditAction.IGNORE, "instagram_post", id, post.permalink())
+			.withDiff(AuditDiff.field("status", post.status(), "IGNORED")), AuditLog.Actor.of(user));
 		return repo.view(id).orElseThrow();
 	}
 
 	/** Volta para a fila: com notícia, como importado; sem, como novo. */
+	@Transactional
 	public InstagramPostView restore(String id) {
 		InstagramRepository.Current post = current(id);
 		if (!"IGNORED".equals(post.status())) {
 			throw new ApiException(HttpStatus.CONFLICT, "Post não está ignorado", "Só dá para restaurar post ignorado.");
 		}
-		repo.setStatus(id, post.newsId() == null ? "NEW" : "IMPORTED", null);
+		String status = post.newsId() == null ? "NEW" : "IMPORTED";
+		repo.setStatus(id, status, null);
+		audit.record(AuditEvent.of(AuditAction.RESTORE, "instagram_post", id, post.permalink())
+			.withDiff(AuditDiff.field("status", post.status(), status)));
 		return repo.view(id).orElseThrow();
 	}
 

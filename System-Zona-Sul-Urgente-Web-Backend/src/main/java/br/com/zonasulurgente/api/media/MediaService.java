@@ -10,7 +10,11 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
+import br.com.zonasulurgente.api.audit.AuditAction;
+import br.com.zonasulurgente.api.audit.AuditEvent;
+import br.com.zonasulurgente.api.audit.AuditLog;
 import br.com.zonasulurgente.api.auth.application.AuthenticatedUser;
 import br.com.zonasulurgente.api.shared.web.ApiException;
 import tools.jackson.databind.json.JsonMapper;
@@ -18,7 +22,8 @@ import tools.jackson.databind.json.JsonMapper;
 /**
  * Envio de foto pelo painel (BE-012): valida o tipo real e o tamanho, gera os derivados, grava
  * em media/{aaaa}/{mm}/{uuid}/ e registra em media_assets. O editor recebe o endereço da maior
- * versão WebP; o site monta as demais larguras a partir dele.
+ * versão WebP; o site monta as demais larguras a partir dele. O registro e a auditoria (BE-008) saem
+ * juntos numa transação curta, depois do processamento (que não segura conexão do banco).
  */
 @Service
 public class MediaService {
@@ -33,9 +38,13 @@ public class MediaService {
 	private final MediaStorage storage;
 	private final JdbcClient jdbc;
 	private final JsonMapper json;
+	private final TransactionTemplate tx;
+	private final AuditLog audit;
 
 	MediaService(MediaProperties props, ImageProcessor processor, MediaStorage storage, JdbcClient jdbc,
-			JsonMapper json) {
+			JsonMapper json, TransactionTemplate tx, AuditLog audit) {
+		this.tx = tx;
+		this.audit = audit;
 		this.props = props;
 		this.processor = processor;
 		this.storage = storage;
@@ -73,19 +82,26 @@ public class MediaService {
 		variants.put("formats", List.of("avif", "webp"));
 		variants.put("og", "og.jpg");
 		variants.put("original", original);
-		jdbc.sql("""
-				INSERT INTO media_assets (id, url, width, height, alt, storage_key, mime_type, bytes, variants, created_by)
-				VALUES (:id, :url, :width, :height, '', :key, :mime, :bytes, :variants::jsonb, :user)""")
-			.param("id", id)
-			.param("url", url)
-			.param("width", result.width())
-			.param("height", result.height())
-			.param("key", key)
-			.param("mime", type.mime)
-			.param("bytes", (long) bytes.length)
-			.param("variants", json.writeValueAsString(variants))
-			.param("user", user.id())
-			.update();
+		tx.executeWithoutResult(status -> {
+			jdbc.sql("""
+					INSERT INTO media_assets (id, url, width, height, alt, storage_key, mime_type, bytes, variants, created_by)
+					VALUES (:id, :url, :width, :height, '', :key, :mime, :bytes, :variants::jsonb, :user)""")
+				.param("id", id)
+				.param("url", url)
+				.param("width", result.width())
+				.param("height", result.height())
+				.param("key", key)
+				.param("mime", type.mime)
+				.param("bytes", (long) bytes.length)
+				.param("variants", json.writeValueAsString(variants))
+				.param("user", user.id())
+				.update();
+			audit.record(AuditEvent.of(AuditAction.CREATE, "media", id, url)
+				.detail("mime", type.mime)
+				.detail("bytes", (long) bytes.length)
+				.detail("width", result.width())
+				.detail("height", result.height()), AuditLog.Actor.of(user));
+		});
 		return new Uploaded(id, url, result.width(), result.height());
 	}
 

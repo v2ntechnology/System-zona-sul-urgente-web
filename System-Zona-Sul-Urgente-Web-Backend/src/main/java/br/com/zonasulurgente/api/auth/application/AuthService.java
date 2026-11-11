@@ -13,6 +13,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import br.com.zonasulurgente.api.audit.AuditAction;
+import br.com.zonasulurgente.api.audit.AuditEvent;
+import br.com.zonasulurgente.api.audit.AuditLog;
 import br.com.zonasulurgente.api.auth.config.AuthProperties;
 import br.com.zonasulurgente.api.auth.infrastructure.AuthRepository;
 import br.com.zonasulurgente.api.auth.infrastructure.AuthRepository.ChallengeRow;
@@ -25,7 +28,8 @@ import br.com.zonasulurgente.api.shared.web.ApiException;
  * Login do painel em duas etapas (BE-006, ARCHITECTURE §8): e-mail + senha; depois o código
  * do app autenticador (obrigatório para os perfis com requires_totp; no primeiro acesso, o
  * mesmo passo cadastra o app). Sessão opaca de 256 bits (só o hash no banco), 12 h sem uso
- * ou 7 dias no total. 5 falhas seguidas bloqueiam o e-mail por 15 min.
+ * ou 7 dias no total. 5 falhas seguidas bloqueiam o e-mail por 15 min. Entradas, falhas (sem a senha),
+ * cadastro do app e saídas vão para a auditoria (BE-008).
  */
 @Service
 public class AuthService {
@@ -54,14 +58,17 @@ public class AuthService {
 	private final PasswordEncoder passwords;
 	private final SecretCipher cipher;
 	private final AuthProperties props;
+	private final AuditLog audit;
 	/** Hash de uma senha qualquer: e-mail inexistente custa o mesmo tempo (não revela quem existe). */
 	private final String dummyHash;
 
-	public AuthService(AuthRepository repo, PasswordEncoder passwords, SecretCipher cipher, AuthProperties props) {
+	public AuthService(AuthRepository repo, PasswordEncoder passwords, SecretCipher cipher, AuthProperties props,
+			AuditLog audit) {
 		this.repo = repo;
 		this.passwords = passwords;
 		this.cipher = cipher;
 		this.props = props;
+		this.audit = audit;
 		this.dummyHash = passwords.encode("senha-que-nao-existe");
 	}
 
@@ -71,6 +78,7 @@ public class AuthService {
 		OffsetDateTime since = now().minus(props.lockout());
 		if (repo.recentFailuresForEmail(email, since) >= props.maxFailures()
 				|| repo.recentFailuresForIp(ip, since) >= props.maxFailures() * 4) {
+			loginFailed(repo.userByEmail(email).orElse(null), email, "blocked");
 			throw new ApiException(HttpStatus.TOO_MANY_REQUESTS, "Muitas tentativas",
 					"Por segurança, espere 15 minutos para tentar de novo.");
 		}
@@ -80,6 +88,10 @@ public class AuthService {
 			.orElseGet(() -> passwords.matches(password, dummyHash) && false);
 		repo.recordAttempt(email, ip, ok);
 		if (!ok) {
+			// Na auditoria (só o Administrador lê) o motivo é preciso; para quem tenta, a mensagem é a mesma.
+			loginFailed(found.orElse(null), email, found.isEmpty() ? "unknown_email"
+					: !"ACTIVE".equals(found.get().status()) || found.get().passwordHash() == null ? "inactive"
+							: "wrong_password");
 			// Mesma mensagem para e-mail inexistente, senha errada ou conta desativada.
 			throw new ApiException(HttpStatus.UNAUTHORIZED, "Não foi possível entrar", "E-mail ou senha incorretos.");
 		}
@@ -96,7 +108,7 @@ public class AuthService {
 			return challenge(user, true,
 					new TotpSetup(current, Totp.otpauthUri(props.totpIssuer(), user.email(), current)), ip);
 		}
-		return new LoginResult(Status.AUTHENTICATED, createSession(user, ip, userAgent), null, null, null);
+		return new LoginResult(Status.AUTHENTICATED, createSession(user, ip, userAgent, "password"), null, null, null);
 	}
 
 	@Transactional(noRollbackFor = ApiException.class)
@@ -112,12 +124,17 @@ public class AuthService {
 		long step = Totp.verify(cipher.decrypt(totp.secretEncrypted()), code, Instant.now(), totp.lastStep());
 		if (step < 0) {
 			repo.failChallenge(challenge.id());
+			loginFailed(user, user.email(), "wrong_code");
 			throw new ApiException(HttpStatus.UNAUTHORIZED, "Código incorreto",
 					"Confira o código de 6 números no app autenticador.");
 		}
 		repo.useTotpStep(user.id(), step, challenge.setup());
 		repo.useChallenge(challenge.id());
-		return new LoginResult(Status.AUTHENTICATED, createSession(user, ip, userAgent), null, null, null);
+		if (challenge.setup()) {
+			audit.record(AuditEvent.of(AuditAction.MFA_SETUP, "user", user.id(), user.name()), actor(user));
+		}
+		return new LoginResult(Status.AUTHENTICATED, createSession(user, ip, userAgent, "password+totp"), null, null,
+				null);
 	}
 
 	/** Valida o token do cookie (repassado pelo Next como Bearer). */
@@ -147,7 +164,12 @@ public class AuthService {
 
 	@Transactional
 	public void logout(String token) {
-		repo.revokeSession(Tokens.hash(token));
+		byte[] hash = Tokens.hash(token);
+		repo.session(hash).filter(s -> s.revokedAt() == null).ifPresent(session -> {
+			repo.revokeSession(hash);
+			UserRow user = repo.userById(session.userId()).orElseThrow();
+			audit.record(AuditEvent.of(AuditAction.LOGOUT, "user", user.id(), user.name()), actor(user));
+		});
 	}
 
 	@Transactional
@@ -163,13 +185,28 @@ public class AuthService {
 				totpSetup);
 	}
 
-	private Session createSession(UserRow user, String ip, String userAgent) {
+	private Session createSession(UserRow user, String ip, String userAgent, String method) {
 		String token = Tokens.newToken();
 		OffsetDateTime expires = now().plus(props.sessionMax());
 		repo.createSession(Tokens.hash(token), user.id(), expires, ip,
 				userAgent == null ? null : userAgent.substring(0, Math.min(300, userAgent.length())));
 		repo.markLogin(user.id());
+		audit.record(AuditEvent.of(AuditAction.LOGIN, "user", user.id(), user.name()).detail("method", method)
+			.detail("role", user.role()), actor(user));
 		return new Session(token, expires);
+	}
+
+	/**
+	 * Falha de entrada: a conta-alvo é a entidade, mas não o autor (quem tentou não provou quem é). O e-mail
+	 * digitado vai junto; nunca a senha nem o código.
+	 */
+	private void loginFailed(UserRow user, String email, String reason) {
+		audit.record(AuditEvent.of(AuditAction.LOGIN_FAILED, "user", user == null ? null : user.id(),
+				user == null ? email : user.name()).detail("email", email).detail("reason", reason), null);
+	}
+
+	private static AuditLog.Actor actor(UserRow user) {
+		return new AuditLog.Actor(user.id(), user.name());
 	}
 
 	private static OffsetDateTime now() {
