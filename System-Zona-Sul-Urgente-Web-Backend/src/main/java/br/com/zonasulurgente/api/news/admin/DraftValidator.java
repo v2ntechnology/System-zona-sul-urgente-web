@@ -11,20 +11,21 @@ import java.util.Map;
 /**
  * Mesmas regras de src/lib/editor/validate.ts (o editor confere antes; aqui é a garantia).
  * Rascunho só exige título; revisão/publicação/agendamento exigem a matéria completa.
+ * Os limites públicos também valem para o rascunho gerado pela IA ({@code ai/}).
  */
-final class DraftValidator {
+public final class DraftValidator {
 
 	static final ZoneId BRASILIA = ZoneId.of("America/Sao_Paulo");
-	static final int TITLE_MIN = 10;
-	static final int TITLE_MAX = 120;
-	static final int SUBTITLE_MAX = 200;
-	static final int SUMMARY_MIN = 30;
-	static final int SUMMARY_MAX = 300;
+	public static final int TITLE_MIN = 10;
+	public static final int TITLE_MAX = 120;
+	public static final int SUBTITLE_MAX = 200;
+	public static final int SUMMARY_MIN = 30;
+	public static final int SUMMARY_MAX = 300;
 	static final int SEO_TITLE_MAX = 70;
 	static final int SEO_DESCRIPTION_MAX = 170;
-	static final int TAGS_MAX = 10;
-	static final int TAG_NAME_MIN = 2;
-	static final int TAG_NAME_MAX = 40;
+	public static final int TAGS_MAX = 10;
+	public static final int TAG_NAME_MIN = 2;
+	public static final int TAG_NAME_MAX = 40;
 
 	private DraftValidator() {
 	}

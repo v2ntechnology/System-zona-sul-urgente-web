@@ -51,6 +51,13 @@ zsu:
   site:
     revalidate-url: ${SITE_REVALIDATE_URL:}
     revalidate-secret: ${REVALIDATE_SECRET:}
+  # IA editorial (BE-014). provider: "gemini" ou "fake" (sem rede, para testes e dev sem chave).
+  # Plano grátis do Gemini: só conteúdo público (ARCHITECTURE §6).
+  ai:
+    provider: ${AI_PROVIDER:fake}
+    gemini:
+      api-key: ${GEMINI_API_KEY:}
+      model: ${GEMINI_MODEL:gemini-3.7-flash}
 
 server:
   port: ${PORT:8080}
@@ -103,6 +110,9 @@ spring:
 zsu:
   media:
     storage: ${MEDIA_STORAGE:s3}
+  # Sem GEMINI_API_KEY a API não sobe em produção (nunca a IA falsa por engano).
+  ai:
+    provider: ${AI_PROVIDER:gemini}
 
 # Em produção a documentação da API não fica pública.
 springdoc:
