@@ -2,6 +2,7 @@ import type {
   AdminNewsRow,
   AdminUser,
   TeamMember,
+  InstagramConnection,
   InstagramImportStatus,
   InstagramMediaType,
 } from "@/types/admin";
@@ -156,6 +157,9 @@ export type InstagramPostMock = {
   attempts?: number;
   ignoredReason?: string;
   sourceChangedHoursAgo?: number;
+  /** Origem na fila (padrão: API, a conta de exemplo está ligada). */
+  source?: "MANUAL" | "API";
+  needsPhoto?: boolean;
 };
 
 const post = (n: number) => `https://www.instagram.com/p/exemplo${n}/`;
@@ -302,12 +306,19 @@ export const draftContentMock: Record<string, { summary: string; paragraphs: str
   },
 };
 
-export const instagramConnectionMock = {
+export const instagramConnectionMock: InstagramConnection = {
   username: "zonasulurgente",
+  igUserId: "17841400000000000",
+  status: "ACTIVE",
+  connectedAt: hoursBefore(30 * 24),
+  connectedBy: "Juliana Prado",
   lastCheckAt: new Date(MOCK_NOW.getTime() - 2 * 60_000).toISOString(),
-  pollMinutes: 3,
-  tokenExpiresAt: hoursAfter(41 * 24),
-  publishRule: "DRAFT" as const,
+  lastSuccessAt: new Date(MOCK_NOW.getTime() - 2 * 60_000).toISOString(),
+  pollMinutes: 15,
+  tokenLast4: "x9Qz",
+  tokenExpiresAt: null,
+  tokenDaysLeft: null,
+  alert: null,
 };
 
 // ---------------------------------------------------------------- equipe (FE-159)

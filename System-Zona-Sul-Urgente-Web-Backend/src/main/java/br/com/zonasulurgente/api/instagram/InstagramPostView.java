@@ -13,7 +13,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record InstagramPostView(String id, String caption, String currentCaption, String permalink,
 		String mediaType, int mediaCount, String thumbnailUrl, OffsetDateTime postedAt, String status,
-		NewsRef news, String error, Integer attempts, String ignoredReason, OffsetDateTime sourceChangedAt) {
+		NewsRef news, String error, Integer attempts, String ignoredReason, OffsetDateTime sourceChangedAt,
+		String source, boolean needsPhoto, List<String> mediaUrls) {
 
 	/** Notícia gerada a partir do post; parágrafos em texto puro (comparação com a legenda). */
 	public record NewsRef(UUID id, String title, String status, String summary, List<String> paragraphs) {

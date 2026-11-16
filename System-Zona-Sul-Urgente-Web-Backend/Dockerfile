@@ -15,7 +15,9 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl libvips42t64 libheif-plugin-aomenc libheif-plugin-libde265 \
     && rm -rf /var/lib/apt/lists/* \
-    && groupadd --system app && useradd --system --gid app app
+    && groupadd --system app && useradd --system --gid app app \
+    # Fotos em pasta local (MEDIA_STORAGE=local, só desenvolvimento): o usuário da API precisa gravar nela.
+    && mkdir -p /app/media-local && chown app:app /app/media-local
 COPY --from=build /app/target/extracted/dependencies/ ./
 COPY --from=build /app/target/extracted/spring-boot-loader/ ./
 COPY --from=build /app/target/extracted/snapshot-dependencies/ ./

@@ -116,18 +116,39 @@ export type InstagramPost = {
   ignoredReason?: string;
   /** Quando a reconciliação percebeu a edição/remoção na origem. */
   sourceChangedAt?: ISODateTime;
+  /** MANUAL = colado no painel; API = trazido pela sincronização com a conta (spec 001). */
+  source?: "MANUAL" | "API";
+  /** A Meta não entregou imagem: a foto do rascunho precisa ser escolhida à mão. */
+  needsPhoto?: boolean;
+  /** Imagens guardadas do post (foto, carrossel ou capa do vídeo), na ordem. */
+  mediaUrls?: string[];
 };
 
-/** Conexão com a conta (ARCHITECTURE §6): polling, token de 60 dias, regra de publicação. */
+/** Aviso da conexão para a tela (mensagem já pronta, em português). */
+export type InstagramConnectionAlert = {
+  kind: "REVOKED" | "FAILING" | "EXPIRING";
+  message: string;
+};
+
+/**
+ * Conta do Instagram ligada ao painel (BE-013, spec 001) — GET /api/v1/admin/instagram/connection.
+ * O acesso nunca vem: só os 4 últimos caracteres. Tudo vira rascunho (a IA nunca publica).
+ */
 export type InstagramConnection = {
   username: string;
-  lastCheckAt: ISODateTime;
+  igUserId: string;
+  status: "ACTIVE" | "REVOKED";
+  connectedAt: ISODateTime;
+  connectedBy?: string | null;
+  /** Última tentativa de sincronização (null = ainda não rodou). */
+  lastCheckAt?: ISODateTime | null;
+  lastSuccessAt?: ISODateTime | null;
   pollMinutes: number;
-  tokenExpiresAt: ISODateTime;
-  /** Dias até o token expirar (alerta abaixo de 10; renovação automática a cada 30). */
-  tokenDaysLeft: number;
-  /** DRAFT = tudo vira rascunho; URGENT_AUTO = urgente publica sozinho. */
-  publishRule: "DRAFT" | "URGENT_AUTO";
+  tokenLast4: string;
+  /** null = o acesso não vence (login unificado da Meta). */
+  tokenExpiresAt?: ISODateTime | null;
+  tokenDaysLeft?: number | null;
+  alert?: InstagramConnectionAlert | null;
 };
 
 export type DashboardStats = {

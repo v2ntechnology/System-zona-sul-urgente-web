@@ -99,6 +99,29 @@ test.describe("fila do Instagram", () => {
     await expect(page.getByText(SIMULATED)).toBeVisible();
   });
 
+  // Spec 001: conta ligada (dados de exemplo). A usuária da demonstração é Administradora; a
+  // regra "só Administrador liga/troca/desliga" é garantida pela API (InstagramConnectionApiTests).
+  test("mostra a conta ligada sem expor o acesso e sincroniza (simulado)", async ({ page }) => {
+    await page.goto("/admin/instagram");
+    const panel = page.getByRole("region", { name: "Conta do Instagram" });
+    await expect(panel).toBeVisible();
+    await expect(panel.getByText("@zonasulurgente")).toBeVisible();
+    await expect(panel.getByText(/não vence/)).toBeVisible();
+    await expect(
+      page.getByText("Cada post vira uma notícia em rascunho", { exact: false }),
+    ).toBeVisible();
+    await expect(page.getByText("renova sozinho")).toHaveCount(0);
+    await expect(page.getByText("publicam sozinhas")).toHaveCount(0);
+
+    await panel.getByRole("button", { name: "Sincronizar agora" }).click();
+    await expect(panel.getByText(/Demonstração: sem a API/)).toBeVisible();
+
+    await panel.getByRole("button", { name: "Trocar conta ou acesso" }).click();
+    const form = page.getByRole("form", { name: "Ligar conta do Instagram" });
+    await expect(form.getByLabel("Acesso (token)")).toHaveAttribute("type", "password");
+    await expect(form.getByLabel("Acesso (token)")).toHaveValue("");
+  });
+
   test("cancelar fecha o formulário sem adicionar", async ({ page }) => {
     await page.goto("/admin/instagram");
     await page.getByRole("button", { name: "Adicionar post" }).click();

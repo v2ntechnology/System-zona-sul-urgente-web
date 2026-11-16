@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   countInstagramPostsByStatus,
+  getInstagramConnection,
   listInstagramPosts,
 } from "@/services/admin/instagram-service";
 
@@ -29,5 +30,15 @@ describe("instagram-service", () => {
       .filter(([k]) => k !== "ALL")
       .reduce((total, [, n]) => total + n, 0);
     expect(sum).toBe(counts.ALL);
+  });
+
+  it("conexão no formato do contrato da spec 001: sem acesso e sem publicar sozinho", async () => {
+    const connection = await getInstagramConnection();
+    expect(connection).not.toBeNull();
+    expect(connection?.status).toBe("ACTIVE");
+    expect(connection?.tokenLast4).toHaveLength(4);
+    expect(connection?.tokenExpiresAt).toBeNull();
+    expect(connection).not.toHaveProperty("publishRule");
+    expect(connection).not.toHaveProperty("accessToken");
   });
 });

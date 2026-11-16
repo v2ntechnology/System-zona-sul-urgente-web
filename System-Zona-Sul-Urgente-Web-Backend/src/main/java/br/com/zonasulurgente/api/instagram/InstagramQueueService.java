@@ -70,6 +70,16 @@ public class InstagramQueueService {
 		this.audit = audit;
 	}
 
+	/**
+	 * Link canônico do post ({@code https://www.instagram.com/{p|reel|tv}/{codigo}/}) — o mesmo formato que a Meta
+	 * devolve. É a chave que liga a importação manual à sincronização (spec 001, R6). Vazio se não for link de post.
+	 */
+	static java.util.Optional<String> canonicalPermalink(String url) {
+		Matcher m = url == null ? null : PERMALINK.matcher(url.strip());
+		return m == null || !m.matches() ? java.util.Optional.empty()
+				: java.util.Optional.of("https://www.instagram.com/" + m.group(1) + "/" + m.group(2) + "/");
+	}
+
 	public List<InstagramPostView> list(String status) {
 		return repo.list(status);
 	}
@@ -119,6 +129,18 @@ public class InstagramQueueService {
 	 * status ERROR com a mensagem no post (a tela mostra e oferece "Reprocessar").
 	 */
 	public InstagramPostView generate(String id, AuthenticatedUser user) {
+		return generate(id, user, null);
+	}
+
+	/**
+	 * Rascunho pedido pela sincronização (job INSTAGRAM_IMPORT, spec 001): mesmas regras, em nome do ator de sistema.
+	 * {@code altText} = descrição da foto vinda da Meta (vira o texto alternativo; publicar exige um).
+	 */
+	InstagramPostView generateFromSync(String id, String altText) {
+		return generate(id, SyncActor.USER, altText);
+	}
+
+	private InstagramPostView generate(String id, AuthenticatedUser user, String altText) {
 		InstagramRepository.Current post = current(id);
 		if (!CAN_GENERATE.contains(post.status()) || post.newsId() != null) {
 			throw new ApiException(HttpStatus.CONFLICT, "Rascunho já gerado",
@@ -134,7 +156,7 @@ public class InstagramQueueService {
 			repo.markError(id, e.getMessage());
 			return repo.view(id).orElseThrow();
 		}
-		NewsDraft newsDraft = toNewsDraft(draft, post, context, user);
+		NewsDraft newsDraft = toNewsDraft(draft, post, context, user, image(id, altText));
 		String output = json.writeValueAsString(draft);
 		tx.executeWithoutResult(status -> {
 			UUID newsId = news.createDraft(newsDraft, "INSTAGRAM", user).id();
@@ -147,7 +169,8 @@ public class InstagramQueueService {
 				.detail("model", draft.generatedBy())
 				.detail("instagramPostId", id)
 				.detail("permalink", post.permalink())
-				.detail("advertising", draft.advertising() ? true : null), AuditLog.Actor.of(user));
+				.detail("advertising", draft.advertising() ? true : null)
+				.detail("source", SyncActor.is(user) ? "API" : null), AuditLog.Actor.of(user));
 		});
 		log.info("Post {} virou rascunho ({})", id, draft.generatedBy());
 		return repo.view(id).orElseThrow();
@@ -191,11 +214,27 @@ public class InstagramQueueService {
 	}
 
 	/**
+	 * Foto principal guardada do post (spec 001, FR-009), com crédito da conta de origem. Sem foto guardada, o
+	 * rascunho nasce sem imagem (como na importação manual).
+	 */
+	private NewsDraft.Image image(String id, String altText) {
+		return repo.mainMediaUrl(id).map(url -> {
+			String origin = repo.igUserIdOf(id).orElse(null);
+			String account = repo.connection()
+				.filter(c -> c.igUserId().equals(origin))
+				.map(c -> " @" + c.username())
+				.orElse("");
+			return new NewsDraft.Image(url, altText == null ? "" : altText.strip(), null,
+					"Foto: Reprodução/Instagram" + account);
+		}).orElse(null);
+	}
+
+	/**
 	 * Rascunho do editor a partir da IA. Sem editoria válida, usa a primeira do site (o rascunho exige uma; o
 	 * editor troca). Urgente e tópicos novos só entram se o perfil puder (mesmas regras do editor).
 	 */
 	private NewsDraft toNewsDraft(AiDraft d, InstagramRepository.Current post, EditorialContext context,
-			AuthenticatedUser user) {
+			AuthenticatedUser user, NewsDraft.Image image) {
 		List<Map<String, String>> body = new ArrayList<>();
 		d.paragraphs().forEach(p -> body.add(Map.of("type", "paragraph", "html", HtmlUtils.htmlEscape(p))));
 		String category = d.categorySlug() != null ? d.categorySlug()
@@ -204,7 +243,7 @@ public class InstagramQueueService {
 		boolean canUrgent = user.permissions().contains("news.mark_urgent");
 		return new NewsDraft(null, d.title(), d.subtitle(), d.summary(), json.valueToTree(body),
 				category, user.authorSlug() == null ? List.of() : List.of(user.authorSlug()), d.neighborhoodSlug(),
-				List.of(), canTag ? d.tags() : List.of(), null, d.urgent() && canUrgent, false, null, null, null,
+				List.of(), canTag ? d.tags() : List.of(), image, d.urgent() && canUrgent, false, null, null, null,
 				null, "INSTAGRAM", post.caption(), null, null);
 	}
 

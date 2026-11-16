@@ -259,8 +259,8 @@ function AddPostForm({ onAdded }: { onAdded: (post: InstagramPost) => void }) {
       aria-label="Adicionar post do Instagram"
     >
       <p className="text-sm text-muted-foreground">
-        Enquanto a conta não está conectada, cole o link e a legenda de um post. A IA transforma em
-        rascunho de notícia.
+        Cole o link e a legenda de um post que ainda não está na fila. A IA transforma em rascunho
+        de notícia.
       </p>
       <label className="flex flex-col gap-1.5 text-sm font-semibold">
         Link do post
@@ -551,7 +551,16 @@ function StatusNote({ post }: { post: InstagramPost }) {
     return note(
       "muted",
       <SparklesIcon aria-hidden className={icon} />,
-      "Na fila: a IA gera o rascunho automaticamente em instantes.",
+      // Só o que veio da conta ligada é gerado sozinho; o colado à mão espera o clique (spec 001, R11).
+      post.source === "API"
+        ? "Na fila: a IA gera o rascunho automaticamente em instantes."
+        : "Clique em “Gerar agora” para a IA escrever o rascunho.",
+    );
+  if (post.needsPhoto)
+    return note(
+      "warning",
+      <AlertTriangleIcon aria-hidden className={icon} />,
+      "O Instagram não entregou a imagem deste post: escolha a foto principal no editor.",
     );
   if (post.status === "IMPORTED" && !post.news)
     return note(
@@ -573,6 +582,11 @@ function Thumbnail({ post }: { post: InstagramPost }) {
           sizes="(min-width: 640px) 96px, 56px"
           className="object-cover"
         />
+      )}
+      {post.needsPhoto && (
+        <span className="absolute inset-x-0 bottom-0 bg-amber-500/90 px-1 py-0.5 text-center text-[0.6rem] font-semibold text-white">
+          Precisa de foto
+        </span>
       )}
       {post.mediaType !== "IMAGE" && (
         <span className="absolute top-1 right-1 rounded-full bg-foreground/70 p-1 text-background">

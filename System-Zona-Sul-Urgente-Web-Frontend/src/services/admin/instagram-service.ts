@@ -43,15 +43,13 @@ export async function countInstagramPostsByStatus(): Promise<Record<string, numb
   return counts;
 }
 
-/** null = conta ainda não conectada pela API da Meta (os posts entram por "Adicionar post"). */
+/**
+ * Conta do Instagram ligada ao painel (spec 001). null = nenhuma conta ligada (a API responde 404):
+ * os posts entram por "Adicionar post".
+ */
 export async function getInstagramConnection(): Promise<InstagramConnection | null> {
   if (apiBaseUrl()) return adminGet<InstagramConnection>("/instagram/connection");
-  return {
-    ...instagramConnectionMock,
-    tokenDaysLeft: Math.floor(
-      (Date.parse(instagramConnectionMock.tokenExpiresAt) - MOCK_NOW.getTime()) / 86_400_000,
-    ),
-  };
+  return instagramConnectionMock;
 }
 
 function toPost(p: InstagramPostMock): InstagramPost {
@@ -87,5 +85,8 @@ function toPost(p: InstagramPostMock): InstagramPost {
       p.sourceChangedHoursAgo === undefined
         ? undefined
         : new Date(MOCK_NOW.getTime() - p.sourceChangedHoursAgo * 3_600_000).toISOString(),
+    // Demonstração: a conta de exemplo está ligada, então os posts vêm da sincronização.
+    source: p.source ?? "API",
+    needsPhoto: p.needsPhoto,
   };
 }

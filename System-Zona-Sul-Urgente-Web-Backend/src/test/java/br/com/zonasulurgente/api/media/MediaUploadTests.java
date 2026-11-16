@@ -35,10 +35,12 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
 
 import com.jayway.jsonpath.JsonPath;
 
 import br.com.zonasulurgente.api.TestcontainersConfiguration;
+import br.com.zonasulurgente.api.auth.application.AuthenticatedUser;
 import br.com.zonasulurgente.api.auth.application.Tokens;
 
 /** BE-012: envio de foto com libvips de verdade e armazenamento local (pasta temporária). */
@@ -228,6 +230,36 @@ class MediaUploadTests {
 			.andExpect(jsonPath("$.image.height").value(1600))
 			.andExpect(jsonPath("$.image.alt").value("Círculo branco em fundo azul"))
 			.andExpect(jsonPath("$.image.credit").value("Foto: Redação"));
+	}
+
+	@Autowired
+	MediaService media;
+
+	/** Spec 001 (T008): a sincronização do Instagram guarda fotos sem pessoa logada. */
+	@Test
+	void systemUploadHasNoCreatorAndIsAuditedAsSystem() throws IOException {
+		var system = new AuthenticatedUser(null, "Sincronização do Instagram", null, "SYSTEM", List.of(), null, null);
+		// O upload da sincronização roda no job, fora de requisição (o teste tem uma requisição simulada na thread).
+		var request = RequestContextHolder.getRequestAttributes();
+		RequestContextHolder.resetRequestAttributes();
+		MediaService.Uploaded uploaded;
+		try {
+			uploaded = media.upload(rotatedJpegWithExif(), system);
+		}
+		finally {
+			RequestContextHolder.setRequestAttributes(request);
+		}
+
+		assertThat(jdbc.sql("SELECT created_by IS NULL FROM media_assets WHERE id = :id")
+			.param("id", uploaded.id())
+			.query(Boolean.class)
+			.single()).isTrue();
+		assertThat(jdbc.sql("""
+				SELECT origin || '|' || actor_name || '|' || coalesce(actor_id::text, '-') FROM audit_logs
+				WHERE entity_type = 'media' AND entity_id = :id""")
+			.param("id", uploaded.id().toString())
+			.query(String.class)
+			.single()).isEqualTo("SYSTEM|Sincronização do Instagram|-");
 	}
 
 	@Test

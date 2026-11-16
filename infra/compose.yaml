@@ -35,6 +35,9 @@ services:
       REVALIDATE_SECRET: dev-only-revalidate-secret-nao-usar-em-producao
     ports:
       - "127.0.0.1:8080:8080"
+    # Fotos enviadas pelo painel e trazidas do Instagram (armazenamento local de desenvolvimento).
+    volumes:
+      - media-data:/app/media-local
     depends_on:
       postgres:
         condition: service_healthy
@@ -53,3 +56,4 @@ services:
 
 volumes:
   postgres-data:
+  media-data:

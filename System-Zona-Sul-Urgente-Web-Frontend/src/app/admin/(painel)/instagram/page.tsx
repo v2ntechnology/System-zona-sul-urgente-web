@@ -4,7 +4,6 @@ import {
   BanIcon,
   CheckCircle2Icon,
   Grid3x3Icon,
-  KeyRoundIcon,
   ListIcon,
   PenLineIcon,
   RefreshCwIcon,
@@ -16,6 +15,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { InstagramConnectionPanel } from "@/components/admin/instagram-connection";
 import { InstagramQueue } from "@/components/admin/instagram-queue";
 import { instagramStatusLabel } from "@/components/admin/instagram-status-badge";
 import { BrandLogo } from "@/components/brand/brand-logo";
@@ -83,8 +83,9 @@ async function Profile({ searchParams }: { searchParams: Promise<Params> }) {
   if (!can(user.role, "instagram.review")) notFound();
 
   const pending = (counts.NEW ?? 0) + (counts.ERROR ?? 0) + (counts.CHANGED_AT_SOURCE ?? 0);
-  const tokenWarning = connection !== null && connection.tokenDaysLeft < 10;
-  // Sem conexão pela API da Meta (BE-013), o perfil é o do site e os posts entram à mão.
+  const canManage = can(user.role, "instagram.settings");
+  const alert = connection?.alert ?? null;
+  // Sem conta ligada (spec 001), o perfil é o do site e os posts entram à mão.
   const username =
     connection?.username ?? siteConfig.social.instagram.replace(/^.*instagram\.com\/|\/$/g, "");
   const href = (overrides: { status?: string; visao?: string }) => {
@@ -106,7 +107,11 @@ async function Profile({ searchParams }: { searchParams: Promise<Params> }) {
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <h1 className="text-xl font-normal">{username}</h1>
-            {connection ? (
+            {connection?.status === "REVOKED" ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-800">
+                <span aria-hidden className="size-1.5 rounded-full bg-red-600" /> Acesso perdido
+              </span>
+            ) : connection ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800">
                 <span aria-hidden className="size-1.5 rounded-full bg-emerald-600" /> Conectada
               </span>
@@ -145,38 +150,45 @@ async function Profile({ searchParams }: { searchParams: Promise<Params> }) {
                 <p className="flex items-start gap-1.5 text-muted-foreground">
                   <RefreshCwIcon aria-hidden className="mt-1 size-3.5 shrink-0" />
                   <span>
-                    Verifica posts novos a cada {connection.pollMinutes} min · última{" "}
-                    <RelativeTime iso={connection.lastCheckAt} />
+                    Verifica posts novos a cada {connection.pollMinutes} min
+                    {connection.lastSuccessAt ? (
+                      <>
+                        {" "}
+                        · última <RelativeTime iso={connection.lastSuccessAt} />
+                      </>
+                    ) : null}
                   </span>
                 </p>
-                <p
-                  className={cn(
-                    "flex items-start gap-1.5",
-                    tokenWarning ? "font-semibold text-red-700" : "text-muted-foreground",
-                  )}
-                >
-                  {tokenWarning ? (
-                    <AlertTriangleIcon aria-hidden className="mt-1 size-3.5 shrink-0" />
-                  ) : (
-                    <KeyRoundIcon aria-hidden className="mt-1 size-3.5 shrink-0" />
-                  )}
-                  <span>Acesso válido por {connection.tokenDaysLeft} dias (renova sozinho)</span>
-                </p>
                 <p className="text-muted-foreground">
-                  {connection.publishRule === "DRAFT"
-                    ? "Cada post vira uma notícia em rascunho automaticamente."
-                    : "Urgentes publicam sozinhas; o resto vira rascunho."}
+                  Cada post vira uma notícia em rascunho; a redação revisa e publica.
                 </p>
               </>
             ) : (
               <p className="text-muted-foreground">
-                A conta ainda não está ligada pela API da Meta. Adicione posts pelo botão “Adicionar
-                post”: a IA transforma cada um em rascunho de notícia.
+                A conta ainda não está ligada. Adicione posts pelo botão “Adicionar post”: a IA
+                transforma cada um em rascunho de notícia.
               </p>
             )}
           </div>
         </div>
       </header>
+
+      {alert && (
+        <p
+          role="alert"
+          className={cn(
+            "flex items-start gap-2 rounded-lg border px-4 py-3 text-sm",
+            alert.kind === "REVOKED"
+              ? "border-red-300 bg-red-50 text-red-900"
+              : "border-amber-300 bg-amber-50 text-amber-900",
+          )}
+        >
+          <AlertTriangleIcon aria-hidden className="mt-0.5 size-4 shrink-0" />
+          <span>{alert.message}</span>
+        </p>
+      )}
+
+      {canManage && <InstagramConnectionPanel connection={connection} />}
 
       {/* Destaques (como os "stories fixados") = filtros por status. */}
       <nav aria-label="Filtrar por status">
