@@ -14,6 +14,7 @@ import {
   PaletteIcon,
   PlusIcon,
   SquarePenIcon,
+  StarIcon,
   UsersIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -38,6 +39,7 @@ import { cn } from "@/lib/utils";
 const icons = {
   dashboard: LayoutDashboardIcon,
   news: NewspaperIcon,
+  featured: StarIcon,
   new: SquarePenIcon,
   instagram: CameraIcon,
   taxonomy: FolderTreeIcon,

@@ -132,3 +132,35 @@ test.describe("fila do Instagram", () => {
     await expect(page.getByRole("button", { name: "Adicionar post" })).toBeVisible();
   });
 });
+
+// Spec 003: destaques da home (modo demonstração: a usuária é Administradora; a API garante as
+// permissões e as regras — HomeFeaturedApiTests).
+test.describe("destaques da home", () => {
+  test("mostra o topo, reordena e salva (simulado)", async ({ page }) => {
+    await page.goto("/admin/destaques");
+    await expect(page.getByRole("heading", { level: 1, name: "Destaques da home" })).toBeVisible();
+
+    const headline = page.getByRole("listitem", { name: /Posição 1 \(Manchete\)/ });
+    const second = page.getByRole("listitem", { name: /Posição 2 / });
+    const headlineTitle = (await headline.locator("span.truncate").textContent())!.trim();
+    const secondTitle = (await second.locator("span.truncate").textContent())!.trim();
+    await expect(page.getByRole("button", { name: "Salvar destaques" })).toBeDisabled();
+
+    await second.getByRole("button", { name: `Subir “${secondTitle}”` }).click();
+    await expect(headline.locator("span.truncate")).toHaveText(secondTitle);
+    await expect(second.locator("span.truncate")).toHaveText(headlineTitle);
+
+    await page.getByRole("button", { name: "Salvar destaques" }).click();
+    await expect(page.getByText(/Demonstração: sem a API/)).toBeVisible();
+  });
+
+  test("atalho na listagem: colocar como manchete (simulado)", async ({ page }) => {
+    await page.goto("/admin/noticias?status=PUBLISHED");
+    await page
+      .getByRole("button", { name: /^Ações para / })
+      .first()
+      .click();
+    await page.getByRole("menuitem", { name: "Colocar como manchete" }).click();
+    await expect(page.getByText(/colocar como manchete \(simulação/)).toBeVisible();
+  });
+});

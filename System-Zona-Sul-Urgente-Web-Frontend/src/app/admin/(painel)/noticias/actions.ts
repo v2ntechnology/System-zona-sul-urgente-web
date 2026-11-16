@@ -8,7 +8,7 @@ import { validateDraft } from "@/lib/editor/validate";
 import { adminFetch } from "@/services/admin/admin-api";
 import { getCurrentUser } from "@/services/admin/admin-service";
 import { apiBaseUrl } from "@/services/api/client";
-import type { DraftErrors, NewsDraft, SaveIntent, SaveResult } from "@/types/admin";
+import type { DraftErrors, HomeFeatured, NewsDraft, SaveIntent, SaveResult } from "@/types/admin";
 import type { NewsStatus } from "@/types/news";
 
 type ApiSaved = { id: string; slug: string; status: NewsStatus; version: number; savedAt: string };
@@ -153,4 +153,28 @@ export async function uploadPhotoAction(formData: FormData): Promise<UploadResul
   });
   if (!result.ok) return { ok: false, message: result.message };
   return { ok: true, ...result.data };
+}
+
+// ---------------------------------------------------------------- destaques da home (spec 003)
+
+export type FeatureShortcut = "MAIN" | "HIGHLIGHT" | "NONE";
+
+/**
+ * Atalho de destaque: manchete, destaques ou tirar. A API confere a permissão (news.publish) e as
+ * regras (só publicada; patrocinada nunca na manchete). Atualiza a home na hora.
+ */
+export async function featureNewsAction(
+  id: string,
+  as: FeatureShortcut,
+): Promise<{ ok: true; ranks: Record<string, number> } | { ok: false; message: string }> {
+  if (!apiBaseUrl()) return { ok: false, message: "simulated" };
+  const result = await adminFetch<HomeFeatured>(`/news/${id}/feature`, {
+    method: "POST",
+    body: { as },
+  });
+  if (!result.ok) return { ok: false, message: result.message };
+  revalidateTag(cacheTags.home(), { expire: 0 });
+  const ranks: Record<string, number> = {};
+  for (const slot of result.data.slots) if (slot.news) ranks[slot.news.id] = slot.position;
+  return { ok: true, ranks };
 }

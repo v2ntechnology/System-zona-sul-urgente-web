@@ -50,7 +50,11 @@ public class NewsReadService {
 		}
 	}
 
-	public record Featured(NewsSummary main, List<NewsSummary> secondary) {
+	/**
+	 * Topo da home (spec 003). {@code mainAutomatic}: ninguém escolheu a manchete (posição 1 vazia) e a home mostra a
+	 * publicada mais recente não patrocinada.
+	 */
+	public record Featured(NewsSummary main, boolean mainAutomatic, List<NewsSummary> secondary) {
 	}
 
 	public record CategoryPage(Category category, Page<NewsSummary> page) {
@@ -93,12 +97,20 @@ public class NewsReadService {
 	}
 
 	public Optional<Featured> featured() {
-		List<NewsSummary> ranked = news.list("n.featured_rank IS NOT NULL", "n.featured_rank", Map.of(), 10,
-				null);
-		if (ranked.isEmpty()) {
+		List<NewsSummary> chosen = news.list("n.featured_rank = 1", "n.featured_rank", Map.of(), 1, null);
+		boolean automatic = chosen.isEmpty();
+		List<NewsSummary> main = automatic
+				? news.list("NOT n.is_sponsored", "n.published_at DESC, n.id DESC", Map.of(), 1, null)
+				: chosen;
+		if (main.isEmpty()) {
 			return Optional.empty();
 		}
-		return Optional.of(new Featured(ranked.getFirst(), ranked.subList(1, ranked.size())));
+		NewsSummary head = main.getFirst();
+		List<NewsSummary> secondary = news.list("n.featured_rank > 1", "n.featured_rank", Map.of(), 9, null)
+			.stream()
+			.filter(s -> !s.id().equals(head.id()))
+			.toList();
+		return Optional.of(new Featured(head, automatic, secondary));
 	}
 
 	public List<NewsSummary> videos(int limit) {

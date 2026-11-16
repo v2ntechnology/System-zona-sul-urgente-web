@@ -5,7 +5,12 @@ import { RemoteImage } from "@/components/media/remote-image";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 
-import { changeNewsStateAction } from "@/app/admin/(painel)/noticias/actions";
+import { changeNewsStateAction, featureNewsAction } from "@/app/admin/(painel)/noticias/actions";
+import {
+  availableShortcuts,
+  FeaturedBadge,
+  shortcutLabels,
+} from "@/components/admin/feature-shortcuts";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { RelativeTime } from "@/components/news/relative-time";
 import {
@@ -33,6 +38,7 @@ import { cn } from "@/lib/utils";
 import type { AdminNewsRow } from "@/types/admin";
 
 type Action = "publish" | "unpublish" | "delete" | "restore";
+type Shortcut = "MAIN" | "HIGHLIGHT" | "NONE";
 
 type NewsTableProps = {
   rows: AdminNewsRow[];
@@ -67,6 +73,38 @@ export function NewsTable({
   const [toDelete, setToDelete] = useState<AdminNewsRow | null>(null);
   const [, startTransition] = useTransition();
 
+  // Atalhos de destaque da home (spec 003): a API devolve a ordem nova; aplica em todas as linhas.
+  function feature(row: AdminNewsRow, as: Shortcut) {
+    startTransition(async () => {
+      const result = await featureNewsAction(row.id, as);
+      if (!result.ok && result.message === "simulated") {
+        setRows((current) =>
+          current.map((r) =>
+            r.id === row.id
+              ? { ...r, featuredRank: as === "MAIN" ? 1 : as === "HIGHLIGHT" ? 2 : null }
+              : r,
+          ),
+        );
+        setMessage(
+          `“${row.title}”: ${shortcutLabels[as].toLowerCase()} (simulação — sem backend conectado).`,
+        );
+        return;
+      }
+      if (!result.ok) {
+        setMessage(`Não deu para concluir: ${result.message}`);
+        return;
+      }
+      setRows((current) =>
+        current.map((r) => ({ ...r, featuredRank: result.ranks[r.id] ?? null })),
+      );
+      setMessage(
+        as === "NONE"
+          ? `“${row.title}” saiu do destaque da home.`
+          : `“${row.title}” ${as === "MAIN" ? "é a manchete" : "está nos destaques"} da home.`,
+      );
+    });
+  }
+
   function apply(row: AdminNewsRow, action: Action) {
     startTransition(async () => {
       const result = await changeNewsStateAction(row.id, action);
@@ -81,8 +119,10 @@ export function NewsTable({
           if (r.id !== row.id) return r;
           if (action === "publish")
             return { ...r, status: "PUBLISHED", publishedAt: r.publishedAt ?? now, updatedAt: now };
-          if (action === "unpublish") return { ...r, status: "UNPUBLISHED", updatedAt: now };
-          if (action === "delete") return { ...r, deletedAt: now };
+          // Saiu do ar: sai do destaque (a API sobe as de baixo; a tela só limpa esta).
+          if (action === "unpublish")
+            return { ...r, status: "UNPUBLISHED", updatedAt: now, featuredRank: null };
+          if (action === "delete") return { ...r, deletedAt: now, featuredRank: null };
           return { ...r, deletedAt: undefined, updatedAt: now };
         }),
       );
@@ -121,6 +161,7 @@ export function NewsTable({
               canPublish={canPublish}
               canDelete={canDelete}
               onAction={apply}
+              onFeature={feature}
               onDelete={setToDelete}
               floating
             />
@@ -178,6 +219,7 @@ export function NewsTable({
                 </td>
                 <td className="px-3 py-3">
                   <StatusBadge status={row.deletedAt ? "DELETED" : row.status} />
+                  <FeaturedBadge rank={row.featuredRank} />
                 </td>
                 <td className="px-3 py-3 whitespace-nowrap">{row.category.name}</td>
                 <td className="px-3 py-3">{row.authors.join(", ")}</td>
@@ -200,6 +242,7 @@ export function NewsTable({
                     canPublish={canPublish}
                     canDelete={canDelete}
                     onAction={apply}
+                    onFeature={feature}
                     onDelete={setToDelete}
                   />
                 </td>
@@ -225,6 +268,7 @@ export function NewsTable({
                 canPublish={canPublish}
                 canDelete={canDelete}
                 onAction={apply}
+                onFeature={feature}
                 onDelete={setToDelete}
               />
             </div>
@@ -303,6 +347,7 @@ function RowActions({
   canPublish,
   canDelete,
   onAction,
+  onFeature,
   onDelete,
   floating,
 }: {
@@ -310,6 +355,7 @@ function RowActions({
   canPublish: boolean;
   canDelete: boolean;
   onAction: (row: AdminNewsRow, action: Action) => void;
+  onFeature: (row: AdminNewsRow, as: Shortcut) => void;
   onDelete: (row: AdminNewsRow) => void;
   /** Sobre a foto do card: botão redondo com fundo. */
   floating?: boolean;
@@ -344,6 +390,16 @@ function RowActions({
           <DropdownMenuItem onClick={() => onAction(row, "unpublish")}>
             Despublicar
           </DropdownMenuItem>
+        )}
+        {canPublish && !deleted && row.status === "PUBLISHED" && (
+          <>
+            <DropdownMenuSeparator />
+            {availableShortcuts(row.featuredRank, row.isSponsored).map((as) => (
+              <DropdownMenuItem key={as} onClick={() => onFeature(row, as)}>
+                {shortcutLabels[as]}
+              </DropdownMenuItem>
+            ))}
+          </>
         )}
         {canDelete && (
           <>

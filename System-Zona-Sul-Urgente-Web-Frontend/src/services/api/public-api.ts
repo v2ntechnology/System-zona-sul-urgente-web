@@ -20,7 +20,7 @@ import type {
 // strings quando uma notícia é publicada/editada, e o site atualiza na hora. O tempo é só
 // rede de segurança. Funções com cursor/busca devolvem o 400 como valor: o service usa unwrap().
 
-type FeaturedResponse = { main: NewsSummary; secondary: NewsSummary[] };
+type FeaturedResponse = { main: NewsSummary; secondary: NewsSummary[]; mainAutomatic?: boolean };
 
 export async function latest(cursor: string | null | undefined, limit: number) {
   "use cache";

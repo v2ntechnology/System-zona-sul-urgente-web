@@ -12,7 +12,15 @@ import { apiBaseUrl } from "@/services/api/client";
 export type FieldProblem = { field: string; message: string };
 
 export type AdminResult<T> =
-  { ok: true; data: T } | { ok: false; status: number; message: string; errors?: FieldProblem[] };
+  | { ok: true; data: T }
+  | {
+      ok: false;
+      status: number;
+      message: string;
+      errors?: FieldProblem[];
+      /** Corpo do problem+json (ex.: `current` no 409 dos destaques da home). */
+      problem?: Record<string, unknown>;
+    };
 
 export async function adminFetch<T>(
   path: string,
@@ -64,6 +72,7 @@ export async function adminFetch<T>(
       status: response.status,
       message: problem.detail ?? problem.title ?? `Erro ${response.status}.`,
       errors: problem.errors,
+      problem: json as Record<string, unknown> | undefined,
     };
   }
   return { ok: true, data: json as T };

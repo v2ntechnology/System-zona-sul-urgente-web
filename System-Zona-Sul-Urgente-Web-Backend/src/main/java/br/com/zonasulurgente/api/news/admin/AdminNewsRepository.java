@@ -93,7 +93,7 @@ class AdminNewsRepository {
 		List<AdminNewsRow> rows = jdbc.sql("""
 				SELECT n.id, n.slug, n.title, n.status, n.origin, n.is_urgent, n.is_sponsored, n.updated_at,
 				       n.published_at, n.scheduled_for, n.deleted_at, coalesce(ns.views_total, 0) AS views,
-				       m.url AS image_url, c.id AS c_id, c.slug AS c_slug, c.name AS c_name,
+				       m.url AS image_url, n.featured_rank, c.id AS c_id, c.slug AS c_slug, c.name AS c_name,
 				       p.id AS p_id, p.slug AS p_slug, p.name AS p_name,
 				       (SELECT string_agg(a.name, '|' ORDER BY na.position) FROM news_authors na
 				          JOIN authors a ON a.id = na.author_id WHERE na.news_id = n.id) AS authors
@@ -431,11 +431,88 @@ class AdminNewsRepository {
 				rs.getBoolean("is_urgent"), rs.getBoolean("is_sponsored"),
 				rs.getObject("updated_at", OffsetDateTime.class), rs.getObject("published_at", OffsetDateTime.class),
 				rs.getObject("scheduled_for", OffsetDateTime.class), rs.getObject("deleted_at", OffsetDateTime.class),
-				rs.getLong("views"), rs.getString("image_url"));
+				rs.getLong("views"), rs.getString("image_url"), rs.getObject("featured_rank", Integer.class));
 	}
 
 	private static String nz(String value) {
 		return value == null ? "" : value;
+	}
+
+	// ---------------------------------------------------------------- destaques da home (spec 003)
+
+	/** Notícia no topo da home (ou candidata a estar): o que a tela de destaques e as regras precisam. */
+	record FeaturedRow(UUID id, Integer rank, String slug, String title, String imageUrl, String category,
+			OffsetDateTime publishedAt, boolean isSponsored, boolean isUrgent, String status,
+			OffsetDateTime deletedAt) {
+
+		boolean live() {
+			return "PUBLISHED".equals(status) && deletedAt == null;
+		}
+
+	}
+
+	private static final String FEATURED_SELECT = """
+			SELECT n.id, n.featured_rank, n.slug, n.title, m.url AS image_url, c.name AS category, n.published_at,
+			       n.is_sponsored, n.is_urgent, n.status, n.deleted_at
+			FROM news n JOIN categories c ON c.id = n.category_id LEFT JOIN media_assets m ON m.id = n.image_id
+			""";
+
+	/** Ordem atual do destaque (posição 1..10). */
+	List<FeaturedRow> featured() {
+		return jdbc.sql(FEATURED_SELECT + " WHERE n.featured_rank IS NOT NULL ORDER BY n.featured_rank")
+			.query((rs, i) -> featuredRow(rs))
+			.list();
+	}
+
+	Map<UUID, FeaturedRow> featuredCandidates(List<UUID> ids) {
+		if (ids.isEmpty()) {
+			return Map.of();
+		}
+		Map<UUID, FeaturedRow> out = new LinkedHashMap<>();
+		jdbc.sql(FEATURED_SELECT + " WHERE n.id IN (:ids)")
+			.param("ids", ids)
+			.query((rs, i) -> featuredRow(rs))
+			.list()
+			.forEach(row -> out.put(row.id(), row));
+		return out;
+	}
+
+	/** A publicada mais recente não patrocinada: a manchete automática (FR-009, FR-010). */
+	java.util.Optional<FeaturedRow> automaticMain() {
+		return jdbc.sql(FEATURED_SELECT + """
+				 WHERE n.status = 'PUBLISHED' AND n.deleted_at IS NULL AND n.published_at <= now()
+				   AND NOT n.is_sponsored
+				 ORDER BY n.published_at DESC, n.id DESC LIMIT 1""")
+			.query((rs, i) -> featuredRow(rs))
+			.optional();
+	}
+
+	/**
+	 * Grava a ordem inteira: {@code ordered.get(i)} vai para a posição {@code i + 1}; nulo = posição vazia. Zera tudo
+	 * antes e regrava uma a uma, então o índice único da V11 nunca vê duas notícias na mesma posição.
+	 */
+	void replaceFeatured(List<UUID> ordered) {
+		jdbc.sql("UPDATE news SET featured_rank = NULL WHERE featured_rank IS NOT NULL").update();
+		for (int i = 0; i < ordered.size(); i++) {
+			if (ordered.get(i) != null) {
+				jdbc.sql("UPDATE news SET featured_rank = :rank WHERE id = :id")
+					.param("rank", i + 1)
+					.param("id", ordered.get(i))
+					.update();
+			}
+		}
+	}
+
+	/** Uma alteração do destaque por vez (salvar, atalho, saída automática): trava até o fim da transação. */
+	void lockFeatured() {
+		jdbc.sql("SELECT pg_advisory_xact_lock(hashtext('home_featured'))").query().singleRow();
+	}
+
+	private static FeaturedRow featuredRow(ResultSet rs) throws SQLException {
+		return new FeaturedRow(rs.getObject("id", UUID.class), rs.getObject("featured_rank", Integer.class),
+				rs.getString("slug"), rs.getString("title"), rs.getString("image_url"), rs.getString("category"),
+				rs.getObject("published_at", OffsetDateTime.class), rs.getBoolean("is_sponsored"),
+				rs.getBoolean("is_urgent"), rs.getString("status"), rs.getObject("deleted_at", OffsetDateTime.class));
 	}
 
 	private static String blankToNull(String value) {

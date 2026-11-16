@@ -62,6 +62,8 @@ export type AdminNewsRow = {
   views: number;
   /** Miniatura da foto principal (cards da listagem). */
   imageUrl?: string;
+  /** Posição no topo da home (1 = manchete); ausente/null = fora do destaque (spec 003). */
+  featuredRank?: number | null;
 };
 
 export type AdminNewsFilter = {
@@ -369,4 +371,29 @@ export type AuthorProfile = {
   newsCount: number;
   /** Pessoa da equipe dona deste perfil (sem = autor sem login). */
   member?: { id: UUID; name: string };
+};
+
+// ---------------------------------------------------------------- destaques da home (spec 003)
+
+/** Notícia num card da tela de destaques. */
+export type HomeFeaturedNews = {
+  id: UUID;
+  slug: string;
+  title: string;
+  imageUrl?: string | null;
+  category: string;
+  publishedAt: ISODateTime;
+  isSponsored: boolean;
+  isUrgent: boolean;
+};
+
+export type HomeFeaturedSlot = { position: number; news: HomeFeaturedNews | null };
+
+/** GET /api/v1/admin/home/featured — 10 posições (1 = manchete, 2–3 ao lado, 4–7 faixa, 8–10 reserva). */
+export type HomeFeatured = {
+  slots: HomeFeaturedSlot[];
+  /** Só quando a posição 1 está vazia: a notícia que a home está mostrando como manchete. */
+  automaticMain?: HomeFeaturedNews | null;
+  /** Ordem que a tela carregou; volta no salvar para detectar mudança de outra pessoa. */
+  signature: string;
 };

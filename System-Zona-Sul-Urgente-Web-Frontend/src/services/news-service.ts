@@ -31,6 +31,8 @@ export type HomeFeatured = {
   main: NewsSummary;
   /** Destaques secundários, em ordem editorial. */
   secondary: NewsSummary[];
+  /** Ninguém escolheu a manchete: é a publicada mais recente não patrocinada (spec 003). */
+  mainAutomatic?: boolean;
 };
 
 export async function getBreakingNews(): Promise<BreakingNews[]> {
@@ -55,7 +57,7 @@ export async function getFeatured(): Promise<HomeFeatured | null> {
     .map(toSummary);
   if (ranked.length === 0) return null;
   const [main, ...secondary] = ranked;
-  return { main, secondary };
+  return { main, secondary, mainAutomatic: false };
 }
 
 export async function getLatest(request: PageRequest = {}): Promise<Page<NewsSummary>> {

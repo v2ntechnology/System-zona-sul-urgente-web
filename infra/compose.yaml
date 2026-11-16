@@ -30,11 +30,16 @@ services:
       DB_PASSWORD: zonasul
       # Stack local: carrega os dados de exemplo (db/seed). Nunca usar "local" em produção.
       SPRING_PROFILES_ACTIVE: local
-      # Revalidação do site após publicar (BE-011); mesmo segredo do serviço web.
-      SITE_REVALIDATE_URL: http://web:3000
+      # Revalidação do site após publicar (BE-011); mesmo segredo do serviço web. Padrão: o serviço `web` desta stack.
+      # Site rodando fora do Docker (npm run dev): suba a API com
+      #   SITE_REVALIDATE_URL=http://host.docker.internal:3000 docker compose -f infra/compose.yaml --profile app up -d api
+      SITE_REVALIDATE_URL: ${SITE_REVALIDATE_URL:-http://web:3000}
       REVALIDATE_SECRET: dev-only-revalidate-secret-nao-usar-em-producao
     ports:
       - "127.0.0.1:8080:8080"
+    # host.docker.internal também no Docker Engine do Linux (no Docker Desktop já existe).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     # Fotos enviadas pelo painel e trazidas do Instagram (armazenamento local de desenvolvimento).
     volumes:
       - media-data:/app/media-local

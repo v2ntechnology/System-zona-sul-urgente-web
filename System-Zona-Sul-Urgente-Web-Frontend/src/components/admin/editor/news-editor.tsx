@@ -30,6 +30,7 @@ import {
 
 import { saveNewsAction, uploadPhotoAction } from "@/app/admin/(painel)/noticias/actions";
 import { RichTextEditor } from "@/components/admin/editor/rich-text-editor";
+import { FeatureShortcuts } from "@/components/admin/feature-shortcuts";
 import { TagPicker } from "@/components/admin/editor/tag-picker";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { adminRoutes } from "@/config/admin-navigation";
@@ -757,6 +758,9 @@ export function NewsEditor({ initial, options, permissions }: NewsEditorProps) {
                   onToggle={() => toggleRow("advanced")}
                 >
                   <div className="flex flex-col gap-4">
+                    {draft.status === "PUBLISHED" && draft.id && permissions.canPublish && (
+                      <FeatureShortcuts newsId={draft.id} isSponsored={draft.isSponsored} />
+                    )}
                     {draft.status !== "PUBLISHED" && permissions.canPublish && (
                       <div className="flex flex-col gap-1">
                         <label htmlFor="campo-scheduledFor" className="text-sm font-semibold">

@@ -7,6 +7,7 @@ export type AdminNavItem = {
   icon:
     | "dashboard"
     | "news"
+    | "featured"
     | "new"
     | "instagram"
     | "taxonomy"
@@ -27,6 +28,8 @@ export const adminRoutes = {
   news: "/admin/noticias",
   newNews: "/admin/noticias/nova",
   editNews: (id: string) => `/admin/noticias/${id}`,
+  /** Destaques da home: manchete e destaques (spec 003). */
+  featured: "/admin/destaques",
   instagram: "/admin/instagram",
   taxonomy: "/admin/editorias",
   tags: "/admin/editorias/topicos",
@@ -47,6 +50,12 @@ export const adminRoutes = {
 export const adminNav: AdminNavItem[] = [
   { label: "Dashboard", href: adminRoutes.dashboard, icon: "dashboard" },
   { label: "Notícias", href: adminRoutes.news, icon: "news" },
+  {
+    label: "Destaques",
+    href: adminRoutes.featured,
+    icon: "featured",
+    permission: "news.publish",
+  },
   {
     label: "Instagram",
     href: adminRoutes.instagram,
@@ -87,6 +96,7 @@ export const newNewsItem: AdminNavItem = {
 export const adminSegmentLabels: Record<string, string> = {
   admin: "Painel",
   noticias: "Notícias",
+  destaques: "Destaques da home",
   nova: "Nova notícia",
   login: "Entrar",
   instagram: "Instagram",

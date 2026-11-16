@@ -43,14 +43,16 @@ public class AdminNewsService {
 	private final ApplicationEventPublisher events;
 	private final MediaProperties media;
 	private final AuditLog audit;
+	private final HomeFeaturedService featured;
 
 	public AdminNewsService(AdminNewsRepository repo, JsonMapper json, ApplicationEventPublisher events,
-			MediaProperties media, AuditLog audit) {
+			MediaProperties media, AuditLog audit, HomeFeaturedService featured) {
 		this.repo = repo;
 		this.json = json;
 		this.events = events;
 		this.media = media;
 		this.audit = audit;
+		this.featured = featured;
 	}
 
 	@Transactional(readOnly = true)
@@ -239,6 +241,7 @@ public class AdminNewsService {
 		Current current = repo.current(id).orElseThrow(() -> new NotFoundException("Notícia não encontrada."));
 		NewsDraft.Out before = repo.draft(id).orElseThrow();
 		String status = current.status();
+		Integer leftFeatured = null;
 		switch (action) {
 			case "PUBLISHED" -> {
 				if (current.deletedAt() != null) {
@@ -254,8 +257,13 @@ public class AdminNewsService {
 				}
 				repo.changeState(id, "status = 'UNPUBLISHED'", Map.of(), user.id());
 				status = "UNPUBLISHED";
+				// Saiu do ar: sai do destaque da home e as de baixo sobem (spec 003, FR-008).
+				leftFeatured = featured.leave(id).orElse(null);
 			}
-			case "DELETED" -> repo.changeState(id, "deleted_at = now(), deleted_by = :user", Map.of(), user.id());
+			case "DELETED" -> {
+				repo.changeState(id, "deleted_at = now(), deleted_by = :user", Map.of(), user.id());
+				leftFeatured = featured.leave(id).orElse(null);
+			}
 			case "RESTORED" -> repo.changeState(id, "deleted_at = NULL, deleted_by = NULL", Map.of(), user.id());
 			default -> throw new IllegalArgumentException(action);
 		}
@@ -268,7 +276,8 @@ public class AdminNewsService {
 			case "DELETED" -> AuditAction.DELETE;
 			default -> AuditAction.RESTORE;
 		};
-		audit.record(auditEvent(auditAction, before, after).detail("version", version), AuditLog.Actor.of(user));
+		audit.record(auditEvent(auditAction, before, after).detail("version", version)
+			.detail("removedFromFeatured", leftFeatured), AuditLog.Actor.of(user));
 		events.publishEvent(new NewsChangedEvent(id, current.slug(), current.slug(),
 				"DELETED".equals(action) ? "DELETED" : status, current.status()));
 		return new SaveResult(id, current.slug(), status, version, OffsetDateTime.now(ZoneOffset.UTC));

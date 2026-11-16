@@ -31,10 +31,16 @@ import jakarta.validation.constraints.Size;
 @Tag(name = "Notícias (admin)")
 public class AdminNewsController {
 
-	private final AdminNewsService service;
+	/** Atalho de destaque da home (spec 003): MAIN = manchete, HIGHLIGHT = destaques, NONE = tirar. */
+	public record FeatureRequest(HomeFeaturedService.Shortcut as) {
+	}
 
-	public AdminNewsController(AdminNewsService service) {
+	private final AdminNewsService service;
+	private final HomeFeaturedService featured;
+
+	public AdminNewsController(AdminNewsService service, HomeFeaturedService featured) {
 		this.service = service;
+		this.featured = featured;
 	}
 
 	@GetMapping
@@ -108,6 +114,18 @@ public class AdminNewsController {
 	@PreAuthorize("hasAuthority('news.delete')")
 	public SaveResult restore(@PathVariable UUID id, @AuthenticationPrincipal AuthenticatedUser user) {
 		return service.restore(id, user);
+	}
+
+	@PostMapping("/{id}/feature")
+	@PreAuthorize("hasAuthority('news.publish')")
+	@Operation(summary = "Coloca como manchete, nos destaques ou tira do destaque da home")
+	public HomeFeaturedService.View feature(@PathVariable UUID id, @RequestBody FeatureRequest body,
+			@AuthenticationPrincipal AuthenticatedUser user) {
+		if (body == null || body.as() == null) {
+			throw new br.com.zonasulurgente.api.shared.web.InvalidFieldsException(
+					java.util.Map.of("as", "Escolha MAIN, HIGHLIGHT ou NONE."));
+		}
+		return featured.feature(id, body.as(), user);
 	}
 
 }

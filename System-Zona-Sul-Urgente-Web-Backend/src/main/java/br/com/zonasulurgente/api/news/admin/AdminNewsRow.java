@@ -13,7 +13,7 @@ import br.com.zonasulurgente.api.shared.contract.CategoryRef;
 public record AdminNewsRow(UUID id, String slug, String title, String status, Category category,
 		List<String> authors, String origin, boolean isUrgent, boolean isSponsored, OffsetDateTime updatedAt,
 		OffsetDateTime publishedAt, OffsetDateTime scheduledFor, OffsetDateTime deletedAt, long views,
-		String imageUrl) {
+		String imageUrl, Integer featuredRank) {
 
 	@JsonInclude(JsonInclude.Include.NON_NULL)
 	public record Category(UUID id, String slug, String name, CategoryRef parent) {
