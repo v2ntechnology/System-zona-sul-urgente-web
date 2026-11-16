@@ -43,7 +43,7 @@ vai para logs/auditoria; limite de chamadas da Meta (1–3 páginas por ciclo)
 |---|---|---|
 | I. Português | Mensagens, avisos da tela e auditoria em português; identificadores em inglês | ✅ |
 | II. Documentação | Atualiza `usuario/05-instagram-e-ia.md`, `tecnico/10-arquitetura.md` (módulo instagram), changelog e backlog (BE-013) | ✅ |
-| III. Segurança | Acesso cifrado (AES-256-GCM, `SecretCipher`), nunca devolvido nem logado; ligar/trocar só `instagram.settings` via `@PreAuthorize`; auditoria na transação de ligar/desligar; permissão mínima na Meta | ✅ |
+| III. Segurança | Acesso de integração cifrado no banco (AES-256-GCM, `SecretCipher`, chave no `.env`, como o 2FA — constituição 1.0.1), nunca devolvido nem logado; ligar/trocar só `instagram.settings` via `@PreAuthorize`; auditoria na transação de ligar/desligar; permissão mínima na Meta | ✅ |
 | IV. Site sem API | Modo demonstração: mock de `InstagramConnection` no novo formato; ações respondem "simulado" | ✅ |
 | V. Contratos explícitos | Migração Flyway nova (V10); contrato em [contracts/](contracts/admin-instagram-connection.md) espelhado em `src/types/admin.ts`; o módulo `instagram` usa `media`, `ai`, `news` e `auth` por seus serviços públicos | ✅ (ver Complexidade) |
 | VI. Leitor primeiro | Não muda o site público; rascunhos só aparecem no site depois de publicados | ✅ |
@@ -121,3 +121,4 @@ outros módulos são usados só pelos serviços públicos que já expõem.
 |---|---|---|
 | `instagram` usa `SecretCipher` do módulo `auth` | Requisito "cifrado como o 2FA"; mesma chave e rotina já testadas | Cópia da classe de cifra no módulo (duplicação de código de segurança) |
 | Ator de sistema com `id` nulo | Rascunho gerado sem pessoa logada | Usuário "robô" no banco (mais uma conta a proteger) |
+| `instagram` enfileira jobs pelo `JobQueue` (classe `@Repository` do módulo `jobs`) | O `JobQueue` é a porta de entrada da fila; o módulo `site` já usa igual (`CacheInvalidateJob`) | Interface extra só para enfileirar (camada sem ganho) |

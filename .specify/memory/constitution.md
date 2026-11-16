@@ -1,9 +1,10 @@
 <!--
 Relatório de sincronização
-- Versão: (nova) → 1.0.0
-- Primeira constituição do Zona Sul Urgente, escrita a partir das regras que o código já segue (READMEs,
-  SecurityConfig, services do frontend, application.yml, CI).
-- Modelos em .specify/templates/: sem mudança necessária (genéricos do Spec Kit 1.4.1).
+- Versão: 1.0.0 → 1.0.1 (correção de texto, sem mudar regra)
+- III: "segredos só em .env" deixava de fora o que já é feito no 2FA (segredo de usuário cifrado no banco com chave
+  do .env). O texto agora separa segredos de configuração (.env) de segredos cadastrados pelo painel (banco, cifrados).
+  Motivo: análise da spec 001 (acesso à conta do Instagram).
+- Modelos em .specify/templates/: sem mudança necessária.
 -->
 
 # Constituição do Zona Sul Urgente
@@ -42,7 +43,9 @@ não supostas. Os itens do backlog mantêm o código (`FE-1xx`, `BE-0xx`...), qu
   negado em `SecurityConfig`.
 - Ações do painel gravam auditoria **na mesma transação** da mudança.
 - Erros em `problem+json` sem stack trace; documentação interativa da API desligada em produção; portas locais só em
-  `127.0.0.1`; segredos só em `.env`, nunca no código nem no `.env.example`.
+  `127.0.0.1`. Segredos de configuração (chaves, senhas de serviços) só em `.env`, nunca no código nem no
+  `.env.example`. Segredos de usuários e de integrações cadastrados pelo painel (2FA, acesso à conta do Instagram) ficam
+  no banco cifrados com chave que está no `.env`, e nunca são devolvidos pela API nem gravados em logs ou auditoria.
 - Dados de leitores e da equipe (e-mails, telefones) são dados pessoais (LGPD). Scripts de publicidade e medição de
   terceiros só carregam depois do aceite de cookies.
 
@@ -133,4 +136,4 @@ Esta constituição vale acima de qualquer outro guia do projeto. Todo `plan.md`
 "Verificação da constituição"; violação só entra justificada na seção de complexidade. Versão: MAIOR remove ou
 redefine princípio; MENOR acrescenta princípio ou seção; CORREÇÃO ajusta texto sem mudar regra.
 
-**Versão**: 1.0.0 | **Ratificada em**: 2026-11-16 | **Última alteração**: 2026-11-16
+**Versão**: 1.0.1 | **Ratificada em**: 2026-11-16 | **Última alteração**: 2026-11-16

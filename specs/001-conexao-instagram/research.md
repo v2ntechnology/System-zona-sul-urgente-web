@@ -20,12 +20,17 @@ Decisões da fase 0 do plano. Cada uma: **Decisão**, **Por quê**, **Alternativ
 - **Por quê**: o token é de um usuário de sistema; `GET /me` devolve o usuário de sistema, e `me/accounts`,
   `me/assigned_business_asset_groups` vêm vazios e `me/businesses` exige outra permissão (testado). Não dá para
   descobrir a conta só pelo token com a permissão mínima.
+- **Conta profissional (FR-002)**: não há verificação separada. Pelo login unificado, a Meta só responde para contas
+  profissionais que estão no portfólio e ligadas ao app; qualquer outra (pessoal, de outro portfólio, ID errado) é
+  recusada na validação e vira "Não foi possível ligar a conta".
 - **Alternativas**: pedir `business_management` para descobrir a conta — amplia o acesso sem necessidade.
 
 ## R3. Campos dos posts e mídia
 
 - **Decisão**: listar com `GET /{id}/media?fields=id,caption,media_type,media_product_type,media_url,thumbnail_url,
-  permalink,timestamp,children{id,media_type,media_url,thumbnail_url}&limit=25`, paginando por `paging.next`.
+  permalink,timestamp,alt_text,children{id,media_type,media_url,thumbnail_url,alt_text}&limit=25`, paginando por
+  `paging.next`. O `alt_text` (quando o post tem) vira o texto alternativo da foto principal do rascunho — publicar
+  exige texto alternativo, rascunho não.
   Foto principal: `IMAGE` → `media_url`; `VIDEO` (inclusive reels) → `thumbnail_url`; `CAROUSEL_ALBUM` → primeiro
   filho (foto: `media_url`; vídeo: `thumbnail_url`). Guardamos todas as imagens do carrossel e a capa dos vídeos;
   **não guardamos arquivos de vídeo** (o armazenamento de fotos só trata imagens).
@@ -102,5 +107,7 @@ Decisões da fase 0 do plano. Cada uma: **Decisão**, **Por quê**, **Alternativ
 
 - **Decisão**: continua igual (FR-017): entra como `NEW` e o rascunho sai pelo botão "Gerar agora". A nota da fila
   passa a dizer "Clique em Gerar agora" para posts manuais e "a IA gera automaticamente" só para os sincronizados.
+  Quando a varredura encontra pelo link um post que entrou à mão, ele **ganha a mídia, mas continua manual**: o job não
+  gera o rascunho sozinho (`source` continua `MANUAL`); quem decide é quem clica em "Gerar agora".
 - **Por quê**: o texto atual promete geração automática que não existe para o manual (achado na leitura do código).
 - **Alternativas**: gerar o manual automaticamente também (muda comportamento fora do escopo da spec).

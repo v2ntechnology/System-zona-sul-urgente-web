@@ -64,7 +64,7 @@ desligar e ver a tela voltar a "não conectado".
 **Cenários de aceite**:
 
 1. **Dado** que nenhuma conta está ligada, **quando** o Administrador liga a conta com um acesso válido, **então** a
-   tela mostra o nome de usuário da conta, a data em que foi ligada e a data em que o acesso vence.
+   tela mostra o nome de usuário da conta, a data em que foi ligada e a validade do acesso (ou "não vence").
 2. **Dado** um acesso inválido ou de uma conta que não é profissional, **quando** o Administrador tenta ligar, **então**
    a conta não é ligada e a tela explica o motivo em português simples.
 3. **Dado** uma conta ligada, **quando** o Administrador liga outra conta, **então** a nova substitui a anterior, os
@@ -150,7 +150,8 @@ um acesso novo, colar e ver a sincronização voltar.
   travar o painel, e a IA gera os rascunhos aos poucos.
 - Post colado à mão com o mesmo link de um post que a sincronização trouxe: um só item na fila (comparação pelo link).
 - Carrossel com mais fotos do que o necessário: todas ficam guardadas; a primeira é a foto principal.
-- Post que parece publicidade (a IA já sinaliza): segue a regra que a fila já usa hoje.
+- Post que parece publicidade: como na fila de hoje, a IA sinaliza, o rascunho é criado assim mesmo e o sinal fica
+  registrado na auditoria; a redação decide se publica.
 - A IA falha ou está fora do ar: o post fica na fila como "Erro" e pode ser reprocessado, como hoje.
 - Troca de conta (reserva → oficial): posts da conta anterior continuam na fila e nas notícias; a sincronização passa a
   olhar só a conta nova.
@@ -224,7 +225,8 @@ um acesso novo, colar e ver a sincronização voltar.
 - **SC-004**: O tempo da redação para transformar um post em rascunho com foto cai de alguns minutos (copiar, colar,
   baixar e subir a foto) para zero.
 - **SC-005**: A integração roda por mais de 60 dias seguidos sem ninguém religar a conta.
-- **SC-006**: Quando a integração para, o aviso aparece no painel no próximo ciclo de sincronização.
+- **SC-006**: Quando o acesso é revogado, o aviso aparece no painel no ciclo seguinte de sincronização; quando a
+  sincronização falha por problema passageiro, o aviso só aparece depois de 3 ciclos seguidos com falha (FR-015).
 - **SC-007**: Trocar da conta reserva para a oficial leva menos de 5 minutos e não exige mudança no sistema.
 
 ## Suposições

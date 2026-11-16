@@ -18,7 +18,7 @@ Uma conta ligada por vez (linha única).
 | `connected_by` | `uuid` → `users` | quem ligou |
 | `connected_at` | `timestamptz` NOT NULL | |
 | `backfill_since` | `timestamptz` NOT NULL | `connected_at - 7 dias` (FR-006) |
-| `last_sync_at` | `timestamptz` | última tentativa |
+| `last_sync_at` | `timestamptz` | última tentativa (sucesso ou falha) |
 | `last_success_at` | `timestamptz` | última sincronização que deu certo |
 | `last_error` | `varchar(500)` | mensagem em português |
 | `failures` | `integer` NOT NULL DEFAULT 0 | falhas seguidas (aviso a partir de 3) |
@@ -63,12 +63,15 @@ Manual: entra `NEW` e só gera com "Gerar agora" (como hoje). Sincronizado: o jo
 
 | Tipo | Payload | Idempotência |
 |---|---|---|
-| `INSTAGRAM_IMPORT` | `{ "postId": "..." }` | mídias por `(post_id, position)`; IA só se `status IN (NEW, ERROR)` e `news_id IS NULL` |
+| `INSTAGRAM_IMPORT` | `{ "postId": "..." }` | mídias por `(post_id, position)`; IA só se `source = 'API'`, `status IN (NEW, ERROR)` e `news_id IS NULL` (post manual vinculado só ganha a mídia) |
 
 ## Auditoria (`AuditAction`, novos valores)
 
 `INSTAGRAM_CONNECT`, `INSTAGRAM_DISCONNECT`, `INSTAGRAM_ACCESS_LOST`. A importação sincronizada usa o
 `INSTAGRAM_IMPORT` existente com `detail("source", "API")`. Nunca registrar o acesso.
+
+A coluna `audit_logs.action` tem um `CHECK` com a lista fixa de ações (V9). A V10 precisa recriar esse `CHECK`
+incluindo os três valores novos — só acrescentar no enum Java faz a gravação da auditoria falhar.
 
 ## Configuração (`zsu.instagram`, `application.yml`)
 
