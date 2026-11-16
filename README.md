@@ -9,8 +9,19 @@ System-zona-sul-urgente-web/
 ├── System-Zona-Sul-Urgente-Web-Frontend/   # Next.js 16 (portal público + /admin)
 ├── System-Zona-Sul-Urgente-Web-Backend/    # Spring Boot 4 + PostgreSQL (API REST /api/v1)
 ├── infra/                                  # Docker Compose do ambiente local
+├── docs/                                   # backlog e changelog
+├── specs/                                  # uma pasta por mudança (Spec Kit)
+├── .specify/                               # Spec Kit: constituição, modelos e scripts
 └── .github/workflows/                      # CI do frontend e do backend
 ```
+
+## Como o trabalho é feito
+
+[Spec Kit](https://github.com/github/spec-kit), igual aos outros projetos. As regras do projeto estão na
+constituição (`.specify/memory/constitution.md`). Cada mudança relevante segue
+`/speckit-specify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` e fica em `specs/NNN-nome/`.
+O andamento fica em `docs/backlog.md` e `docs/changelog.md`, atualizados ao fim do dia com `/encerrar-dia`, e
+aparece na área do desenvolvedor em `/admin/projeto` (só em `npm run dev`, para Administrador).
 
 ## Stack
 

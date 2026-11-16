@@ -32,17 +32,22 @@ Configuração por variáveis de ambiente (`DB_URL`, `DB_USER`, `DB_PASSWORD`, `
   `ddl-auto: validate` e nunca altera o banco. IDs `uuid` com `DEFAULT uuidv7()`.
 - **Erros:** RFC 9457 (`application/problem+json`), títulos em português, nunca stack trace; toda
   resposta traz `X-Request-Id` (o mesmo id sai nos logs e no corpo do erro como `requestId`).
-- **Módulos por domínio** dentro de `br.com.zonasulurgente.api`, cada um com
-  `api/ application/ domain/ infrastructure/`:
+- **Módulos por domínio** dentro de `br.com.zonasulurgente.api`. Os maiores separam camadas em
+  subpacotes (`api/` leitura pública, `admin/` painel, `application/`, `infrastructure/`); os
+  menores ficam num pacote só:
 
 ```
 br.com.zonasulurgente.api
-├── shared/        # config transversal (segurança, erros, auditoria base)
-├── news/          # notícias, versões, publicação
-├── categories/  authors/  locations/
-├── instagram/  ai/  media/
-├── advertising/  analytics/  newsletter/  notifications/
-├── auth/  users/  audit/  settings/
+├── shared/        # segurança, erros (problem+json, X-Request-Id) e records do contrato público
+├── news/          # leitura pública, editor do painel, publicação agendada e revalidação do site
+├── taxonomy/      # editorias e tópicos (leitura pública + gestão no painel)
+├── team/          # equipe, convites, perfis de autor e primeiro administrador
+├── auth/          # login, sessão, 2FA (TOTP)
+├── audit/         # log de auditoria e consulta no painel
+├── media/         # envio e processamento de fotos (pasta local ou Cloudflare R2)
+├── instagram/     # fila de posts do Instagram para revisão
+├── ai/            # IA editorial (Gemini ou falsa)
+├── site/          # invalidação de cache do site (Next + Cloudflare)
 └── jobs/          # fila de jobs no PostgreSQL
 ```
 

@@ -1,4 +1,4 @@
-// Painel do projeto (só em desenvolvimento): lê o doc/BACKLOG.md e devolve os itens com o
+// Painel do projeto (só em desenvolvimento): lê o docs/backlog.md e devolve os itens com o
 // andamento. Formato dos itens: "## FE-101 — Título" e, no bloco, "**Status:** Review (...)".
 
 export type ItemStatus = "todo" | "doing" | "review" | "done";
