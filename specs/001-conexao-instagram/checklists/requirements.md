@@ -34,5 +34,5 @@
 - Esclarecidos em 2026-11-16: FR-006 (posts dos últimos 7 dias) e FR-019 (colar o acesso agora; botão depois).
 - "Meta", "conta profissional" e "cifrado no banco" aparecem por serem restrições do pedido (fornecedor e segurança),
   não escolhas de implementação.
-- A dúvida sobre a legenda vir ou não nesse tipo de acesso fica como suposição a confirmar com a conta reserva antes do
-  plano.
+- Teste com a conta reserva (2026-11-16): a legenda vem; o acesso do login unificado não vence. História 4, FR-004,
+  FR-014 a FR-016 e SC-005 foram revistos para refletir isso.

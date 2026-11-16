@@ -17,7 +17,8 @@ importação manual; (3) trazer a mídia do post (foto, fotos do carrossel, capa
 fotos do sistema, para o rascunho já nascer com foto principal e crédito; (4) perceber quando a legenda muda ou o post
 é apagado no Instagram e marcar na fila, sem mexer na notícia sozinho; (5) tela de conexão mostrando a conta ligada,
 a última sincronização, erros e quando o acesso vence; o acesso dura cerca de 60 dias e deve ser renovado
-automaticamente antes de vencer, avisando no painel se a renovação falhar; (6) a importação manual continua
+automaticamente antes de vencer, avisando no painel se a renovação falhar (revisto no teste com a conta reserva: o
+acesso do login unificado não vence); (6) a importação manual continua
 existindo. Restrições: a IA continua só gerando rascunho (1 post → no máximo 1 notícia); só conteúdo público vai para
 a IA; o acesso à conta é segredo; tudo deve funcionar localmente. Em aberto: se a legenda é retornada nesse tipo de
 acesso da Meta; vídeos com música licenciada podem vir sem o arquivo de mídia."
@@ -29,6 +30,15 @@ acesso da Meta; vídeos com música licenciada podem vir sem o arquivo de mídia
 - P: Na primeira conexão (ou troca de conta), quais posts antigos entram na fila? → R: os dos últimos 7 dias.
 - P: Como o Administrador liga a conta? → R: colando o acesso gerado no painel da Meta agora; o botão "Conectar com
   Instagram" entra depois, com o site publicado.
+
+### Teste com a conta reserva (2026-11-16)
+
+- A Meta só oferece agora o "login unificado": o acesso pertence ao portfólio empresarial (Zona Sul Urgente), é gerado
+  no painel do app e **não vence** (expiração "Nunca"). Ele deixa de funcionar se for revogado, se o app for removido do
+  portfólio ou se a conta mudar de portfólio.
+- A **legenda vem** completa, junto com tipo, arquivo de mídia, capa do vídeo, link e data. Há paginação.
+- A conta reserva tem 434 posts; os 4 dos últimos 7 dias eram todos **reels** (vídeo), com arquivo e capa. Para a
+  maioria dos posts, a foto principal do rascunho será a capa do vídeo.
 
 ## Contexto
 
@@ -112,25 +122,26 @@ com a comparação entre a legenda original e a nova; apagar o post e ver a fila
 
 ---
 
-### História 4 — Acesso renovado sozinho e problemas visíveis (Prioridade: P2)
+### História 4 — Problemas da integração visíveis no painel (Prioridade: P2)
 
-O acesso à conta vence depois de cerca de 60 dias. O sistema renova sozinho antes de vencer. Se a renovação falhar, ou
-se a sincronização parar de funcionar (acesso revogado, senha da conta trocada, Instagram fora do ar), o painel avisa
-de forma clara, com o que fazer.
+O acesso à conta não vence com o tempo, mas pode parar de funcionar (acesso revogado no painel da Meta, app removido
+do portfólio, conta movida para outro portfólio, Instagram fora do ar). Quando isso acontece, o painel avisa de forma
+clara, com o que fazer, em vez de a integração parar em silêncio.
 
-**Por que esta prioridade**: sem renovação a integração para em silêncio depois de dois meses; mas no começo basta
-religar a conta à mão.
+**Por que esta prioridade**: sem aviso, a fila simplesmente deixa de receber posts e ninguém percebe; mas o fluxo
+principal funciona sem ela.
 
-**Teste independente**: com um acesso perto de vencer, ver a data de validade avançar sozinha; com um acesso revogado,
-ver o aviso aparecer no painel.
+**Teste independente**: revogar o acesso no painel da Meta e ver o aviso aparecer no painel no ciclo seguinte; gerar
+um acesso novo, colar e ver a sincronização voltar.
 
 **Cenários de aceite**:
 
-1. **Dado** um acesso que vence em menos de 10 dias, **quando** a renovação roda, **então** a nova data de validade
-   aparece na tela de conexão.
-2. **Dado** que a renovação ou a sincronização falha, **quando** alguém com acesso à fila abre o painel, **então** vê um
-   aviso com o problema e a última sincronização que deu certo; o Administrador vê o que fazer para religar a conta.
-3. **Dado** que a conta foi desligada ou o acesso venceu, **quando** a sincronização tentaria rodar, **então** nada é
+1. **Dado** que a sincronização falha porque o acesso foi revogado, **quando** alguém com acesso à fila abre o painel,
+   **então** vê um aviso com o problema e a última sincronização que deu certo; o Administrador vê o que fazer para
+   religar a conta.
+2. **Dado** uma falha passageira (Instagram fora do ar, limite de chamadas), **quando** a sincronização falha,
+   **então** tenta de novo nos próximos ciclos sem avisar à toa; o aviso só aparece se a falha persistir.
+3. **Dado** que a conta foi desligada ou o acesso revogado, **quando** a sincronização tentaria rodar, **então** nada é
    buscado e a importação manual continua funcionando.
 
 ### Casos-limite
@@ -145,7 +156,9 @@ ver o aviso aparecer no painel.
   olhar só a conta nova.
 - Muitos posts de uma vez (ex.: a conta publicou 20 posts num dia): todos entram, sem estourar os limites da Meta e
   sem travar o painel.
-- A Meta deixa de entregar a legenda: o post entra mesmo assim, marcado para a legenda ser colada à mão (ver Suposições).
+- A Meta deixa de entregar a legenda (não acontece hoje): o post entra mesmo assim, marcado para a legenda ser colada à
+  mão (ver Suposições).
+- Acesso revogado no painel da Meta ou app removido do portfólio: a sincronização para e o painel avisa (História 4).
 
 ## Requisitos *(obrigatório)*
 
@@ -158,7 +171,7 @@ ver o aviso aparecer no painel.
 - **FR-003**: O sistema DEVE guardar o acesso à conta como segredo: cifrado no banco, nunca exibido inteiro na tela,
   nunca no código, nos logs ou na auditoria.
 - **FR-004**: O sistema DEVE mostrar na tela de conexão: nome de usuário da conta, quando foi ligada, última
-  sincronização com sucesso, último erro (se houver) e data de validade do acesso.
+  sincronização com sucesso, último erro (se houver) e a validade do acesso (ou "não vence").
 - **FR-005**: O sistema DEVE buscar os posts da conta ligada periodicamente (padrão: a cada 15 minutos) e colocar cada
   post novo na fila com legenda, link, data de publicação, tipo e quantidade de mídias.
 - **FR-006**: Na primeira conexão (e em toda troca de conta), o sistema DEVE importar os posts publicados nos últimos
@@ -177,12 +190,13 @@ ver o aviso aparecer no painel.
   Instagram", guardando a legenda nova sem sobrescrever a original e sem alterar a notícia.
 - **FR-013**: O sistema DEVE detectar posts importados que foram apagados no Instagram e marcá-los como "Removido do
   Instagram", sem alterar a notícia.
-- **FR-014**: O sistema DEVE renovar o acesso automaticamente antes de vencer (a partir de 10 dias do vencimento) e
-  registrar a nova validade.
-- **FR-015**: Quando a renovação ou a sincronização falhar, o sistema DEVE avisar no painel, mostrar a última
-  sincronização com sucesso e parar de tentar a cada ciclo se o acesso tiver sido revogado (até a conta ser religada).
-- **FR-016**: Ligar, trocar e desligar a conta, e cada falha de renovação, DEVEM ir para a auditoria (quem, quando,
-  qual conta — nunca o acesso em si).
+- **FR-014**: Se o acesso colado tiver data de validade, o sistema DEVE mostrá-la e avisar o Administrador a partir de
+  10 dias do vencimento. O acesso do login unificado não vence; não há renovação automática nesta spec.
+- **FR-015**: Quando a sincronização falhar, o sistema DEVE tentar de novo nos ciclos seguintes em falhas passageiras e,
+  se a falha persistir ou o acesso tiver sido revogado, avisar no painel, mostrar a última sincronização com sucesso e
+  parar de tentar até a conta ser religada.
+- **FR-016**: Ligar, trocar e desligar a conta, e a perda de acesso detectada pela sincronização, DEVEM ir para a
+  auditoria (quem, quando, qual conta — nunca o acesso em si).
 - **FR-017**: A importação manual (link + legenda) DEVE continuar funcionando com ou sem conta ligada.
 - **FR-018**: A sincronização DEVE funcionar no ambiente local de desenvolvimento, sem depender de o site estar
   publicado na internet.
@@ -193,7 +207,8 @@ ver o aviso aparecer no painel.
 ### Entidades
 
 - **Conexão do Instagram**: a conta ligada ao painel (uma por vez). Nome de usuário, identificador da conta na Meta,
-  acesso (segredo), validade do acesso, quem ligou e quando, última sincronização com sucesso, último erro.
+  acesso (segredo), validade do acesso (pode não ter), quem ligou e quando, última sincronização com sucesso, último
+  erro.
 - **Post do Instagram** (já existe na fila): ganha a origem "sincronização", a mídia guardada e a referência à conta de
   onde veio.
 - **Mídia do post**: cada foto (ou capa de vídeo) guardada no armazenamento do sistema, na ordem do carrossel; a
@@ -208,7 +223,7 @@ ver o aviso aparecer no painel.
 - **SC-003**: Nenhum post aparece duas vezes na fila, mesmo quando foi colado à mão antes da sincronização.
 - **SC-004**: O tempo da redação para transformar um post em rascunho com foto cai de alguns minutos (copiar, colar,
   baixar e subir a foto) para zero.
-- **SC-005**: Com a renovação funcionando, a integração roda por mais de 60 dias seguidos sem ninguém religar a conta.
+- **SC-005**: A integração roda por mais de 60 dias seguidos sem ninguém religar a conta.
 - **SC-006**: Quando a integração para, o aviso aparece no painel no próximo ciclo de sincronização.
 - **SC-007**: Trocar da conta reserva para a oficial leva menos de 5 minutos e não exige mudança no sistema.
 
@@ -220,7 +235,9 @@ ver o aviso aparecer no painel.
 - Uma conta ligada por vez é suficiente.
 - O aviso instantâneo da Meta a cada post novo (que exige o site publicado na internet) fica fora desta spec; a busca
   periódica atende o desenvolvimento e o começo da produção.
-- Em aberto, a confirmar com a conta reserva antes do plano: se a legenda vem nesse tipo de acesso da Meta. Se não vier,
-  o post entra na fila sem legenda e a redação cola a legenda (o rascunho só é gerado depois disso).
+- Confirmado com a conta reserva: a legenda vem nesse tipo de acesso. Se um dia a Meta deixar de entregar, o post entra
+  na fila sem legenda e a redação cola a legenda (o rascunho só é gerado depois disso).
+- O acesso usado é o do login unificado: pertence ao portfólio empresarial Zona Sul Urgente e não vence. Na troca para
+  a conta oficial, ela entra no mesmo portfólio e um acesso novo é gerado e colado (FR-019).
 - Entram os posts do perfil (foto, vídeo — inclusive reels — e carrossel). Stories (somem em 24 horas) ficam fora.
 - Comentários, curtidas e métricas dos posts ficam fora desta spec.
