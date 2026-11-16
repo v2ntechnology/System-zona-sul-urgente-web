@@ -21,6 +21,9 @@ entradas até 2026-11-10 foram reconstruídas do histórico do git.
 ### Alterado
 
 - README do backend com os módulos que existem de verdade.
+- A área do desenvolvedor passou a ler o backlog e os documentos de `docs/` (versionado) em vez da pasta local
+  `doc/`; a aba Histórico virou Commits e a de Documentos inclui os capítulos do manual e da documentação técnica.
+- O repositório passa a versionar a documentação, o Spec Kit e as skills do projeto (`CLAUDE.md` continua fora).
 
 ## 2026-11-10
 
