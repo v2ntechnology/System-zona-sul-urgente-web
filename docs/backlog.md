@@ -150,7 +150,8 @@ Formato que a área do desenvolvedor (`/admin/projeto`) lê: `## <ID> — Títul
 **Status:** Concluído (2026-10-16): pasta local ou R2.
 
 ## BE-013 — Importação do Instagram
-**Status:** Parcial: fila manual pronta; falta a conexão com a API da Meta.
+**Status:** Em andamento (2026-11-16): spec 001 (`specs/001-conexao-instagram/`) — conexão com a conta,
+sincronização dos posts com mídia, avisos de mudança e renovação do acesso. Fila manual já pronta.
 
 ## BE-014 — IA editorial
 **Status:** Concluído (2026-11-10): Gemini com modelo de reserva e implementação falsa.
