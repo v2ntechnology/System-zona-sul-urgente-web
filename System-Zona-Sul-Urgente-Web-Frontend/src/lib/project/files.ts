@@ -21,15 +21,26 @@ export type ProjectDoc = { key: string; label: string; file: string };
 const markdownIn = async (dir: string) =>
   (await readdir(dir).catch(() => [] as string[])).filter((f) => f.endsWith(".md")).sort();
 
-/** Documentos de docs/ e as regras do projeto. `key` é o que vai na URL (?doc=). */
+/**
+ * Documentos de docs/ (backlog, changelog), os capítulos do manual do cliente e da documentação
+ * técnica (docs/documentacao/) e as regras do projeto. `key` é o que vai na URL (?doc=).
+ */
 export async function listDocs(): Promise<ProjectDoc[]> {
   const docs = (await markdownIn(DOCS)).map((f) => ({
     key: f.replace(/\.md$/, ""),
     label: f,
     file: path.join(DOCS, f),
   }));
+  const chapters = async (dir: "usuario" | "tecnico", label: string) =>
+    (await markdownIn(path.join(DOCS, "documentacao", dir))).map((f) => ({
+      key: `${dir}/${f.replace(/\.md$/, "")}`,
+      label: `${label} · ${f.replace(/\.md$/, "")}`,
+      file: path.join(DOCS, "documentacao", dir, f),
+    }));
   return [
     ...docs,
+    ...(await chapters("usuario", "Manual")),
+    ...(await chapters("tecnico", "Técnico")),
     {
       key: "regras",
       label: "Regras do projeto (.claude/CLAUDE.md)",

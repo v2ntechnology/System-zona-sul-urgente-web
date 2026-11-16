@@ -13,6 +13,10 @@ entradas até 2026-11-10 foram reconstruídas do histórico do git.
 - Documentação versionada em `docs/`: backlog reconstruído do código e este histórico.
 - Rotina de encerramento do dia (`/encerrar-dia`).
 - Área do desenvolvedor (`/admin/projeto`) com as abas de specs e changelog, lendo `docs/`, `specs/` e a constituição.
+- Manual do sistema para o cliente (`docs/documentacao/usuario/`): o que é o portal, o site, acesso e perfis,
+  notícias, Instagram e IA, editorias e equipe, dashboard, analytics e publicidade, dúvidas comuns.
+- Documentação técnica (`docs/documentacao/tecnico/`): arquitetura, desenvolvimento, variáveis e produção.
+- PDFs do manual e da documentação técnica (`uv run scripts/gerar_pdf.py`), atualizados pelo `/encerrar-dia`.
 
 ### Alterado
 
