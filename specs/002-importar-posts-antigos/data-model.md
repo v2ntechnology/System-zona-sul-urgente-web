@@ -1,6 +1,6 @@
 # Modelo de dados: Importar posts antigos do Instagram
 
-Migração nova: `V11__instagram_history.sql` (nenhuma migração existente é editada).
+Migração nova: `V12__instagram_history.sql` (nenhuma migração existente é editada).
 
 ## Tabela nova `instagram_history_imports`
 

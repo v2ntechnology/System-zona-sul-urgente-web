@@ -20,7 +20,7 @@ minutos passa a conferir, em rodízio, os posts antigos que viraram notícia. De
 `InstagramSyncService`, `InstagramQueueService`), `jobs` (`JobQueue` ganha `enqueue` com `runAt`/`maxAttempts`),
 `ai` (`AiUnavailableException` × `AiOutputException`), `media`, `audit`. Nenhuma dependência nova.
 
-**Armazenamento**: PostgreSQL 18 — migração `V11__instagram_history.sql` ([data-model.md](data-model.md))
+**Armazenamento**: PostgreSQL 18 — migração `V12__instagram_history.sql` ([data-model.md](data-model.md))
 
 **Testes**: JUnit + Testcontainers com a `FakeGraphServer` ampliada (histórico longo, cursores, limite); Vitest; Playwright
 no modo demonstração (tela de importação e seleção em lote)
@@ -45,7 +45,7 @@ a varredura de posts novos não pode ser atrasada pelo histórico nem pela confe
 | II. Documentação | Atualiza `usuario/05-instagram-e-ia.md` (importar histórico, lote), `tecnico/10-arquitetura.md`, backlog e changelog | ✅ |
 | III. Segurança | Importar/interromper só `instagram.settings`; lote só `instagram.review`; auditoria `INSTAGRAM_HISTORY` e `AI_BATCH`; acesso segue cifrado e fora de logs | ✅ |
 | IV. Site sem API | Modo demonstração com mocks de importação, pré-visualização e lote (respostas "simuladas") | ✅ |
-| V. Contratos explícitos | V11 nova; contrato em [contracts/](contracts/admin-instagram-history.md) espelhado em `src/types/admin.ts`; `JobQueue` estendido pela própria API pública dele | ✅ |
+| V. Contratos explícitos | V12 nova; contrato em [contracts/](contracts/admin-instagram-history.md) espelhado em `src/types/admin.ts`; `JobQueue` estendido pela própria API pública dele | ✅ |
 | VI. Leitor primeiro | Nada muda no site; rascunhos só aparecem depois de publicados | ✅ |
 | VII. IA só rascunho | Histórico não gera nada sozinho; lote só cria rascunho, 1 por post | ✅ |
 | VIII. Verificado | Testes de integração por requisito (lista no [quickstart](quickstart.md)); CI verde | ✅ |
@@ -69,7 +69,7 @@ specs/002-importar-posts-antigos/
 
 ```text
 System-Zona-Sul-Urgente-Web-Backend/src/main/
-├── resources/db/migration/V11__instagram_history.sql            # novo
+├── resources/db/migration/V12__instagram_history.sql            # novo
 └── java/br/com/zonasulurgente/api/
     ├── jobs/JobQueue.java                       # enqueue(type, payload, runAt, maxAttempts)
     ├── audit/AuditAction.java                   # INSTAGRAM_HISTORY, AI_BATCH

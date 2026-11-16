@@ -88,8 +88,8 @@ Decisões da fase 0. Cada uma: **Decisão**, **Por quê**, **Alternativas**. Bas
 
 ## R10. Auditoria
 
-- **Decisão**: ações novas `INSTAGRAM_HISTORY` (detalhe `event`: `start`, `cancel`, `completed`, `failed`, com
-  período e contadores) e `AI_BATCH` (total, enfileirados, pulados). A V11 recria o `CHECK` de `audit_logs.action`.
+- **Decisão**: (migração V12, porque a spec 003 usa a V11) ações novas `INSTAGRAM_HISTORY` (detalhe `event`: `start`, `cancel`, `completed`, `failed`, com
+  período e contadores) e `AI_BATCH` (total, enfileirados, pulados). A V12 recria o `CHECK` de `audit_logs.action`.
 - **Por quê**: FR-015; o `CHECK` fixo da V9 exige a migração (achado da spec 001).
 
 ## R11. Permissões
