@@ -7,11 +7,11 @@ Migração nova: `V11__home_featured.sql`.
 | Regra | Como |
 |---|---|
 | Posições 1 a 10 | `CHECK (featured_rank BETWEEN 1 AND 10)` (a V2 tinha só `> 0`) |
-| Uma notícia por posição | `CREATE UNIQUE INDEX news_featured_rank_unique ON news (featured_rank) WHERE featured_rank IS NOT NULL` |
-| Só publicadas | regra no serviço (`AdminNewsService`/`HomeFeaturedService`): salvar recusa não publicadas; despublicar e lixeira zeram |
+| Uma notícia por posição | `ALTER TABLE news ADD CONSTRAINT news_featured_rank_unique UNIQUE (featured_rank) DEFERRABLE INITIALLY DEFERRED` (conferida no fim da transação, para deslocar posições ±1) |
+| Só publicadas | regra no serviço (`AdminNewsService`/`HomeFeaturedService`): salvar recusa não publicadas; despublicar e lixeira zeram e sobem as de baixo — patrocinada nunca sobe para a 1 (fica automática) |
 | Patrocinada nunca na 1 | regra no serviço (salvar e atalho recusam); a manchete automática pula patrocinadas |
 
-Antes de criar o índice, a V11 corrige dados existentes: zera `featured_rank` de notícias não publicadas ou na
+Antes de criar a restrição, a V11 corrige dados existentes: zera `featured_rank` de notícias não publicadas ou na
 lixeira e renumera as restantes em sequência (1, 2, 3…) pela ordem atual.
 
 ## Layout da home (como o site usa as posições)

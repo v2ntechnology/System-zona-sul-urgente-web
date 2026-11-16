@@ -4,11 +4,16 @@ Decisões da fase 0. Cada uma: **Decisão**, **Por quê**, **Alternativas**.
 
 ## R1. Onde fica a ordem do destaque
 
-- **Decisão**: continua na coluna existente `news.featured_rank` (1 = manchete, 2–10 = destaques). A V11 acrescenta um
-  índice único parcial `(featured_rank) WHERE featured_rank IS NOT NULL` e o `CHECK (featured_rank BETWEEN 1 AND 10)`.
+- **Decisão**: continua na coluna existente `news.featured_rank` (1 = manchete, 2–10 = destaques). A V11 acrescenta a
+  restrição `UNIQUE (featured_rank) DEFERRABLE INITIALLY DEFERRED` (NULL continua livre) e o
+  `CHECK (featured_rank BETWEEN 1 AND 10)`.
 - **Por quê**: o site e os dados de exemplo já leem essa coluna; uma notícia ocupa no máximo uma posição e cada posição
-  tem no máximo uma notícia (Entidades da spec) — o índice garante isso no banco.
-- **Alternativas**: tabela `home_featured(position, news_id)` (mais uma tabela, mesma informação).
+  tem no máximo uma notícia (Entidades da spec). A restrição precisa ser **adiada para o fim da transação**: testado em
+  2026-11-16 no PostgreSQL 18, um índice único comum recusa `UPDATE … SET featured_rank = featured_rank + 1` ("duplicate
+  key"), porque confere linha a linha — o que quebraria os atalhos e a compactação.
+- **Alternativas**: tabela `home_featured(position, news_id)` (mais uma tabela, mesma informação); índice único comum
+  com renumeração em dois passos (valores negativos temporários) — funciona, mas espalha o truque por todo lugar que
+  desloca posições.
 
 ## R2. Manchete automática (FR-009) e patrocinada (FR-010)
 
@@ -32,8 +37,8 @@ Decisões da fase 0. Cada uma: **Decisão**, **Por quê**, **Alternativas**.
 ## R4. Saída automática do destaque (FR-008)
 
 - **Decisão**: em `AdminNewsService.changeState`, despublicar e enviar para a lixeira zeram o `featured_rank` da
-  notícia e **sobem** as de baixo (posição − 1, preservando a manchete automática se a posição 1 ficar vazia) na mesma
-  transação. Publicar de novo não devolve. "Arquivada" ainda não tem ação no painel; quando tiver, segue a mesma regra
+  notícia e **sobem** as de baixo (posição − 1) na mesma transação. Exceção: se quem subiria para a posição 1 for
+  **patrocinada**, a posição 1 fica vazia (manchete automática) e só as de 2 em diante sobem (FR-010). Publicar de novo não devolve. "Arquivada" ainda não tem ação no painel; quando tiver, segue a mesma regra
   (registrado como regra no serviço, não depende de tela).
 - **Por quê**: a regra fica no único lugar por onde o estado muda; o evento `NewsChangedEvent` já enfileira a
   revalidação com a tag `home`.
@@ -42,8 +47,9 @@ Decisões da fase 0. Cada uma: **Decisão**, **Por quê**, **Alternativas**.
 ## R5. Atalhos (FR-007)
 
 - **Decisão**: `POST /api/v1/admin/news/{id}/feature` com `{ "as": "MAIN" | "HIGHLIGHT" | "NONE" }`. MAIN: a notícia vai
-  para 1 e as outras descem; HIGHLIGHT: vai para 2 e as de 2 em diante descem; quem passar de 10 sai. NONE: sai e as de
-  baixo sobem. Patrocinada com MAIN → 422.
+  para 1 e as outras descem; HIGHLIGHT: vai sempre para 2 (mesmo com a 1 vazia, que continua automática) e as de 2 em
+  diante descem; quem passar de 10 sai. NONE: sai e as de baixo sobem (com a exceção da patrocinada de R4). Patrocinada
+  com MAIN → 422. O atalho age sobre a ordem do momento numa transação, sem assinatura: não há o que conflitar.
 - **Por quê**: o caso comum ("acabei de publicar, quero na manchete") em um clique, com as regras da tela.
 
 ## R6. Atualizar a home (FR-005, SC-002)
@@ -74,6 +80,8 @@ Decisões da fase 0. Cada uma: **Decisão**, **Por quê**, **Alternativas**.
   arrastando (HTML5 drag and drop) **e** com botões subir/descer (teclado e celular); prévia do topo no desenho da home;
   aviso ao sair com mudanças não salvas.
 - **Por quê**: drag and drop sozinho não é acessível nem funciona bem no celular.
+- **Aviso ao sair**: `beforeunload` (fechar/recarregar a aba) + confirmação nos links do painel enquanto houver
+  mudanças; o "voltar" do navegador fica sem aviso (o App Router não tem evento confiável para isso).
 
 ## R10. Impacto na spec 002
 

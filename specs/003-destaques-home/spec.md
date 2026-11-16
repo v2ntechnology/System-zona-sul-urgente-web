@@ -94,8 +94,9 @@ tela da H1 já resolve sozinha.
 
 1. **Dado** uma notícia publicada fora do destaque, **quando** o Editor clica em Colocar como manchete, **então** ela vira
    a manchete e as outras descem uma posição; a última, se passar do limite, sai do destaque.
-2. **Dado** uma notícia publicada, **quando** o Editor clica em Colocar nos destaques, **então** ela entra na primeira
-   posição de destaque depois da manchete e as seguintes descem.
+2. **Dado** uma notícia publicada, **quando** o Editor clica em Colocar nos destaques, **então** ela entra na posição 2
+   (primeiro destaque depois da manchete) e as seguintes descem — mesmo com a manchete automática (posição 1 vazia), que
+   continua automática.
 3. **Dado** uma notícia destacada, **quando** o Editor clica em Tirar do destaque, **então** ela sai e as de baixo sobem.
 4. **Dado** uma notícia patrocinada publicada, **quando** o Editor abre o menu dela, **então** vê Colocar nos destaques,
    mas não Colocar como manchete.
@@ -106,7 +107,7 @@ tela da H1 já resolve sozinha.
 
 ### História 3 — O destaque se ajusta sozinho (Prioridade: P1)
 
-Notícia que deixa de estar no ar (despublicada, na lixeira, arquivada) sai do destaque sozinha, e as de baixo sobem —
+Notícia que deixa de estar no ar (despublicada ou na lixeira) sai do destaque sozinha, e as de baixo sobem —
 o topo da home nunca mostra notícia que não está publicada.
 
 **Por que esta prioridade**: uma remoção editorial ou legal não pode deixar a notícia na vitrine.
@@ -115,12 +116,14 @@ o topo da home nunca mostra notícia que não está publicada.
 
 **Cenários de aceite**:
 
-1. **Dado** uma notícia destacada, **quando** ela é despublicada, vai para a lixeira ou é arquivada, **então** ela sai do
-   destaque, as de baixo sobem e a home atualiza em menos de 1 minuto.
-2. **Dado** que a manchete saiu do ar e nenhuma notícia escolhida sobe para o lugar, **quando** alguém abre a home,
+1. **Dado** uma notícia destacada, **quando** ela é despublicada ou vai para a lixeira, **então** ela sai do destaque, as
+   de baixo sobem e a home atualiza em menos de 1 minuto.
+2. **Dado** que a manchete sai do ar e a notícia da posição 2 é patrocinada, **quando** as de baixo sobem, **então** a
+   patrocinada **não** vira manchete: a posição 1 fica com a manchete automática e as posições de 2 em diante sobem.
+3. **Dado** que a manchete saiu do ar e nenhuma notícia escolhida sobe para o lugar, **quando** alguém abre a home,
    **então** a manchete é a notícia publicada mais recente (que não seja patrocinada), e a tela de destaques mostra
    "Manchete automática".
-3. **Dado** uma notícia que saiu do destaque desse jeito, **quando** ela é publicada de novo, **então** ela não volta
+4. **Dado** uma notícia que saiu do destaque desse jeito, **quando** ela é publicada de novo, **então** ela não volta
    sozinha para o destaque.
 
 ### Casos-limite
@@ -130,6 +133,8 @@ o topo da home nunca mostra notícia que não está publicada.
 - Notícia publicada há muitos dias: pode ser destacada; a tela mostra há quanto tempo foi publicada.
 - Mais notícias destacadas do que posições: ao colocar uma nova, a última sai do destaque (a tela avisa qual).
 - Notícia urgente: pode estar no destaque; a faixa de urgentes continua independente.
+- Aviso de mudanças não salvas: vale para fechar ou recarregar a aba e para os links do próprio painel; o botão
+  "voltar" do navegador pode sair sem aviso (limitação aceita).
 - Ambiente local com o site fora do Docker e a API dentro: o aviso de atualização precisa chegar ao site (ver FR-012).
 
 ## Requisitos *(obrigatório)*
@@ -150,8 +155,9 @@ o topo da home nunca mostra notícia que não está publicada.
   atual em vez de sobrescrever sem aviso.
 - **FR-007**: A listagem e o editor de notícias DEVEM oferecer, para notícias publicadas, Colocar como manchete,
   Colocar nos destaques e Tirar do destaque, com as regras de deslocamento das Histórias 2.
-- **FR-008**: Notícia despublicada, enviada para a lixeira ou arquivada DEVE sair do destaque na mesma operação, e as de
-  baixo DEVEM subir; publicar de novo não a devolve ao destaque.
+- **FR-008**: Notícia despublicada ou enviada para a lixeira DEVE sair do destaque na mesma operação, e as de baixo
+  DEVEM subir — exceto que uma patrocinada nunca sobe para a manchete (a posição 1 fica automática); publicar de novo não
+  a devolve ao destaque. O painel ainda não tem a ação "arquivar"; quando tiver, segue esta mesma regra.
 - **FR-009**: A manchete PODE ficar vazia: nesse caso a home usa a notícia publicada mais recente (manchete
   **automática**), e a tela mostra isso ("Manchete automática: a mais recente") com a notícia que está aparecendo. A
   qualquer momento o Editor PODE trocar a automática por uma manchete escolhida, e voltar para a automática tirando a
@@ -176,8 +182,8 @@ o topo da home nunca mostra notícia que não está publicada.
 
 - **SC-001**: Trocar a manchete leva menos de 30 segundos no painel (pelo atalho, 1 clique).
 - **SC-002**: Depois de salvar, a home do site mostra o topo novo em menos de 1 minuto.
-- **SC-003**: Em 100% dos casos, notícia despublicada, na lixeira ou arquivada deixa de aparecer no topo da home em
-  menos de 1 minuto.
+- **SC-003**: Em 100% dos casos, notícia despublicada ou na lixeira deixa de aparecer no topo da home em menos de
+  1 minuto.
 - **SC-004**: Nenhuma mudança no topo fica sem registro na auditoria.
 - **SC-005**: Nenhum ajuste direto no banco é necessário para montar o topo da home.
 
