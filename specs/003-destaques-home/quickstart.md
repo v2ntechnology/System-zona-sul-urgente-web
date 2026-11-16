@@ -35,3 +35,22 @@ despublicar/lixeira com as de baixo subindo, republicar não volta, manchete aut
 ## Conferência final
 
 Auditoria com `HOME_FEATURE` em cada salvamento/atalho; nenhum ajuste no banco à mão.
+
+## Resultado da validação (2026-11-16, ambiente local — API em contêiner, site por `npm run dev`)
+
+Mudanças feitas direto na API (sem passar pelo Next), medindo quando a home do site mudou sozinha:
+
+| # | Resultado |
+|---|---|
+| 1 | ✅ Repórter → 403 na tela e na API. |
+| 2 | ✅ Administradora vê as 10 posições com as notícias atuais. |
+| 3 | ✅ Salvar nova manchete → a home mudou sozinha em **2,4 s** (aviso da API chegou ao site fora do Docker — FR-012). |
+| 4 | ✅ Assinatura antiga → 409 "Os destaques mudaram". |
+| 5 | ✅ Atalho "Colocar como manchete" → home em **2,5 s**. |
+| 6 | ✅ Patrocinada como manchete → 422. |
+| 7 | ✅ Despublicar a manchete → a de baixo subiu na home em **2,4 s**; republicar não devolveu ao destaque. |
+| 8 | ✅ Manchete vazia → a home mostrou a manchete automática (publicada mais recente, não patrocinada). |
+
+A ordem original foi restaurada no fim. Testes automáticos: backend 125 (0 falhas), frontend 124 + 79 de ponta a ponta.
+Observação: a notícia "Teste do painel do Zona Sul Urgente", que tinha sido posta na manchete à mão antes desta spec, estava
+na lixeira; a V11 a tirou do destaque, como manda a regra nova.

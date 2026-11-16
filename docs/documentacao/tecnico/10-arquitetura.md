@@ -49,6 +49,20 @@ As strings de tag são contrato entre `src/lib/cache-tags.ts` e o backend.
 
 Agendadas: `ScheduledPublisher` publica as que chegaram no horário, pelo relógio do banco.
 
+## Destaques da home (spec 003)
+
+- A ordem é `news.featured_rank` (1 = manchete, 2–3 ao lado, 4–7 faixa, 8–10 reserva), com `CHECK 1..10` e índice
+  único parcial (V11). `HomeFeaturedService` concentra as regras: só publicadas, patrocinada nunca na 1, deslocamento
+  dos atalhos e saída automática ao despublicar/lixeira (patrocinada não sobe para a manchete). Toda gravação zera e
+  regrava as posições (`replaceFeatured`), sob `pg_advisory_xact_lock`.
+- `GET/PUT /api/v1/admin/home/featured` (assinatura da ordem → 409 com `current` se outra pessoa salvou antes) e
+  `POST /api/v1/admin/news/{id}/feature` (`MAIN`/`HIGHLIGHT`/`NONE`), com `news.publish`; auditoria `HOME_FEATURE`.
+- Público: `GET /news/featured` monta a manchete automática (publicada mais recente não patrocinada) quando a 1 está
+  vazia e devolve `mainAutomatic`.
+- Revalidação: as Server Actions chamam `revalidateTag("home")` na hora; a API também enfileira `CACHE_INVALIDATE`.
+- As regras de deslocamento existem também no painel (`src/lib/home-featured.ts`) para a tela e a prévia — mudar de um
+  lado exige mudar do outro.
+
 ## Instagram → rascunho (spec 001)
 
 1. O Administrador cola o **ID da conta** e o **acesso** (token de usuário do sistema do login unificado, sem

@@ -66,3 +66,37 @@ do servidor, com as mesmas regras.
 - **Mover para a lixeira** também tira do site. Na aba *Lixeira*, **Restaurar** traz de volta.
 - O endereço antigo de uma matéria que mudou de título ou editoria continua funcionando: o site redireciona para o
   novo.
+
+## Destaques da home
+
+O topo da home é a vitrine do jornal e quem decide o que vai ali é a redação (Editor e Administrador), no menu
+**Destaques**.
+
+| Posição | Onde aparece no site |
+|---|---|
+| 1 | **Manchete** — a foto grande no topo |
+| 2 e 3 | **Destaques ao lado** da manchete |
+| 4 a 7 | **Faixa** logo abaixo (completada pelas últimas notícias quando falta) |
+| 8 a 10 | **Reserva** — ficam guardadas, ainda não aparecem na home |
+
+Como usar:
+
+1. Busque a notícia publicada à direita e clique em **Manchete**, **Destaque** ou **Faixa**. As que já estavam ali
+   descem uma posição; a que passar da 10ª sai do destaque.
+2. Reordene arrastando ou com as setas **subir/descer**; o **X** tira do destaque.
+3. Confira a **prévia do topo** e clique em **Salvar destaques**. Em instantes a home do site mostra o topo novo.
+
+Regras:
+
+- Só notícia **publicada** entra no destaque — rascunhos, inclusive os escritos pela IA a partir do Instagram, nunca.
+- Sem manchete escolhida, a home usa a **manchete automática**: a notícia publicada mais recente. A qualquer momento
+  dá para escolher outra.
+- Notícia **patrocinada** pode ficar nos destaques, nunca na manchete.
+- Despublicar ou mandar para a lixeira uma notícia destacada tira ela do topo sozinha, e as de baixo sobem. Publicar
+  de novo não a devolve ao destaque.
+- Se outra pessoa salvar os destaques enquanto você edita, o painel avisa e mostra a ordem atual antes de você salvar
+  por cima.
+
+**Atalhos:** na lista de notícias (menu **⋯** de cada notícia publicada) e no editor (em *Configurações avançadas*)
+há **Colocar como manchete**, **Colocar nos destaques** e **Tirar do destaque**. A lista mostra o selo **Manchete** ou
+**Destaque N** nas notícias que estão no topo.

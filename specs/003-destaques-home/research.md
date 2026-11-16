@@ -4,9 +4,15 @@ Decisões da fase 0. Cada uma: **Decisão**, **Por quê**, **Alternativas**.
 
 ## R1. Onde fica a ordem do destaque
 
-- **Decisão**: continua na coluna existente `news.featured_rank` (1 = manchete, 2–10 = destaques). A V11 acrescenta a
-  restrição `UNIQUE (featured_rank) DEFERRABLE INITIALLY DEFERRED` (NULL continua livre) e o
-  `CHECK (featured_rank BETWEEN 1 AND 10)`.
+- **Decisão**: continua na coluna existente `news.featured_rank` (1 = manchete, 2–10 = destaques). A V11 acrescenta o
+  índice único parcial `(featured_rank) WHERE featured_rank IS NOT NULL` e o `CHECK (featured_rank BETWEEN 1 AND 10)`.
+  Toda mudança de ordem (salvar, atalho, saída automática) é montada no `HomeFeaturedService` e gravada por "zerar e
+  regravar uma a uma" — nunca por `UPDATE … ± 1` em massa.
+- **Revisão na implementação (2026-11-16)**: a análise tinha trocado o índice por restrição adiada, por causa do
+  `UPDATE + 1` em massa. Na implementação, (a) o deslocamento passou a ser feito em memória e gravado por "zerar e
+  regravar", que não colide com índice comum; e (b) o seed local (`R__seed_local.sql`) usa `INSERT … ON CONFLICT` sem
+  alvo, que o PostgreSQL recusa com restrição adiada ("ON CONFLICT does not support deferrable unique constraints").
+  Voltou o índice comum.
 - **Por quê**: o site e os dados de exemplo já leem essa coluna; uma notícia ocupa no máximo uma posição e cada posição
   tem no máximo uma notícia (Entidades da spec). A restrição precisa ser **adiada para o fim da transação**: testado em
   2026-11-16 no PostgreSQL 18, um índice único comum recusa `UPDATE … SET featured_rank = featured_rank + 1` ("duplicate

@@ -112,6 +112,11 @@ foto, avisos de alteração/remoção e de acesso perdido (spec 001).
 ## FE-158 — Editorias e tópicos
 **Status:** Concluído (2026-10-16): ligado à API.
 
+## FE-160 — Destaques da home (curadoria editorial)
+**Prioridade:** P1 · **Status:** Concluído (2026-11-16): spec 003 — tela Destaques (manchete, 2 ao lado, faixa de 4,
+reserva), arrastar/subir/descer com prévia, conflito entre duas pessoas, atalhos na listagem e no editor, manchete
+automática, patrocinada fora da manchete, saída automática ao despublicar/lixeira; home atualizada em ~2,5 s.
+
 ## FE-159 — Equipe e autores
 **Status:** Concluído (2026-10-16): convites, perfis de autor, primeiro administrador (2026-11-10).
 

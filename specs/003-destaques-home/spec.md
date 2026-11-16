@@ -4,7 +4,7 @@
 
 **Criada em**: 2026-11-16
 
-**Situação**: Rascunho (esclarecida)
+**Situação**: Concluída (2026-11-16)
 
 **Ordem**: implementar **antes** da spec 002 (pedido do desenvolvedor em 2026-11-16)
 

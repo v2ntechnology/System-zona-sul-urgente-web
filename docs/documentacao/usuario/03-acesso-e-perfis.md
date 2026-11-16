@@ -36,6 +36,7 @@ O menu mostra só o que o seu perfil pode usar:
 | Publicar e despublicar | ✓ | ✓ | — | — | — |
 | Editar matéria de outra pessoa | ✓ | ✓ | — | — | — |
 | Mover para a lixeira | ✓ | ✓ | — | — | — |
+| Destaques da home (manchete) | ✓ | ✓ | — | — | — |
 | Marcar urgente | ✓ | ✓ | ✓ | — | — |
 | Marcar patrocinada | ✓ | ✓ | — | ✓ | — |
 | Instagram (fila) | ✓ | ✓ | ✓ | — | — |

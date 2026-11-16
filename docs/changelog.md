@@ -26,6 +26,10 @@ entradas até 2026-11-10 foram reconstruídas do histórico do git.
 - Spec 002 (importar posts antigos do Instagram) especificada e planejada: o Administrador escolhe um período e, se
   quiser, desmarca posts numa lista; o histórico entra na fila com foto, sem virar rascunho sozinho; a redação gera
   rascunhos em lote no ritmo da IA. A implementação vem a seguir.
+- **Destaques da home** (spec 003): Editor e Administrador escolhem a manchete e os destaques no menu Destaques
+  (arrastar ou subir/descer, com prévia) ou pelos atalhos "Colocar como manchete" / "Colocar nos destaques" na lista e
+  no editor; a home muda em segundos. Sem manchete escolhida, entra a publicada mais recente; patrocinada nunca vira
+  manchete; notícia despublicada ou na lixeira sai do topo sozinha.
 - Decisão de hospedagem registrada na documentação técnica: VPS com Docker e a Cloudflare na frente (o Cloudflare
   Workers foi testado e descartado).
 
@@ -39,6 +43,8 @@ entradas até 2026-11-10 foram reconstruídas do histórico do git.
 - A fila do Instagram deixa claro que post colado à mão espera o "Gerar agora"; só o sincronizado vira rascunho
   sozinho. A tela não oferece mais "urgente publica sozinha" (a IA só faz rascunho).
 - A API em contêiner passa a gravar fotos na pasta local (antes falhava por permissão), com volume próprio.
+- A home não promove mais a posição 2 a manchete quando a 1 fica vazia: usa a publicada mais recente não patrocinada.
+- No ambiente local, a API em contêiner consegue avisar o site que roda fora do Docker (`SITE_REVALIDATE_URL`).
 
 ## 2026-11-10
 

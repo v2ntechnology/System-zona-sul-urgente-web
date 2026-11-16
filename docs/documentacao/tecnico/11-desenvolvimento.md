@@ -19,6 +19,16 @@ cp .env.example .env.local && npm ci && npm run dev            # site :3000
 
 Stack inteira em contêineres: `docker compose -f infra/compose.yaml --profile app up -d --build`.
 
+**Modo misto** (sem JDK no WSL): banco e API em contêiner e o site por `npm run dev`. Para a API conseguir avisar o
+site depois de publicar (revalidação), suba a API apontando para o site fora do Docker:
+
+```bash
+SITE_REVALIDATE_URL=http://host.docker.internal:3000 docker compose -f infra/compose.yaml --profile app up -d --build postgres api
+```
+
+Testes do backend sem JDK local: rode o Maven dentro da imagem `infra/dev/jdk-vips.Dockerfile` com o socket do Docker
+montado e `TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal`.
+
 Sem `API_URL` no `.env.local`, o site roda só com os dados de exemplo e o painel fica em modo demonstração. Com
 `API_URL=http://localhost:8080`, login de verdade (perfil `local`, senha `zonasul-local`):
 `ana.ribeiro@zonasulurgente.com.br` (repórter, entra direto) e `juliana.prado@zonasulurgente.com.br`

@@ -14,7 +14,7 @@ para a redação revisar e publicar. Ela aparece para Administrador, Editor e Re
 | 2. Rascunho | O sistema (IA) | A IA escreve o rascunho em *Notícias*. **Nada vai ao ar.** |
 | 3. Conferência | Qualquer pessoa da redação | Abrir o rascunho e conferir texto, título, foto, texto alternativo, crédito, editoria, bairro e a marca de urgente. |
 | 4. Publicação | Editor ou Administrador | Clicar em *Publicar*. Repórter, Comercial e Autor usam *Enviar para revisão*. |
-| 5. Destaque (opcional) | Editor ou Administrador | Colocar a notícia publicada na manchete ou nos destaques da home. |
+| 5. Destaque (opcional) | Editor ou Administrador | Colocar a notícia publicada na manchete ou nos destaques da home (menu **Destaques** ou atalho na lista — capítulo 4). |
 
 A IA **nunca publica nem destaca**: as etapas 3, 4 e 5 são sempre de uma pessoa. Atenção na conferência à marca de
 **urgente** sugerida pela IA — ela põe a notícia na faixa vermelha do site.
