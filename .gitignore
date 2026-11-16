@@ -13,15 +13,17 @@
 System-Zona-Sul-Urgente-Web-Frontend-Antigo/
 
 # ---------------------------------------------------------------
-# Documentacao local (nao versionar)
+# Documentação: docs/ (backlog, changelog, documentação) e specs/ (Spec Kit) vão para o git.
+# doc/ era a pasta local antiga; não versionar.
 # ---------------------------------------------------------------
 doc/
-docs/
 
 # ---------------------------------------------------------------
-# IA — a unica pasta permitida e a .claude (local, nao versionada)
+# IA — só .claude/skills/ (Spec Kit e rotinas) vai para o git; o resto
+# da .claude/ e o CLAUDE.md ficam só na máquina.
 # ---------------------------------------------------------------
-.claude/
+.claude/*
+!.claude/skills/
 CLAUDE.md
 AGENTS.md
 .cursor/
