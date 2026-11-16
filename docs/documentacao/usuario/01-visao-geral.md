@@ -23,7 +23,7 @@ audiência.
 |---|---|
 | Site | Home com manchete e destaques, faixa de urgentes, páginas de editoria e de bairro, matéria completa, busca, Mais Lidas, colunas, web stories, RSS e instalação como app no celular. |
 | Painel: notícias | Editor de matérias com foto, revisão, agendamento, publicação, despublicação e lixeira. |
-| Painel: Instagram e IA | Fila de posts do Instagram que a inteligência artificial transforma em rascunho de matéria, sempre revisado por uma pessoa. |
+| Painel: Instagram e IA | Conta do Instagram ligada ao painel: os posts novos entram sozinhos, com foto, e a inteligência artificial transforma cada um em rascunho de matéria, sempre revisado por uma pessoa. |
 | Painel: organização | Editorias e subeditorias, tópicos (hashtags), equipe com convites e perfis de autor. |
 | Painel: números | Dashboard da redação, analytics de audiência e publicidade de venda direta. |
 

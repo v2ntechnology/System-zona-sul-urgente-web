@@ -30,7 +30,7 @@ e o CI verde para concluir uma tarefa.
 
 **Objetivo**: schema, configuração e auditoria que todas as histórias usam.
 
-- [ ] T001 Criar a migração `{res}/db/migration/V10__instagram_connection.sql` conforme data-model.md: tabela
+- [X] T001 Criar a migração `{res}/db/migration/V10__instagram_connection.sql` conforme data-model.md: tabela
   `instagram_connection` (`id smallint PRIMARY KEY CHECK (id = 1)`, `ig_user_id varchar(64) NOT NULL`,
   `username varchar(100) NOT NULL`, `token_cipher text NOT NULL`, `token_last4 varchar(4) NOT NULL`,
   `token_expires_at timestamptz` nulo = não vence, `status varchar(10) NOT NULL CHECK (status IN ('ACTIVE','REVOKED'))`,
@@ -44,11 +44,11 @@ e o CI verde para concluir uma tarefa.
   `kind varchar(12) NOT NULL CHECK (kind IN ('IMAGE','VIDEO_COVER'))`, `PRIMARY KEY (post_id, position)`); recriar o
   `CHECK` de `audit_logs.action` (criado na `V9__audit_logs.sql`) com todos os valores atuais mais `INSTAGRAM_CONNECT`,
   `INSTAGRAM_DISCONNECT`, `INSTAGRAM_ACCESS_LOST`. Comentários em português citando BE-013 e a spec 001.
-- [ ] T002 [P] Criar `{api}/instagram/InstagramProperties.java` (`@ConfigurationProperties("zsu.instagram")`, record
+- [X] T002 [P] Criar `{api}/instagram/InstagramProperties.java` (`@ConfigurationProperties("zsu.instagram")`, record
   com `@DefaultValue`: `graphBaseUrl = https://graph.facebook.com/v27.0`, `syncInterval = 15m`, `backfill = 7d`,
   `reconcileWindow = 30d`, `failuresBeforeAlert = 3`, `timeout = 20s`) e o bloco comentado `zsu.instagram` em
   `{res}/application.yml` (sem variável de ambiente nova).
-- [ ] T003 [P] Acrescentar `INSTAGRAM_CONNECT`, `INSTAGRAM_DISCONNECT`, `INSTAGRAM_ACCESS_LOST` em
+- [X] T003 [P] Acrescentar `INSTAGRAM_CONNECT`, `INSTAGRAM_DISCONNECT`, `INSTAGRAM_ACCESS_LOST` em
   `{api}/audit/AuditAction.java` (o banco aceita os valores pelo `CHECK` recriado na T001; hoje não há mapeamento de
   rótulos de auditoria no frontend, então nada a mudar lá).
 
@@ -58,12 +58,12 @@ e o CI verde para concluir uma tarefa.
 
 **Objetivo**: cliente da Meta, ator de sistema, repositório e o servidor falso para testes.
 
-- [ ] T004 Criar `{test}/instagram/FakeGraphServer.java`: `HttpServer` local (mesmo padrão de
+- [X] T004 Criar `{test}/instagram/FakeGraphServer.java`: `HttpServer` local (mesmo padrão de
   `{test}/ai/GeminiEditorialAiTests.java`) que imita `GET /{igUserId}`, `GET /{igUserId}/media` (com `paging.next`),
   `GET /{mediaId}` e serve imagens JPEG reais pequenas para download; permite configurar posts, legendas, posts
   apagados, respostas de erro (`{"error":{"code":190}}`, 5xx, `code 4/17/32/613`) e registra o cabeçalho
   `Authorization` recebido.
-- [ ] T005 Criar `{api}/instagram/InstagramGraphClient.java` (`RestClient`, `Authorization: Bearer`, timeout de
+- [X] T005 Criar `{api}/instagram/InstagramGraphClient.java` (`RestClient`, `Authorization: Bearer`, timeout de
   `InstagramProperties.timeout`): `account(igUserId, token)` → `id, username, name, media_count`;
   `media(igUserId, token, after)` → página com os campos de research.md R3 (`id,caption,media_type,media_product_type,
   media_url,thumbnail_url,permalink,timestamp,alt_text,children{id,media_type,media_url,thumbnail_url,alt_text}`,
@@ -71,16 +71,17 @@ e o CI verde para concluir uma tarefa.
   `mediaById(id, token)`; `download(url)` → bytes. Classificar erros (R9): `190`, `10`, `200` → `AccessRevokedException`;
   `4`, `17`, `32`, `613`, 5xx e tempo esgotado → `TransientGraphException`; "não existe" em `mediaById` → `Optional.empty()`.
   Nunca colocar o token em mensagem de exceção ou log.
-- [ ] T006 [P] Criar `{test}/instagram/InstagramGraphClientTests.java` (sem Spring, com `FakeGraphServer`): leitura da
+- [X] T006 [P] Criar `{test}/instagram/InstagramGraphClientTests.java` (sem Spring, com `FakeGraphServer`): leitura da
   conta e dos posts, paginação, carrossel com `children`, reel sem `media_url`, classificação de cada código de erro,
   token só no cabeçalho (nunca na URL).
-- [ ] T007 [P] Criar `{api}/instagram/SyncActor.java`: `AuthenticatedUser(id = null, name = "Sincronização do
+- [X] T007 [P] Criar `{api}/instagram/SyncActor.java`: `AuthenticatedUser(id = null, name = "Sincronização do
   Instagram", role = "SYSTEM", permissions = [news.create, news.edit.own, news.mark_urgent, tags.manage],
   authorSlug = null, sessionId = null)` (research.md R5).
-- [ ] T008 Ajustar `{api}/media/MediaService.java` para aceitar ator com `id` nulo em `upload(bytes, user)`
+- [X] T008 Ajustar `{api}/media/MediaService.java` para aceitar ator com `id` nulo em `upload(bytes, user)`
   (`created_by` nulo; auditoria por `recordSystem` quando não há pessoa) e cobrir em
-  `{test}/media/MediaUploadTests.java` com um caso "upload pelo sistema".
-- [ ] T009 Estender `{api}/instagram/InstagramRepository.java`: leitura/gravação de `instagram_connection` (linha única
+  `{test}/media/MediaUploadTests.java` com um caso "upload pelo sistema". *Feito: o código já aceitava (`created_by`
+  nulo; fora de requisição o `AuditLog` grava origem SYSTEM com o nome do ator); só o teste foi acrescentado.*
+- [X] T009 Estender `{api}/instagram/InstagramRepository.java`: leitura/gravação de `instagram_connection` (linha única
   `id = 1`), busca de post por `permalink` e por `ig_media_id`, inserção de post vindo da API (`source = 'API'`),
   vínculo de `ig_media_id`/`ig_user_id` num post manual existente, gravação em `instagram_post_media` com
   `ON CONFLICT (post_id, position) DO NOTHING`, `main_media_id`, `needs_photo`.
@@ -98,7 +99,7 @@ desligar e ver "Não conectada".
 
 ### Testes da História 1
 
-- [ ] T010 [P] [US1] Criar `{test}/instagram/InstagramConnectionApiTests.java` (`@SpringBootTest`,
+- [X] T010 [P] [US1] Criar `{test}/instagram/InstagramConnectionApiTests.java` (`@SpringBootTest`,
   `@AutoConfigureMockMvc`, `@Import(TestcontainersConfiguration.class)`, `@DynamicPropertySource` apontando
   `zsu.instagram.graph-base-url` para o `FakeGraphServer`; sessões por `TestSessions.bearer`): `GET /connection` sem
   conta → 404; `PUT` com acesso válido → 200 com `username`, `tokenLast4`, `tokenExpiresAt: null`; acesso recusado pela
@@ -108,27 +109,27 @@ desligar e ver "Não conectada".
 
 ### Implementação da História 1
 
-- [ ] T011 [US1] Criar `{api}/instagram/InstagramConnectionService.java`: `connect(igUserId, token, user)` valida na
+- [X] T011 [US1] Criar `{api}/instagram/InstagramConnectionService.java`: `connect(igUserId, token, user)` valida na
   Meta (`InstagramGraphClient.account`; a recusa da Meta cobre conta não profissional — research.md R2), cifra com `SecretCipher` (`{api}/auth/application/SecretCipher.java`), grava
   `status = ACTIVE`, `backfill_since = now - InstagramProperties.backfill`, `token_last4`, zera `failures`/`last_error`
   e audita na mesma transação; `disconnect(user)`; `view()` monta o corpo do contrato
   (`contracts/admin-instagram-connection.md`) com `alert` (`REVOKED`, `FAILING` a partir de `failuresBeforeAlert`,
   `EXPIRING` a 10 dias de `token_expires_at`); `token(…)` decifra só para uso interno.
-- [ ] T012 [US1] Em `{api}/instagram/AdminInstagramController.java`, trocar o `GET /connection` (hoje 404 fixo) e
+- [X] T012 [US1] Em `{api}/instagram/AdminInstagramController.java`, trocar o `GET /connection` (hoje 404 fixo) e
   acrescentar `PUT /connection` e `DELETE /connection`, com `@PreAuthorize("hasAuthority('instagram.review')")` no `GET`
   e `instagram.settings` nas escritas; corpo de entrada `{ igUserId, accessToken }`.
-- [ ] T013 [P] [US1] Atualizar `InstagramConnection` em `{fe}/types/admin.ts` para o contrato (remover `publishRule`,
+- [X] T013 [P] [US1] Atualizar `InstagramConnection` em `{fe}/types/admin.ts` para o contrato (remover `publishRule`,
   `tokenExpiresAt`/`tokenDaysLeft` anuláveis, `status`, `igUserId`, `connectedAt`, `connectedBy`, `lastSuccessAt`,
   `tokenLast4`, `alert`) e o `instagramConnectionMock` em `{fe}/mocks/admin.ts` no mesmo formato.
-- [ ] T014 [US1] Ajustar `getInstagramConnection` em `{fe}/services/admin/instagram-service.ts` (sem cálculo de
+- [X] T014 [US1] Ajustar `getInstagramConnection` em `{fe}/services/admin/instagram-service.ts` (sem cálculo de
   `tokenDaysLeft` quando não vence) e cobrir em `{fe}/services/admin/instagram-service.test.ts`.
-- [ ] T015 [US1] Acrescentar as Server Actions `connectInstagram({ igUserId, accessToken })` e `disconnectInstagram()`
+- [X] T015 [US1] Acrescentar as Server Actions `connectInstagram({ igUserId, accessToken })` e `disconnectInstagram()`
   em `{fe}/app/admin/(painel)/instagram/actions.ts` (sem API: resultado "simulado", como as atuais).
-- [ ] T016 [US1] Criar `{fe}/components/admin/instagram-connection.tsx`: painel "Conta do Instagram" para quem tem
+- [X] T016 [US1] Criar `{fe}/components/admin/instagram-connection.tsx`: painel "Conta do Instagram" para quem tem
   `instagram.settings` — formulário com ID da conta e acesso (campo tipo senha, nunca reexibido), ajuda curta de onde
   achar os dois no painel da Meta, botões Ligar/Trocar e Desligar (com confirmação); mostra
   `@usuário`, ligada por/quando, última sincronização, `…tokenLast4` e "acesso não vence" ou a validade.
-- [ ] T017 [US1] Em `{fe}/app/admin/(painel)/instagram/page.tsx`, usar o contrato novo no cabeçalho (sem "renova
+- [X] T017 [US1] Em `{fe}/app/admin/(painel)/instagram/page.tsx`, usar o contrato novo no cabeçalho (sem "renova
   sozinho" nem `publishRule`; texto "Cada post vira uma notícia em rascunho"), mostrar o `alert` e incluir o
   `InstagramConnection` para o Administrador.
 
@@ -145,7 +146,7 @@ sem tocar no painel.
 
 ### Testes da História 2
 
-- [ ] T018 [P] [US2] Criar `{test}/instagram/InstagramSyncTests.java` (`@SpringBootTest` + `FakeGraphServer`,
+- [X] T018 [P] [US2] Criar `{test}/instagram/InstagramSyncTests.java` (`@SpringBootTest` + `FakeGraphServer`,
   `zsu.jobs.enabled=false`, chamando `InstagramSyncService.sync()` e `JobWorker.runOnce()` direto, `AI_PROVIDER=fake`):
   primeira varredura traz só os posts dos últimos 7 dias; 30 posts no período (2 páginas de 25) entram todos, sem
   perda nem duplicação; segunda varredura sem novidade não muda nada; post manual com o mesmo link não duplica, ganha
@@ -159,31 +160,31 @@ sem tocar no painel.
 
 ### Implementação da História 2
 
-- [ ] T019 [US2] Criar `{api}/instagram/InstagramSyncService.java` — `sync()`: lê a conexão `ACTIVE`, pagina
+- [X] T019 [US2] Criar `{api}/instagram/InstagramSyncService.java` — `sync()`: lê a conexão `ACTIVE`, pagina
   `InstagramGraphClient.media` do mais novo para o mais antigo até passar de `max(backfill_since, último post conhecido)`,
   normaliza o link (`https://www.instagram.com/{p|reel}/{codigo}/`), insere os novos (`source = 'API'`, `status = NEW`) ou
   vincula ao manual existente pelo link (research.md R6, mantendo `source = 'MANUAL'`), enfileira `INSTAGRAM_IMPORT`
   com `{ "postId": … }` (novos e manuais vinculados sem mídia) pela
   `JobQueue` na mesma transação, e grava `last_sync_at`/`last_success_at`/`failures = 0`.
-- [ ] T020 [US2] Criar `{api}/instagram/InstagramImportJob.java` (`JobHandler`, tipo `INSTAGRAM_IMPORT`, idempotente):
+- [X] T020 [US2] Criar `{api}/instagram/InstagramImportJob.java` (`JobHandler`, tipo `INSTAGRAM_IMPORT`, idempotente):
   baixa as mídias que faltam (`InstagramGraphClient.download` → `MediaService.upload` com `SyncActor`), grava
   `instagram_post_media` e `main_media_id`, marca `needs_photo` quando não há imagem (FR-010) e só chama a geração do
   rascunho se `source = 'API'`, `status IN (NEW, ERROR)` e sem notícia (post manual vinculado só ganha a mídia —
   research.md R11).
-- [ ] T021 [US2] Em `{api}/instagram/InstagramQueueService.java`, separar a geração para aceitar o ator de sistema
+- [X] T021 [US2] Em `{api}/instagram/InstagramQueueService.java`, separar a geração para aceitar o ator de sistema
   (`SyncActor`) e preencher `NewsDraft.Image(url da foto principal, alt = alt_text do post ou "" (rascunho não exige;
   publicar exige — `{api}/news/admin/DraftValidator.java`), caption = null, credit =
   "Foto: Reprodução/Instagram @" + username)` quando houver foto; auditoria por `recordSystem` quando o ator for o
   sistema; `INSTAGRAM_IMPORT` da varredura com `detail("source", "API")`.
-- [ ] T022 [US2] Criar `{api}/instagram/InstagramSyncScheduler.java` (`@Scheduled(fixedDelayString =
+- [X] T022 [US2] Criar `{api}/instagram/InstagramSyncScheduler.java` (`@Scheduled(fixedDelayString =
   "${zsu.instagram.sync-interval:15m}", initialDelayString = "1m")`, desligado se `JobsProperties.enabled()` for
   falso, exceções logadas sem o token, como `{api}/news/admin/ScheduledPublisher.java`) e o
   `POST /connection/sync` (202; 409 sem conta ativa; `instagram.settings`) em
   `{api}/instagram/AdminInstagramController.java`; o `connect` da T011 passa a disparar uma varredura logo depois de
   ligar (na US1 ele só grava).
-- [ ] T023 [US2] Em `{api}/instagram/InstagramPostView.java` e no mapeamento de `{api}/instagram/InstagramRepository.java`,
+- [X] T023 [US2] Em `{api}/instagram/InstagramPostView.java` e no mapeamento de `{api}/instagram/InstagramRepository.java`,
   acrescentar `source`, `needsPhoto`, `mediaUrls` e fazer `thumbnailUrl` apontar para a foto principal guardada.
-- [ ] T024 [P] [US2] Em `{fe}/types/admin.ts`, acrescentar `source`, `needsPhoto`, `mediaUrls` em `InstagramPost`;
+- [X] T024 [P] [US2] Em `{fe}/types/admin.ts`, acrescentar `source`, `needsPhoto`, `mediaUrls` em `InstagramPost`;
   em `{fe}/components/admin/instagram-queue.tsx`, nota de `NEW` diferente para manual ("Clique em Gerar agora") e
   sincronizado ("a IA gera o rascunho automaticamente"), selo "Precisa de foto" quando `needsPhoto`, miniatura pela
   foto guardada; ajustar os mocks de posts em `{fe}/mocks/admin.ts`; acrescentar a Server Action `syncInstagramNow()` em
@@ -203,7 +204,7 @@ sem tocar no painel.
 
 ### Testes da História 3
 
-- [ ] T025 [P] [US3] Acrescentar em `{test}/instagram/InstagramSyncTests.java`: legenda alterada → `CHANGED_AT_SOURCE`,
+- [X] T025 [P] [US3] Acrescentar em `{test}/instagram/InstagramSyncTests.java`: legenda alterada → `CHANGED_AT_SOURCE`,
   `current_caption` = nova, `caption` original intacta, notícia sem alteração; "Marcar como revisado" volta para
   `IMPORTED` até a próxima mudança; post importado ausente da lista e `GET /{media-id}` "não existe" →
   `REMOVED_AT_SOURCE`; post fora da janela de 30 dias não é conferido; ausência por paginação incompleta não marca
@@ -211,7 +212,7 @@ sem tocar no painel.
 
 ### Implementação da História 3
 
-- [ ] T026 [US3] Em `{api}/instagram/InstagramSyncService.java`, acrescentar a reconciliação (research.md R7): dentro de
+- [X] T026 [US3] Em `{api}/instagram/InstagramSyncService.java`, acrescentar a reconciliação (research.md R7): dentro de
   `InstagramProperties.reconcileWindow`, comparar a legenda dos posts já importados (`CHANGED_AT_SOURCE` +
   `current_caption` + `source_changed_at`) e confirmar ausentes com `mediaById` antes de `REMOVED_AT_SOURCE`; métodos
   correspondentes em `{api}/instagram/InstagramRepository.java`.
@@ -229,18 +230,18 @@ novo → volta a sincronizar.
 
 ### Testes da História 4
 
-- [ ] T027 [P] [US4] Acrescentar em `{test}/instagram/InstagramSyncTests.java`: `190` → conexão `REVOKED`, auditoria
+- [X] T027 [P] [US4] Acrescentar em `{test}/instagram/InstagramSyncTests.java`: `190` → conexão `REVOKED`, auditoria
   `INSTAGRAM_ACCESS_LOST` (uma vez, sem o token), varreduras seguintes não chamam a Meta, `GET /connection` com
   `alert.kind = REVOKED`; 5xx/limite → `failures` sobe, sem alerta até 3 seguidas, `FAILING` na 3ª, sucesso zera;
   importação manual continua funcionando com a conexão `REVOKED`; ligar de novo limpa o alerta.
 
 ### Implementação da História 4
 
-- [ ] T028 [US4] Em `{api}/instagram/InstagramSyncService.java` e `{api}/instagram/InstagramConnectionService.java`,
+- [X] T028 [US4] Em `{api}/instagram/InstagramSyncService.java` e `{api}/instagram/InstagramConnectionService.java`,
   tratar `AccessRevokedException` (status `REVOKED`, `last_error` em português, auditoria `INSTAGRAM_ACCESS_LOST` por
   `recordSystem`) e `TransientGraphException` (`failures + 1`, `last_error`), parar a varredura com conexão `REVOKED`;
   `InstagramImportJob` com acesso revogado falha sem repetir à toa.
-- [ ] T029 [P] [US4] Em `{fe}/app/admin/(painel)/instagram/page.tsx` e `{fe}/components/admin/instagram-connection.tsx`,
+- [X] T029 [P] [US4] Em `{fe}/app/admin/(painel)/instagram/page.tsx` e `{fe}/components/admin/instagram-connection.tsx`,
   mostrar o `alert` (vermelho para `REVOKED`, âmbar para `FAILING`/`EXPIRING`) com a última sincronização boa e, para o
   Administrador, o passo a passo para gerar acesso novo e religar.
 
@@ -250,17 +251,17 @@ novo → volta a sincronizar.
 
 ## Fase 7: Acabamento
 
-- [ ] T030 [P] Teste de ponta a ponta no modo demonstração em `{e2e}/admin.spec.ts`: a tela do Instagram mostra a
+- [X] T030 [P] Teste de ponta a ponta no modo demonstração em `{e2e}/admin.spec.ts`: a tela do Instagram mostra a
   conexão do mock (sem "renova sozinho"), o Administrador vê o formulário de ligar e um Repórter não.
-- [ ] T031 [P] Atualizar `docs/documentacao/usuario/05-instagram-e-ia.md` (ligar a conta, o que entra sozinho e quando,
+- [X] T031 [P] Atualizar `docs/documentacao/usuario/05-instagram-e-ia.md` (ligar a conta, o que entra sozinho e quando,
   foto e crédito automáticos, avisos, "Precisa de foto") e `docs/documentacao/tecnico/10-arquitetura.md` (fluxo
   varredura → job `INSTAGRAM_IMPORT` → IA; configuração `zsu.instagram`); README do backend se a lista de módulos
   mudar.
-- [ ] T032 Rodar `./mvnw verify` (backend) e `npm run format:check && npm run lint && npm run typecheck && npm test &&
+- [X] T032 Rodar `./mvnw verify` (backend) e `npm run format:check && npm run lint && npm run typecheck && npm test &&
   npm run test:e2e` (frontend); corrigir o que falhar.
-- [ ] T033 Validar com a conta reserva os 12 cenários de `specs/001-conexao-instagram/quickstart.md` e a conferência de
+- [X] T033 Validar com a conta reserva os 12 cenários de `specs/001-conexao-instagram/quickstart.md` e a conferência de
   que o acesso (`EAA…`) não aparece em logs nem em `audit_logs`; registrar o resultado e marcar a spec como concluída.
-- [ ] T034 Atualizar `docs/backlog.md` (BE-013 e FE-155 → Concluído) e `docs/changelog.md` pelo `/encerrar-dia`.
+- [X] T034 Atualizar `docs/backlog.md` (BE-013 e FE-155 → Concluído) e `docs/changelog.md` pelo `/encerrar-dia`.
 
 ---
 

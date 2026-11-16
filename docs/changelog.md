@@ -17,6 +17,12 @@ entradas até 2026-11-10 foram reconstruídas do histórico do git.
   notícias, Instagram e IA, editorias e equipe, dashboard, analytics e publicidade, dúvidas comuns.
 - Documentação técnica (`docs/documentacao/tecnico/`): arquitetura, desenvolvimento, variáveis e produção.
 - PDFs do manual e da documentação técnica (`uv run scripts/gerar_pdf.py`), atualizados pelo `/encerrar-dia`.
+- **Conta do Instagram ligada ao painel** (spec 001): o Administrador liga a conta colando o ID e o acesso da Meta; a
+  cada 15 minutos os posts novos entram sozinhos na fila, com a foto (carrossel inteiro ou capa do reel), e viram
+  rascunho com foto principal e crédito. A fila avisa quando a legenda muda ou o post é apagado no Instagram, e o
+  painel avisa quando o acesso deixa de funcionar ou a sincronização falha seguidamente.
+- Spec Kit aplicado de ponta a ponta na spec 001: especificação, plano, tarefas, análise de consistência,
+  implementação com testes e validação com a conta reserva.
 
 ### Alterado
 
@@ -24,6 +30,10 @@ entradas até 2026-11-10 foram reconstruídas do histórico do git.
 - A área do desenvolvedor passou a ler o backlog e os documentos de `docs/` (versionado) em vez da pasta local
   `doc/`; a aba Histórico virou Commits e a de Documentos inclui os capítulos do manual e da documentação técnica.
 - O repositório passa a versionar a documentação, o Spec Kit e as skills do projeto (`CLAUDE.md` continua fora).
+- Next.js atualizado para 16.4.6.
+- A fila do Instagram deixa claro que post colado à mão espera o "Gerar agora"; só o sincronizado vira rascunho
+  sozinho. A tela não oferece mais "urgente publica sozinha" (a IA só faz rascunho).
+- A API em contêiner passa a gravar fotos na pasta local (antes falhava por permissão), com volume próprio.
 
 ## 2026-11-10
 

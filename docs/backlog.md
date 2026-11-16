@@ -100,7 +100,8 @@ Formato que a área do desenvolvedor (`/admin/projeto`) lê: `## <ID> — Títul
 **Status:** Concluído (2026-10-16): Tiptap, foto principal, agendamento, ligado à API.
 
 ## FE-155 — Fila do Instagram
-**Status:** Concluído (2026-11-10): importação manual e rascunho pela IA (conexão com a Meta no BE-013).
+**Status:** Concluído (2026-11-16): importação manual, conta ligada pela tela (Administrador), posts sincronizados com
+foto, avisos de alteração/remoção e de acesso perdido (spec 001).
 
 ## FE-156 — Analytics
 **Status:** Parcial: telas com dados de exemplo; dados reais dependem do BE-015.
@@ -150,8 +151,10 @@ Formato que a área do desenvolvedor (`/admin/projeto`) lê: `## <ID> — Títul
 **Status:** Concluído (2026-10-16): pasta local ou R2.
 
 ## BE-013 — Importação do Instagram
-**Status:** Em andamento (2026-11-16): spec 001 (`specs/001-conexao-instagram/`) — conexão com a conta,
-sincronização dos posts com mídia, avisos de mudança e renovação do acesso. Fila manual já pronta.
+**Status:** Review (2026-11-16): spec 001 implementada — conexão pelo login unificado da Meta (acesso cifrado),
+varredura a cada 15 min, mídia guardada, rascunho automático com foto e crédito, legenda alterada/post apagado e avisos.
+Validada com a conta reserva (cenários 1–6); faltam os cenários 7–11 (ações na conta) e, em produção, o aviso
+instantâneo da Meta (webhook) e o botão "Conectar com Instagram".
 
 ## BE-014 — IA editorial
 **Status:** Concluído (2026-11-10): Gemini com modelo de reserva e implementação falsa.

@@ -24,6 +24,13 @@ O convite é de uso único e vale por 7 dias. Peça ao Administrador um novo.
 **A IA escreveu algo errado.**
 É só um rascunho: corrija antes de publicar. A legenda original continua na fila do Instagram para conferência.
 
+**Postei no Instagram e não apareceu na fila.**
+Com a conta ligada, o painel confere a cada 15 minutos. Se tiver pressa, o Administrador pode clicar em
+*Sincronizar agora*. Se aparecer o aviso de acesso perdido, a conta precisa ser ligada de novo (capítulo 5).
+
+**O rascunho veio sem foto.**
+Alguns vídeos chegam do Instagram sem imagem (o post mostra *Precisa de foto*). Escolha a foto principal no editor.
+
 **A foto não sobe.**
 Use JPEG, PNG, WebP ou HEIC de até 10 MB.
 

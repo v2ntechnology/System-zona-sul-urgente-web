@@ -49,6 +49,25 @@ As strings de tag são contrato entre `src/lib/cache-tags.ts` e o backend.
 
 Agendadas: `ScheduledPublisher` publica as que chegaram no horário, pelo relógio do banco.
 
+## Instagram → rascunho (spec 001)
+
+1. O Administrador cola o **ID da conta** e o **acesso** (token de usuário do sistema do login unificado, sem
+   vencimento, só `instagram_basic`). `InstagramConnectionService` confere na Graph API
+   (`graph.facebook.com/v27.0/{id}`) e grava em `instagram_connection` com `SecretCipher` (mesma chave do 2FA).
+2. `InstagramSyncScheduler` roda `InstagramSyncService.sync()` a cada `zsu.instagram.sync-interval` (15 min; também ao
+   ligar e no "Sincronizar agora"): lê os posts do mais novo para o mais antigo, insere os novos (`source = 'API'`) e
+   liga pelo link os colados à mão (que continuam `MANUAL`); enfileira `INSTAGRAM_IMPORT` na mesma transação.
+3. `InstagramImportJob` baixa foto, carrossel ou capa do vídeo (nunca o vídeo) para o `MediaService` e, só para posts
+   da API, gera o rascunho como o ator de sistema `SyncActor` ("Sincronização do Instagram", permissões de Repórter,
+   `created_by` nulo), com foto principal e crédito `Foto: Reprodução/Instagram @conta`.
+4. A cada varredura, os posts dos últimos `zsu.instagram.reconcile-window` (30 dias) são conferidos: legenda diferente
+   da última vista → `CHANGED_AT_SOURCE`; ausente e confirmado por `GET /{media-id}` → `REMOVED_AT_SOURCE`. A notícia
+   nunca muda sozinha.
+5. Erros da Meta (`InstagramGraphClient.classify`): 190/10/200/102 → conexão `REVOKED` + auditoria
+   `INSTAGRAM_ACCESS_LOST`, varredura parada; limite/5xx/tempo esgotado → `failures + 1`, aviso a partir de 3.
+
+O acesso vai sempre no cabeçalho `Authorization` e nunca aparece em resposta, log ou auditoria.
+
 ## Backend por módulo
 
 Pacote `br.com.zonasulurgente.api`, um módulo por domínio. Módulos não acessam o repositório de outro; conversam
@@ -63,7 +82,7 @@ por interfaces e eventos.
 | `auth` | Login, sessão (hash do token no banco), TOTP com segredo cifrado (AES-256) |
 | `audit` | Auditoria na transação da ação |
 | `media` | Upload até 10 MB, derivados AVIF/WebP via libvips; armazenamento local ou S3/R2 |
-| `instagram` | Fila de posts → rascunho pela IA |
+| `instagram` | Conexão com a conta (acesso do login unificado da Meta, cifrado), varredura a cada 15 min, job `INSTAGRAM_IMPORT` (mídia + rascunho pela IA), conferência de legenda alterada/post apagado (spec 001) |
 | `ai` | `EditorialAiProvider`: Gemini (com modelo de reserva) ou falso |
 | `site` | Job de invalidação do cache do site |
 | `jobs` | Fila no PostgreSQL (`SKIP LOCKED`), worker e agendamento |

@@ -38,7 +38,8 @@ O menu mostra só o que o seu perfil pode usar:
 | Mover para a lixeira | ✓ | ✓ | — | — | — |
 | Marcar urgente | ✓ | ✓ | ✓ | — | — |
 | Marcar patrocinada | ✓ | ✓ | — | ✓ | — |
-| Instagram | ✓ | ✓ | ✓ | — | — |
+| Instagram (fila) | ✓ | ✓ | ✓ | — | — |
+| Ligar a conta do Instagram | ✓ | — | — | — | — |
 | Editorias | ✓ | ✓ | — | — | — |
 | Tópicos | ✓ | ✓ | ✓ | — | — |
 | Analytics | ✓ | ✓ | ✓ | — | ✓ |

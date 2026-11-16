@@ -45,7 +45,7 @@ br.com.zonasulurgente.api
 ├── auth/          # login, sessão, 2FA (TOTP)
 ├── audit/         # log de auditoria e consulta no painel
 ├── media/         # envio e processamento de fotos (pasta local ou Cloudflare R2)
-├── instagram/     # fila de posts do Instagram para revisão
+├── instagram/     # conta do Instagram ligada, sincronização dos posts e fila para revisão
 ├── ai/            # IA editorial (Gemini ou falsa)
 ├── site/          # invalidação de cache do site (Next + Cloudflare)
 └── jobs/          # fila de jobs no PostgreSQL

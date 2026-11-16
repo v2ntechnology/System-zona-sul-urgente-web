@@ -45,3 +45,21 @@ seguidas.
 
 - `grep` no log da API e na tabela `audit_logs` pelo início do acesso (`EAA`): nenhuma ocorrência.
 - `docs/documentacao/usuario/05-instagram-e-ia.md` e `tecnico/10-arquitetura.md` atualizados; changelog do dia.
+
+## Resultado da validação (2026-11-16, conta reserva, ambiente local)
+
+| # | Resultado |
+|---|---|
+| 1 | ✅ Ligou `@zonasulurgentereserva` em 2,1 s; "não vence"; `…ZDZD`; primeira varredura já feita; acesso ausente da resposta. |
+| 2 | ✅ Acesso errado recusado pela Meta real: 422 "Não foi possível ligar a conta", mensagem em português. |
+| 3 | ✅ Coberto pelos testes automáticos (`InstagramConnectionApiTests`, `InstagramSyncTests`: 403 para Editor e Repórter). |
+| 4 | ✅ Os 4 reels dos últimos 7 dias entraram na fila, cada um com a capa guardada. |
+| 5 | ✅ 4 rascunhos em Notícias (origem Instagram), foto principal = capa 1170×2080, crédito "Foto: Reprodução/Instagram @zonasulurgentereserva". |
+| 6 | ✅ Coberto pelos testes automáticos (post manual vinculado pelo link, sem rascunho automático). |
+| 7–11 | ⏳ Dependem de ações na conta reserva (publicar, editar, apagar post; revogar e gerar acesso novo). Comportamento coberto pelos testes automáticos com a Meta falsa. |
+| 12 | ✅ Coberto pelos testes automáticos (`DELETE /connection`). |
+| Final | ✅ Acesso ausente dos logs da API, da auditoria e do banco em texto puro. |
+
+Achado na validação: a API em contêiner não conseguia gravar a pasta de fotos local (`/app/media-local`), problema
+anterior a esta spec (BE-012 nunca tinha rodado em contêiner). Corrigido no `Dockerfile` (pasta do usuário `app`) e no
+`infra/compose.yaml` (volume `media-data`).
