@@ -23,6 +23,11 @@ entradas até 2026-11-10 foram reconstruídas do histórico do git.
   painel avisa quando o acesso deixa de funcionar ou a sincronização falha seguidamente.
 - Spec Kit aplicado de ponta a ponta na spec 001: especificação, plano, tarefas, análise de consistência,
   implementação com testes e validação com a conta reserva.
+- Spec 002 (importar posts antigos do Instagram) especificada e planejada: o Administrador escolhe um período e, se
+  quiser, desmarca posts numa lista; o histórico entra na fila com foto, sem virar rascunho sozinho; a redação gera
+  rascunhos em lote no ritmo da IA. A implementação vem a seguir.
+- Decisão de hospedagem registrada na documentação técnica: VPS com Docker e a Cloudflare na frente (o Cloudflare
+  Workers foi testado e descartado).
 
 ### Alterado
 

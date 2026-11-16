@@ -6,6 +6,19 @@ Boa parte das notícias do Zona Sul Urgente começa como post no Instagram. A te
 posts em **rascunhos de matéria**, escritos por inteligência artificial a partir da legenda e já com a foto do post,
 para a redação revisar e publicar. Ela aparece para Administrador, Editor e Repórter.
 
+## Do Instagram ao site: o caminho de uma notícia
+
+| Etapa | Quem faz | O que acontece |
+|---|---|---|
+| 1. Post no Instagram | Redação, no Instagram | O painel traz o post para a fila em até 15 minutos, com a foto. |
+| 2. Rascunho | O sistema (IA) | A IA escreve o rascunho em *Notícias*. **Nada vai ao ar.** |
+| 3. Conferência | Qualquer pessoa da redação | Abrir o rascunho e conferir texto, título, foto, texto alternativo, crédito, editoria, bairro e a marca de urgente. |
+| 4. Publicação | Editor ou Administrador | Clicar em *Publicar*. Repórter, Comercial e Autor usam *Enviar para revisão*. |
+| 5. Destaque (opcional) | Editor ou Administrador | Colocar a notícia publicada na manchete ou nos destaques da home. |
+
+A IA **nunca publica nem destaca**: as etapas 3, 4 e 5 são sempre de uma pessoa. Atenção na conferência à marca de
+**urgente** sugerida pela IA — ela põe a notícia na faixa vermelha do site.
+
 ## Ligar a conta do Instagram (Administrador)
 
 Com a conta ligada, o painel confere o Instagram **a cada 15 minutos** e traz os posts novos sozinho. Só o

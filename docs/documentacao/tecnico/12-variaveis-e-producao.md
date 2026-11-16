@@ -35,3 +35,18 @@
 - Portas expostas só em `127.0.0.1`; a borda é a Cloudflare.
 - Staging: qualquer `NEXT_PUBLIC_SITE_ENV` diferente de `production` bloqueia a indexação; o painel em demonstração
   (`ADMIN_PREVIEW=true`) só atrás de proteção (ex.: Cloudflare Access).
+
+## Decisão de hospedagem (2026-11-16)
+
+- **Escolhido:** VPS com Docker Compose (site Next + API + PostgreSQL) e a Cloudflare na frente (DNS, CDN, WAF, R2),
+  de preferência com Cloudflare Tunnel (sem portas abertas na VPS). Imagens compiladas no GitHub Actions; a VPS só
+  baixa e reinicia. Mínimo: 4 GB de RAM.
+- **Descartado: Cloudflare Workers (OpenNext).** Testado localmente com `@opennextjs/cloudflare` 1.20.17 (exige Next
+  ≥ 16.4.5): as rotas com `ensureStatic = "navigation"` (`[...path]` e `bairro/[slug]`) travam no runtime do Workers e
+  respondem 500 quando a página não foi gerada no build — 404/308 de verdade e matérias publicadas depois do deploy
+  quebrariam. Tirar o `ensureStatic` faz funcionar, mas o 404 vira "200 + noindex" (contra a constituição VI). Além
+  disso, a API Java precisa de servidor de qualquer forma.
+- **Domínio:** `.com.br` no Registro.br (revendedor Newfold/HostGator), sem DNSSEC; DNS hoje na Vercel
+  (`ns1/ns2.vercel-dns.com`), com registro curinga `*` apontando para a Vercel e sem e-mail no domínio. A ida para a
+  Cloudflare é troca de servidores de DNS no painel da HostGator (`.com.br` não transfere para o registrador da
+  Cloudflare); copiar antes os registros, inclusive os CAA.

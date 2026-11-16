@@ -168,6 +168,11 @@ instantâneo da Meta (webhook) e o botão "Conectar com Instagram".
 ## BE-021 — Cidades, zonas e bairros
 **Status:** Concluído (2026-10-16).
 
+## BE-024 — Importação do histórico do Instagram
+**Prioridade:** P1 (antes da estreia do site) · **Status:** Em andamento (2026-11-16): spec 002
+(`specs/002-importar-posts-antigos/`) especificada e planejada — importar por período com lista para desmarcar, fila
+com foto sem rascunho automático, geração em lote no ritmo da IA, conferência dos antigos que viraram notícia.
+
 ## BE-023 — Radar de pautas
 **Status:** Proposto (2026-11-04).
 
