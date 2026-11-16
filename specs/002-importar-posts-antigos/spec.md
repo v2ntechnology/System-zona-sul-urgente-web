@@ -88,8 +88,10 @@ no meio e conferir que os posts já trazidos continuam na fila e nada mais entra
    pouco tempo, os posts já trazidos continuam na fila e a situação mostra "interrompida".
 3. **Dado** uma importação em andamento, **quando** alguém tenta iniciar outra, **então** o sistema recusa até a atual
    terminar ou ser interrompida.
-4. **Dado** que a Meta fica fora do ar ou o acesso é perdido durante a importação, **quando** isso acontece, **então** a
-   importação para com a situação "falhou" e o motivo, e o que já entrou fica.
+4. **Dado** que o acesso à conta é perdido durante a importação, **quando** isso acontece, **então** a importação para
+   na hora com a situação "falhou" e o motivo, e o que já entrou fica.
+5. **Dado** que a Meta fica fora do ar ou limita as chamadas durante a importação, **quando** isso acontece, **então** a
+   importação espera e tenta de novo sozinha; só vira "falhou" se a falha persistir, e o que já entrou fica.
 
 ---
 
@@ -156,12 +158,18 @@ de alguns minutos, sem nenhum duplicado.
 - **FR-011**: A geração em lote DEVE respeitar o limite da IA: no máximo um ritmo configurável de rascunhos por minuto
   (padrão: 4) e, ao bater o limite do plano, esperar e continuar depois.
 - **FR-012**: A geração em lote DEVE seguir as regras atuais: só rascunho, no máximo uma notícia por post, só conteúdo
-  público vai para a IA, falha vira "Erro" com Reprocessar, com foto principal e crédito quando houver.
+  público vai para a IA, falha vira "Erro" com Reprocessar, com foto principal e crédito quando houver. Rascunho gerado
+  em lote **nunca nasce urgente** (a marca de urgente sugerida pela IA é ignorada): a faixa de urgentes do site é para
+  o que acabou de acontecer, e um post antigo publicado hoje entraria nela. A redação marca urgente à mão, se for o caso.
+  Se a IA continuar indisponível depois de todas as tentativas, o post vira "Erro" com Reprocessar (não fica parado em
+  "Novo").
 - **FR-013**: A fila DEVE permitir filtrar só os posts antigos.
 - **FR-014**: Posts antigos que **viraram notícia** DEVEM ser conferidos para legenda alterada e post apagado (mesmas
   regras e avisos da spec 001), qualquer que seja a data do post. Posts antigos sem notícia não são conferidos.
 - **FR-015**: Iniciar, interromper e o resultado de cada importação de histórico, e cada lote de geração, DEVEM ir para
   a auditoria (quem, quando, quantos).
+- **FR-016**: Posts antigos sem rascunho NÃO DEVEM contar como pendência: ficam fora do "pedem ação" da tela do
+  Instagram e do card de posts novos do Dashboard, e aparecem com contagem própria no filtro "Antigos".
 
 ### Entidades
 
