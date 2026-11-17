@@ -1,0 +1,105 @@
+# Produção (VPS). Roteiro completo: docs/documentacao/tecnico/13-deploy-vps.md.
+#
+#   Variáveis: infra/.env (copie de infra/prod.env.example; chmod 600; nunca versionar).
+#   Deploy:    infra/deploy.sh   (sobe banco + API, compila o site com a API no ar, troca o site e liga o túnel)
+#
+# Nenhuma porta fica aberta para a internet: o Docker publica portas por fora do firewall (ufw), então só a API
+# aparece em 127.0.0.1 (usada pelo build do site e para diagnóstico por túnel SSH). O público chega pelo
+# Cloudflare Tunnel (serviço `cloudflared`), que sai da VPS até a Cloudflare.
+name: zona-sul-urgente-prod
+
+x-logging: &logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: zonasul
+      POSTGRES_USER: zonasul
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no infra/.env}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      # Backups do banco (infra/backup.sh) ficam aqui antes de irem para fora da VPS.
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zonasul -d zonasul"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    shm_size: 256mb
+    logging: *logging
+
+  api:
+    build: ../System-Zona-Sul-Urgente-Web-Backend
+    image: zsu-api:latest
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/zonasul
+      DB_USER: zonasul
+      DB_PASSWORD: ${DB_PASSWORD}
+      TOTP_ENCRYPTION_KEY: ${TOTP_ENCRYPTION_KEY:?defina TOTP_ENCRYPTION_KEY no infra/.env}
+      SITE_REVALIDATE_URL: http://web:3000
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?defina REVALIDATE_SECRET no infra/.env}
+      MEDIA_STORAGE: s3
+      MEDIA_PUBLIC_URL: ${MEDIA_PUBLIC_URL:?defina MEDIA_PUBLIC_URL no infra/.env}
+      MEDIA_S3_ENDPOINT: ${MEDIA_S3_ENDPOINT:?defina MEDIA_S3_ENDPOINT no infra/.env}
+      MEDIA_S3_BUCKET: ${MEDIA_S3_BUCKET:?defina MEDIA_S3_BUCKET no infra/.env}
+      MEDIA_S3_ACCESS_KEY: ${MEDIA_S3_ACCESS_KEY:?defina MEDIA_S3_ACCESS_KEY no infra/.env}
+      MEDIA_S3_SECRET_KEY: ${MEDIA_S3_SECRET_KEY:?defina MEDIA_S3_SECRET_KEY no infra/.env}
+      AI_PROVIDER: gemini
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?defina GEMINI_API_KEY no infra/.env}
+      ZSU_BOOTSTRAP_ADMIN_EMAIL: ${ZSU_BOOTSTRAP_ADMIN_EMAIL:-}
+      ZSU_BOOTSTRAP_ADMIN_NAME: ${ZSU_BOOTSTRAP_ADMIN_NAME:-Administrador Zona Sul}
+      ZSU_SITE_URL: ${SITE_URL}
+      # Heap = 60% do limite do contêiner; o resto fica para o libvips (fotos) e a própria JVM.
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=60 --enable-native-access=ALL-UNNAMED"
+    mem_limit: 2560m
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging: *logging
+
+  web:
+    build:
+      context: ../System-Zona-Sul-Urgente-Web-Frontend
+      # O build busca as notícias na API (precisa dela no ar): usa a porta da API em 127.0.0.1 da própria VPS.
+      network: host
+      args:
+        API_URL: http://127.0.0.1:8080
+        NEXT_PUBLIC_SITE_URL: ${SITE_URL:?defina SITE_URL no infra/.env}
+        NEXT_PUBLIC_SITE_ENV: ${SITE_ENV:-staging}
+        NEXT_PUBLIC_WHATSAPP_URL: ${WHATSAPP_URL:-}
+        NEXT_PUBLIC_REPORT_WHATSAPP_URL: ${REPORT_WHATSAPP_URL:-}
+        NEXT_PUBLIC_ADSENSE_CLIENT: ${ADSENSE_CLIENT:-}
+    image: zsu-web:latest
+    restart: unless-stopped
+    environment:
+      API_URL: http://api:8080
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET}
+      NEXT_PUBLIC_SITE_URL: ${SITE_URL}
+      NEXT_PUBLIC_SITE_ENV: ${SITE_ENV:-staging}
+    mem_limit: 1536m
+    depends_on:
+      api:
+        condition: service_healthy
+    logging: *logging
+
+  cloudflared:
+    # Fixe a versão depois do primeiro deploy (docker image inspect → tag) para não mudar sozinha.
+    image: cloudflare/cloudflared:${CLOUDFLARED_TAG:-latest}
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?defina TUNNEL_TOKEN no infra/.env}
+    depends_on:
+      - web
+    logging: *logging
+
+volumes:
+  postgres-data:

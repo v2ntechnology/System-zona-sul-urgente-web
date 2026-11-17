@@ -8,6 +8,20 @@ RUN npm ci
 FROM node:24-alpine AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+# Variáveis lidas no build (NEXT_PUBLIC_* ficam embutidas no código do navegador). Com API_URL, o build busca as
+# notícias na API, que precisa estar no ar (ver infra/compose.prod.yaml). Vazias = dados de exemplo.
+ARG API_URL=
+ARG NEXT_PUBLIC_SITE_URL=
+ARG NEXT_PUBLIC_SITE_ENV=
+ARG NEXT_PUBLIC_WHATSAPP_URL=
+ARG NEXT_PUBLIC_REPORT_WHATSAPP_URL=
+ARG NEXT_PUBLIC_ADSENSE_CLIENT=
+ENV API_URL=$API_URL \
+    NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
+    NEXT_PUBLIC_SITE_ENV=$NEXT_PUBLIC_SITE_ENV \
+    NEXT_PUBLIC_WHATSAPP_URL=$NEXT_PUBLIC_WHATSAPP_URL \
+    NEXT_PUBLIC_REPORT_WHATSAPP_URL=$NEXT_PUBLIC_REPORT_WHATSAPP_URL \
+    NEXT_PUBLIC_ADSENSE_CLIENT=$NEXT_PUBLIC_ADSENSE_CLIENT
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build

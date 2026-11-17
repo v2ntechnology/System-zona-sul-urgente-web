@@ -6,6 +6,8 @@
 .env
 .env.*
 !.env.example
+# Backups do banco na VPS (infra/backup.sh)
+infra/backups/
 
 # ---------------------------------------------------------------
 # Frontend antigo (referencia local, nao versionar)

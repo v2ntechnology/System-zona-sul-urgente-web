@@ -39,8 +39,8 @@
 ## Decisão de hospedagem (2026-11-16)
 
 - **Escolhido:** VPS com Docker Compose (site Next + API + PostgreSQL) e a Cloudflare na frente (DNS, CDN, WAF, R2),
-  de preferência com Cloudflare Tunnel (sem portas abertas na VPS). Imagens compiladas no GitHub Actions; a VPS só
-  baixa e reinicia. Mínimo: 4 GB de RAM.
+  com Cloudflare Tunnel (sem portas abertas na VPS). Contratada a Hostinger KVM 2 (2 vCPU, 8 GB). As imagens são
+  compiladas **na própria VPS** (o build do site precisa da API no ar) — roteiro no capítulo 13.
 - **Descartado: Cloudflare Workers (OpenNext).** Testado localmente com `@opennextjs/cloudflare` 1.20.17 (exige Next
   ≥ 16.4.5): as rotas com `ensureStatic = "navigation"` (`[...path]` e `bairro/[slug]`) travam no runtime do Workers e
   respondem 500 quando a página não foi gerada no build — 404/308 de verdade e matérias publicadas depois do deploy

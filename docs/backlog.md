@@ -187,7 +187,13 @@ com foto sem rascunho automático, geração em lote no ritmo da IA, conferênci
 **Status:** Concluído (2026-11-10): Playwright no CI, desktop e celular.
 
 ## OPS-001 — Ambiente de staging
-**Status:** Parcial: bloqueio de indexação fora de produção pronto; o ambiente ainda não existe.
+**Status:** Parcial: bloqueio de indexação fora de produção pronto; a prévia vai ser `novo.<domínio>` na VPS
+(`SITE_ENV=staging`), quando o domínio estiver na Cloudflare.
+
+## OPS-002 — Hospedagem na VPS
+**Status:** Parcial (2026-11-16): VPS Hostinger KVM 2 preparada (acesso só por chave, firewall, fail2ban, swap,
+Docker) e configuração de produção no repositório (`infra/compose.prod.yaml`, `deploy.sh`, `backup.sh`, capítulo 13
+da documentação técnica). Falta: domínio na Cloudflare, R2, túnel, primeiro deploy e cópia do backup para fora da VPS.
 
 ## OPS-003 — Migração do site antigo
 **Status:** Parcial: redirecionamentos de rotas antigas definidos; migração do conteúdo a fazer.

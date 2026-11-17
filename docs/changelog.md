@@ -7,6 +7,10 @@ entradas até 2026-11-10 foram reconstruídas do histórico do git.
 
 ### Adicionado
 
+- Configuração de produção para a VPS: banco, API, site e Cloudflare Tunnel num Compose sem portas abertas para a
+  internet, script de deploy (o site é compilado com a API no ar) e backup diário do banco, com o roteiro completo na
+  documentação técnica.
+
 - Spec Kit (mesma versão dos outros projetos) e a constituição do Zona Sul Urgente, com os princípios que o projeto
   já seguia: português, documentação como fonte oficial, segurança primeiro, site que funciona sem a API, contratos
   entre site e API, leitor primeiro, IA só para rascunhos e verificação pelo CI.
