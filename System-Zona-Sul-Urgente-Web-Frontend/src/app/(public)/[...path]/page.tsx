@@ -9,6 +9,7 @@ import { siteConfig } from "@/config/site";
 import { shareImage } from "@/lib/media-url";
 import { getByCategory, getSectionPaths, resolveSectionPath } from "@/services/news-service";
 import { getSubcategories } from "@/services/taxonomy-service";
+import { atLeastOne, PLACEHOLDER_SLUG } from "@/lib/static-params";
 
 // Rota única na raiz (padrão CNN/g1): /{editoria}, /{editoria}/{sub}, /{editoria}/{slug},
 // /{editoria}/{sub}/{slug}. Rotas fixas (busca, bairro, admin...) têm pasta própria e
@@ -26,7 +27,10 @@ export const ensureStatic = "navigation";
 export const instant = false;
 
 export async function generateStaticParams() {
-  return (await getSectionPaths()).map((path) => ({ path }));
+  return atLeastOne(
+    (await getSectionPaths()).map((path) => ({ path })),
+    { path: [PLACEHOLDER_SLUG] },
+  );
 }
 
 export async function generateMetadata({ params }: PageProps<"/[...path]">): Promise<Metadata> {

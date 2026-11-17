@@ -3,10 +3,14 @@ import { siteConfig } from "@/config/site";
 import { buildRss, RSS_HEADERS } from "@/lib/rss";
 import { getNewsForFeed } from "@/services/news-service";
 import { getCategories } from "@/services/taxonomy-service";
+import { atLeastOne, PLACEHOLDER_SLUG } from "@/lib/static-params";
 
 // RSS por editoria (FE-114): /feed/{slug}.xml — inclui as subeditorias.
 export async function generateStaticParams() {
-  return (await getCategories()).map((c) => ({ file: `${c.slug}.xml` }));
+  return atLeastOne(
+    (await getCategories()).map((c) => ({ file: `${c.slug}.xml` })),
+    { file: `${PLACEHOLDER_SLUG}.xml` },
+  );
 }
 
 export async function GET(_request: Request, { params }: RouteContext<"/feed/[file]">) {

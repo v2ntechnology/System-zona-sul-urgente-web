@@ -4,13 +4,17 @@ import { escapeHtml as esc } from "@/lib/html";
 import { absoluteUrl } from "@/lib/structured-data";
 import { getLatestStories, getStoryBySlug } from "@/services/story-service";
 import type { WebStory } from "@/types/news";
+import { atLeastOne, PLACEHOLDER_SLUG } from "@/lib/static-params";
 
 // Web Story em AMP (FE-119), o formato que o Google Discover exibe — a CNN Brasil faz igual,
 // em stories.cnnbrasil.com.br. Fica fora do layout do site porque AMP exige HTML próprio.
 // O CSS "amp-boilerplate" é obrigatório e deve ser idêntico ao da especificação.
 
 export async function generateStaticParams() {
-  return (await getLatestStories(100)).map((story) => ({ slug: story.slug }));
+  return atLeastOne(
+    (await getLatestStories(100)).map((story) => ({ slug: story.slug })),
+    { slug: PLACEHOLDER_SLUG },
+  );
 }
 
 export async function GET(_request: Request, { params }: RouteContext<"/stories/[slug]">) {

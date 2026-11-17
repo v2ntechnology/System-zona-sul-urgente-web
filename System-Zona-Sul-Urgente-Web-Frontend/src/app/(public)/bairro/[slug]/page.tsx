@@ -14,6 +14,7 @@ import { routes } from "@/config/navigation";
 import { breadcrumbJsonLd, type Crumb, serializeJsonLd } from "@/lib/structured-data";
 import { getByNeighborhood } from "@/services/news-service";
 import { getNeighborhoods } from "@/services/taxonomy-service";
+import { atLeastOne, PLACEHOLDER_SLUG } from "@/lib/static-params";
 
 // Página de bairro (FE-105). Mesma regra das editorias: pré-gerada e com 404 real
 // (ver comentário de ensureStatic em [...path]/page.tsx).
@@ -23,7 +24,10 @@ export const ensureStatic = "navigation";
 export const instant = false;
 
 export async function generateStaticParams() {
-  return (await getNeighborhoods()).map((n) => ({ slug: n.slug }));
+  return atLeastOne(
+    (await getNeighborhoods()).map((n) => ({ slug: n.slug })),
+    { slug: PLACEHOLDER_SLUG },
+  );
 }
 
 export async function generateMetadata({ params }: PageProps<"/bairro/[slug]">): Promise<Metadata> {
