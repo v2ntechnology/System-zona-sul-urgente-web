@@ -27,6 +27,9 @@ O convite é de uso único e vale por 7 dias. Peça ao Administrador um novo.
 **Postei no Instagram e não apareceu na fila.**
 Com a conta ligada, o painel confere a cada 15 minutos. Se tiver pressa, o Administrador pode clicar em
 *Sincronizar agora*. Se aparecer o aviso de acesso perdido, a conta precisa ser ligada de novo (capítulo 5).
+Só entram posts e Reels **publicados pela própria conta ligada**. Não entram Stories, Reels **repostados** ou
+compartilhados de outras páginas, nem posts em que a conta é só colaboradora — eles pertencem à outra página. Para
+transformar um desses em notícia, use **Adicionar post do Instagram** (cole o link) e dê o crédito à página de origem.
 
 **O rascunho veio sem foto.**
 Alguns vídeos chegam do Instagram sem imagem (o post mostra *Precisa de foto*). Escolha a foto principal no editor.

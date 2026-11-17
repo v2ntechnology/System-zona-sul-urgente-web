@@ -44,6 +44,9 @@ os 15 minutos.
   (`https://www.instagram.com/p/...`) e a **legenda** e confirme. O post entra na fila e o rascunho sai quando alguém
   clica em **Gerar agora**. Se depois a sincronização encontrar o mesmo post, ele não é duplicado: só ganha a foto.
 
+Do vídeo ou Reels, por enquanto só a **capa** vai para a matéria (o vídeo dentro da matéria é o próximo passo).
+Stories e Reels repostados de outras páginas não entram sozinhos (veja *Dúvidas*).
+
 Em todos os casos, abra o rascunho, revise texto, título, foto, texto alternativo da foto, editoria e bairro, e
 publique (ou envie para revisão).
 

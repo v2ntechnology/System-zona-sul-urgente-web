@@ -27,52 +27,74 @@ Usuário `vinicius` com sudo; SSH só com chave e sem root (`/etc/ssh/sshd_confi
 `fail2ban` no SSH; atualizações de segurança automáticas; swap de 4 GB; fuso `America/Sao_Paulo`; Docker do
 repositório oficial com logs limitados (`/etc/docker/daemon.json`). Firewall do painel da Hostinger: só a 22.
 
-## 1. Cloudflare: domínio
+## 1. Cloudflare: domínio (feito em 2026-11-17)
 
-1. Criar a conta, **Add a domain** → o `.com.br` → plano Free.
-2. Conferir os registros importados com os da Vercel (inclusive o curinga `*` e os **CAA**). Enquanto apontarem para
-   a Vercel, o site antigo continua no ar.
-3. No painel da HostGator (Registro.br), trocar os servidores de DNS pelos dois que a Cloudflare mostrar. Esperar a
-   Cloudflare marcar o domínio como **Active**.
+1. Conta da Cloudflare do jornal → **Add a domain** → `zonasulurgente.com.br` → plano Free. Política de robôs:
+   *Search* e *Agents* liberados, *Training* conforme o cliente, *Bot Preference Sync* ligado.
+2. Os registros importados (Vercel) foram **todos apagados**: o cliente aceitou o site antigo fora do ar. Os únicos
+   registros são os do túnel (raiz e `www`) e o do R2 (`media`).
+3. No painel da HostGator (**Domínios → Alterar plataforma → Outra plataforma**), os nameservers da Cloudflare:
+   `stephane.ns.cloudflare.com` e `sullivan.ns.cloudflare.com`. Conferir no Registro.br:
+   `curl -s https://rdap.registro.br/domain/zonasulurgente.com.br` (campo `nameservers`).
+4. **Cuidado:** adicionar o domínio de novo (ou noutra conta) gera **outro par de nameservers**. A HostGator chegou a
+   apontar para um par de uma cópia antiga (`hadlee`/`shane`) e o site continuou na Vercel. O par certo é o que a
+   página *Overview* do domínio mostra **na conta onde está o túnel**; apague as outras cópias.
+5. O `.com` (`zonasulurgente.com`) continua na HostGator, com e-mail (MX). Não mexer sem migrar o e-mail antes.
 
 ## 2. Cloudflare: fotos (R2)
 
-1. **R2** → criar o bucket `zsu-media`.
-2. **Settings → Custom domains** → `media.<domínio>` (vira `MEDIA_PUBLIC_URL`).
-3. **Manage API tokens** → token com **Object Read & Write** só nesse bucket → anotar *Access Key ID*, *Secret Access
-   Key* e o endpoint `https://<id-da-conta>.r2.cloudflarestorage.com`.
+1. **R2** → bucket `zsu-media` (Location *Automatic*, classe *Standard*). Pede cartão mesmo no plano grátis.
+2. **Manage API tokens** → *Create Account API token* `zsu-api`: **Object Read & Write**, **só o bucket
+   `zsu-media`**, TTL *Forever* e **filtro de IP com o IP da VPS** (a chave não funciona fora do servidor).
+3. O endpoint (`MEDIA_S3_ENDPOINT`) é `https://<id-da-conta>.r2.cloudflarestorage.com` — **sem** `/zsu-media` no
+   fim (a tela do bucket mostra com o nome; tirar).
+4. Depois do domínio **Active**: **Settings → Custom Domains** → `media.zonasulurgente.com.br`, TLS mínimo **1.2**
+   (1.3 deixaria aparelhos antigos sem foto).
 
 ## 3. Cloudflare: túnel
 
-1. **Zero Trust → Networks → Tunnels → Create a tunnel** → *Cloudflared* → nome `zsu-prod`.
-2. Na tela de instalação, copiar só o **token** (o texto depois de `--token`) para `TUNNEL_TOKEN`.
-3. **Public hostname**: `novo.<domínio>` → serviço `HTTP` → `web:3000` (a prévia).
+1. **Zero Trust** (equipe `zonasulurgente`, plano Free) → **Networks → Tunnels → Create a tunnel** → *Cloudflared*
+   → `zsu-prod`.
+2. Copiar o **token** (texto depois de `--token`) para o gerenciador de senhas.
+3. A tela nova só libera o *Continue* depois que um conector liga. Ligar um temporário na VPS sem deixar o token no
+   histórico: `read -rs TUNNEL_TOKEN` → `docker run -d --name cf-temporario cloudflare/cloudflared:latest tunnel
+   --no-autoupdate run --token "$TUNNEL_TOKEN"`; depois `docker rm -f cf-temporario`.
+4. **Routes → Add route → Published application**: raiz e `www` de `zonasulurgente.com.br` → `http://web:3000`.
+   A Cloudflare cria os registros de DNS do tipo *Tunnel*.
+5. Token perdido: **Overview → Add a replica → Docker** mostra o comando de novo (ou *Rotate token*).
 
 ## 4. VPS: código e segredos
 
 ```bash
-# O repositório é público (nenhum segredo nele): o servidor só lê, sem chave.
 git clone https://github.com/v2ntechnology/System-zona-sul-urgente-web.git ~/zona-sul-urgente
-cd ~/zona-sul-urgente/infra
-cp prod.env.example .env && chmod 600 .env
-openssl rand -base64 32     # um para cada: DB_PASSWORD, TOTP_ENCRYPTION_KEY, REVALIDATE_SECRET
-nano .env
+cd ~/zona-sul-urgente/infra && cp prod.env.example .env && chmod 600 .env
+# Segredos gerados no próprio servidor (ninguém precisa copiar):
+sed -i "s|^DB_PASSWORD=$|DB_PASSWORD=$(openssl rand -hex 24)|" .env
+sed -i "s|^TOTP_ENCRYPTION_KEY=$|TOTP_ENCRYPTION_KEY=$(openssl rand -base64 32)|" .env
+sed -i "s|^REVALIDATE_SECRET=$|REVALIDATE_SECRET=$(openssl rand -hex 32)|" .env
+grep TOTP_ENCRYPTION_KEY .env    # guardar no gerenciador de senhas: perdê-la invalida todos os 2FA
+nano .env                        # R2, GEMINI_API_KEY, TUNNEL_TOKEN, CLOUDFLARED_TAG, ZSU_BOOTSTRAP_ADMIN_*
+grep -E "^[A-Z0-9_]+=" .env | sed -E "s/=.+/=(preenchido)/"    # conferir sem mostrar valores
 ```
 
-Na prévia: `SITE_URL=https://novo.<domínio>` e `SITE_ENV=staging` (fora do Google). No primeiro deploy, preencher
-`ZSU_BOOTSTRAP_ADMIN_EMAIL` com o e-mail de quem vai administrar.
+Hoje: `SITE_URL=https://zonasulurgente.com.br`, `SITE_ENV=staging` (fora do Google até ter conteúdo),
+`CLOUDFLARED_TAG=2026.11.0`.
 
-## 5. Primeiro deploy
+## 5. Primeiro deploy (feito em 2026-11-17)
 
 ```bash
 ~/zona-sul-urgente/infra/deploy.sh
-docker compose -f ~/zona-sul-urgente/infra/compose.prod.yaml logs api | grep -i convite   # link do 1º Admin
+docker compose -f ~/zona-sul-urgente/infra/compose.prod.yaml logs api | grep -A1 "Primeiro administrador"
 ```
 
-O primeiro build leva alguns minutos (Maven e npm baixam tudo). Depois, `https://novo.<domínio>` deve abrir o site
-novo. O Admin entra pelo link do convite, cadastra a senha e o 2FA e convida a equipe.
+- **Banco novo não tem editorias nem bairros** (o `db/seed` só existe no perfil `local`). Foram carregadas à mão, uma
+  vez, as cidades, zonas, os 18 bairros e as 12 editorias de `db/seed/R__seed_local.sql` (sem as colunas de
+  colunistas fictícios), com `ON CONFLICT DO NOTHING`. A redação ajusta as editorias pelo painel.
+- Com o banco vazio, `generateStaticParams` voltaria vazio e o `next build` falharia (Cache Components exige ao menos
+  um item): `src/lib/static-params.ts` devolve o endereço reservado `_vazio` (404) nesse caso.
+- O link do convite do 1º Admin sai no log da API (uso único, 7 dias).
 
-## 6. Backup
+## 6. Backup (falta agendar)
 
 ```bash
 crontab -e
@@ -82,13 +104,14 @@ crontab -e
 Restaurar: `docker compose -f infra/compose.prod.yaml exec -T postgres pg_restore -U zonasul -d zonasul --clean
 --if-exists /backups/<arquivo>.dump`. A cópia para fora da VPS (R2) é o próximo passo.
 
-## 7. Virar o site oficial
+## 7. Liberar o Google
 
-Com a aprovação do cliente:
+Quando a redação tiver publicado as primeiras matérias:
 
-1. No túnel, **Public hostname** para o domínio e para `www` → `HTTP web:3000` (substitui os registros da Vercel).
-2. No `infra/.env`: `SITE_URL=https://<domínio>` e `SITE_ENV=production` (libera o Google).
-3. `infra/deploy.sh --sem-git` (as variáveis `NEXT_PUBLIC_*` ficam embutidas no build).
+1. No `infra/.env`: `SITE_ENV=production`.
+2. `infra/deploy.sh --sem-git` (as variáveis `NEXT_PUBLIC_*` ficam embutidas no build).
+3. Regra de redirecionamento na Cloudflare de `www` para a raiz (o `SITE_URL` canônico), para o Google não ver duas
+   cópias.
 
 ## Dia a dia
 

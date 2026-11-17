@@ -187,13 +187,21 @@ com foto sem rascunho automático, geração em lote no ritmo da IA, conferênci
 **Status:** Concluído (2026-11-10): Playwright no CI, desktop e celular.
 
 ## OPS-001 — Ambiente de staging
-**Status:** Parcial: bloqueio de indexação fora de produção pronto; a prévia vai ser `novo.<domínio>` na VPS
-(`SITE_ENV=staging`), quando o domínio estiver na Cloudflare.
+**Status:** Parcial: bloqueio de indexação fora de produção pronto; por decisão do cliente (2026-11-17) não houve
+prévia separada — o próprio domínio está com `SITE_ENV=staging` (fora do Google) até ter conteúdo.
 
 ## OPS-002 — Hospedagem na VPS
-**Status:** Parcial (2026-11-16): VPS Hostinger KVM 2 preparada (acesso só por chave, firewall, fail2ban, swap,
-Docker) e configuração de produção no repositório (`infra/compose.prod.yaml`, `deploy.sh`, `backup.sh`, capítulo 13
-da documentação técnica). Falta: domínio na Cloudflare, R2, túnel, primeiro deploy e cópia do backup para fora da VPS.
+**Status:** Parcial (2026-11-17): **site novo no ar** em `zonasulurgente.com.br` (VPS Hostinger KVM 2 + Cloudflare
+Tunnel; domínio, R2 com `media.`, editorias e bairros carregados; 1º Administrador entrou). Falta: testar o envio de
+foto, ligar o Instagram em produção, agendar o backup e copiá-lo para fora da VPS, `SITE_ENV=production` e o
+redirecionamento `www` → raiz.
+
+## OPS-004 — Monitor dos planos gratuitos
+**Status:** A fazer: spec 004 especificada (2026-11-17), aguardando 3 respostas (quem vê, canal dos avisos, limite da
+trava das fotos). Uso do R2, da IA e do disco com avisos em 70%/90% e trava antes da cota grátis.
+
+## FE-161 — Vídeo do Instagram dentro da matéria
+**Status:** A fazer (spec 005): capa com ▶ e player do Instagram carregado só no clique (leve, sem guardar o vídeo).
 
 ## OPS-003 — Migração do site antigo
 **Status:** Parcial: redirecionamentos de rotas antigas definidos; migração do conteúdo a fazer.

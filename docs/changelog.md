@@ -3,6 +3,27 @@
 Registro diário do que foi adicionado, alterado e removido no projeto. A entrada mais recente fica no topo. As
 entradas até 2026-11-10 foram reconstruídas do histórico do git.
 
+## 2026-11-17
+
+### Adicionado
+
+- **Site novo no ar** em `zonasulurgente.com.br` (e `www`): servidor próprio com a Cloudflare na frente, fotos no
+  R2 (`media.zonasulurgente.com.br`) e as 12 editorias e 18 bairros da Zona Sul já cadastrados. Ainda fora do
+  Google até a redação publicar as primeiras matérias.
+- Primeiro Administrador cadastrado em produção pelo convite.
+- Spec 004 (monitor dos planos gratuitos) especificada: uso das fotos, da IA e do disco, com avisos e trava antes de
+  passar da cota grátis.
+
+### Alterado
+
+- O site compila mesmo com o banco ainda vazio (sem notícias, stories ou editorias).
+- Manual: explica que Stories e Reels repostados de outras páginas não entram sozinhos na fila do Instagram, e que do
+  vídeo só a capa vai para a matéria por enquanto.
+
+### Removido
+
+- O site antigo (Vercel) saiu do ar, substituído pelo novo.
+
 ## 2026-11-16
 
 ### Adicionado
