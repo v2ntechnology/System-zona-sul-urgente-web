@@ -209,6 +209,7 @@ function SearchResult({ news, query }: { news: NewsSummary; query: string }) {
         {news.image && (
           <RemoteImage
             src={news.image.url}
+            frame={news.image}
             alt={news.image.alt}
             fill
             sizes="176px"

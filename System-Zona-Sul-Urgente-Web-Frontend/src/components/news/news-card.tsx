@@ -92,6 +92,7 @@ function CardImage({
       {news.image && (
         <RemoteImage
           src={news.image.url}
+          frame={news.image}
           alt={news.image.alt}
           fill
           sizes={sizes}
@@ -267,6 +268,7 @@ export function NewsCardVideo({ news, className }: CardProps) {
         {news.image && (
           <RemoteImage
             src={news.image.url}
+            frame={news.image}
             alt={news.image.alt}
             fill
             sizes="(min-width: 1024px) 20vw, 280px"

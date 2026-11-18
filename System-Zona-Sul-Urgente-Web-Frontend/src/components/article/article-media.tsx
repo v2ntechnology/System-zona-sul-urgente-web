@@ -10,6 +10,7 @@ export function ArticleFigure({ image, preload }: { image: MediaAsset; preload?:
       <div className="relative aspect-video overflow-hidden bg-muted">
         <RemoteImage
           src={image.url}
+          frame={image}
           alt={image.alt}
           fill
           sizes="(min-width: 1024px) 760px, 100vw"

@@ -78,6 +78,7 @@ function Thumb({
       {news.image && (
         <RemoteImage
           src={news.image.url}
+          frame={news.image}
           alt={news.image.alt}
           fill
           sizes={sizes}

@@ -466,6 +466,7 @@ function Thumb({
       {row.imageUrl ? (
         <RemoteImage
           src={row.imageUrl}
+          frame
           alt=""
           fill
           sizes={sizes}
