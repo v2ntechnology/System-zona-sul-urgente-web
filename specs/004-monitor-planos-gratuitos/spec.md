@@ -208,7 +208,8 @@ Os limites e as porcentagens de aviso e de trava são configuráveis, para o mes
 - **SC-003**: Os números das fotos na tela diferem no máximo 10% dos mostrados pela própria nuvem.
 - **SC-004**: Em testes simulados, 100% dos envios de foto acima do limite de trava são recusados, e 100% dos rascunhos
   que esbarram no limite da IA são gerados depois sozinhos, sem nenhum post em "Erro" por causa da cota.
-- **SC-005**: O aviso de 70% chega com folga: no ritmo médio de uso, pelo menos 1 semana antes da trava das fotos.
+- **SC-005**: O aviso de 70% chega com folga: no ritmo médio de uso, pelo menos 1 semana antes da trava das fotos
+  (acompanhado na validação e na produção, com o ritmo real registrado).
 
 ## Suposições
 

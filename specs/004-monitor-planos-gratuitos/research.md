@@ -26,6 +26,10 @@
   `max(último número da nuvem, conta do sistema)` + o que o sistema gravou **depois** da última leitura (R4).
 - **Armazenamento**: o plano cobra a média do mês (GB-mês); comparamos o **tamanho atual** com 10 GB, mais
   conservador.
+- **Outros usos na mesma conta**: a conta da Cloudflare pode ter outros buckets (outro projeto). Contam para a cota
+  (é o que a Cloudflare cobra), mas a "conta do sistema" do Zona Sul nunca vai bater com eles: nuvem **maior** que o
+  sistema é só informação ("inclui outros usos da conta"); só nuvem **menor** que o sistema em mais de 10% vira aviso
+  de diferença (análise de 2026-11-18, U2).
 
 ## R3. Pedidos à IA (FR-004, FR-008)
 
@@ -34,6 +38,8 @@
   (zera à meia-noite do horário do Pacífico, como a cota do Gemini). Limites por modelo na configuração.
 - **No limite do minuto**: `QuotaGuard` responde "espere N segundos"; a geração lança `QuotaDeferredException`
   com o horário de volta. **No limite do dia**: o mesmo, com o horário de reinício da cota.
+- **Sem limite configurado** (análise G1): o recurso de IA aparece como "Sem limite configurado" em vermelho e a API
+  avisa no log ao subir — não some, porque sumir deixaria a IA sem trava sem ninguém perceber.
 - **Por quê**: a cota do plano grátis não tem API de consulta; contar aqui é o único jeito de saber antes de estourar.
 
 ## R4. Fotos: conta do próprio sistema e trava (FR-006, FR-010)
@@ -48,8 +54,11 @@
 
 ## R5. Espera em vez de erro (FR-007, FR-008, FR-009)
 
-- **Decisão**: exceção `QuotaDeferredException(Instant retryAt, String motivo)`. O `JobWorker` trata essa exceção à
-  parte: reagenda o job para `retryAt` **sem contar tentativa** e sem marcar erro (`JobQueue.defer`).
+- **Decisão**: exceção genérica `JobDeferredException(Instant retryAt, String motivo)` no módulo `jobs`, estendida por
+  `QuotaDeferredException` no `usage` — a fila não depende do domínio de cota (análise A1). O `JobWorker` trata essa
+  exceção à parte: reagenda o job para `retryAt` **sem contar tentativa** e sem marcar erro (`JobQueue.defer`).
+- **Cuidado (análise C1)**: `InstagramImportJob` hoje captura qualquer `ApiException` ao gravar a foto e segue como
+  "imagem indisponível"; a recusa da trava precisa ser capturada antes, senão a foto se perde sem aviso.
 - **Instagram com fotos travadas**: o `INSTAGRAM_IMPORT` grava o post **sem foto** (`waiting = 'SPACE'`, selo
   "Aguardando espaço"), gera o rascunho normalmente e enfileira `INSTAGRAM_PHOTO_RETRY` adiado; quando a trava
   desliga, ele busca a mídia de novo (`GET /{media-id}`, porque o endereço da Meta expira) e põe a foto principal se o
