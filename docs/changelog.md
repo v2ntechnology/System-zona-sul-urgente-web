@@ -3,6 +3,24 @@
 Registro diário do que foi adicionado, alterado e removido no projeto. A entrada mais recente fica no topo. As
 entradas até 2026-11-10 foram reconstruídas do histórico do git.
 
+## 2026-11-18
+
+### Adicionado
+
+- Instagram ligado no site em produção (conta reserva): os Reels recentes entraram com a capa e viraram rascunhos.
+- Backup diário do banco às 03:30, guardando 14 dias, com os arquivos protegidos no servidor.
+- **Monitor de uso dos planos gratuitos** (spec 004, pronto para publicar): tela "Uso dos planos" para o
+  Administrador com o espaço e as gravações das fotos, os pedidos à IA e o disco; faixa de aviso em 70% e 90%; e
+  travas antes de passar da cota grátis — a foto nova é recusada com aviso, o post do Instagram espera "Aguardando
+  espaço" ou "Aguardando a IA" e segue sozinho depois, sem virar erro.
+
+### Alterado
+
+- Fotos verticais (capa de Reels, foto de celular) aparecem inteiras, com fundo desfocado nas laterais, em vez de
+  cortadas e borradas.
+- A ordem das specs mudou: o monitor (004) vem antes da importação de posts antigos (002), que passa a respeitar as
+  travas.
+
 ## 2026-11-17
 
 ### Adicionado

@@ -191,19 +191,27 @@ com foto sem rascunho automático, geração em lote no ritmo da IA, conferênci
 prévia separada — o próprio domínio está com `SITE_ENV=staging` (fora do Google) até ter conteúdo.
 
 ## OPS-002 — Hospedagem na VPS
-**Status:** Parcial (2026-11-17): **site novo no ar** em `zonasulurgente.com.br` (VPS Hostinger KVM 2 + Cloudflare
-Tunnel; domínio, R2 com `media.`, editorias e bairros carregados; 1º Administrador entrou). Falta: testar o envio de
-foto, ligar o Instagram em produção, agendar o backup e copiá-lo para fora da VPS, `SITE_ENV=production` e o
-redirecionamento `www` → raiz.
+**Status:** Parcial (2026-11-18): site novo no ar em `zonasulurgente.com.br` (VPS Hostinger KVM 2 + Cloudflare
+Tunnel, R2 com `media.`, editorias e bairros). Instagram ligado em produção (conta reserva) com fotos no R2 e
+rascunhos do Gemini; backup diário do banco agendado às 03:30 (14 dias, arquivos só do usuário do servidor). Falta:
+copiar o backup para fora da VPS, `SITE_ENV=production` e o redirecionamento `www` → raiz.
 
 ## OPS-004 — Monitor dos planos gratuitos
-**Status:** A fazer: spec 004 especificada (2026-11-17), aguardando 3 respostas (quem vê, canal dos avisos, limite da
-trava das fotos). Uso do R2, da IA e do disco com avisos em 70%/90% e trava antes da cota grátis.
+**Status:** Review (2026-11-18): spec 004 implementada (tela "Uso dos planos", faixa de 70%/90%, travas das fotos e
+da IA, auditoria; CI verde). Falta publicar na VPS — antes, preencher os limites do Gemini (`USAGE_AI_*`) e o token só
+de leitura da Cloudflare — e validar com os números reais (T027).
 
 ## QA-003 — Aviso de cache da home ("Unexpected cache miss after cache warming")
 **Status:** A fazer (vigiar): 18 avisos na produção entre 17/11 e 18/11, não reproduzidos localmente (argumentos
 determinísticos, vencimento do cache e banco vazio descartados). Ao reaparecer, cruzar o horário com reinícios do `web`
 e ligar `NEXT_PRIVATE_DEBUG_CACHE=1` por alguns minutos para ver a chave que falta.
+
+## FE-162 — Foto vertical inteira com moldura
+**Status:** Concluído (2026-11-18): capas de Reels e fotos de celular aparecem inteiras, com o fundo da própria foto
+desfocado nas laterais, em vez de cortadas e ampliadas (matéria, cards, busca, mais lidas e lista do painel).
+
+## BE-025 — Envio de e-mails (Resend)
+**Status:** A fazer: convites e "Esqueci a senha" por e-mail e os avisos da spec 004 para os Administradores.
 
 ## FE-161 — Vídeo do Instagram dentro da matéria
 **Status:** A fazer (spec 005): capa com ▶ e player do Instagram carregado só no clique (leve, sem guardar o vídeo).

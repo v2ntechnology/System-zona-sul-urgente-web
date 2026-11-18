@@ -4,7 +4,7 @@
 
 **Criada em**: 2026-11-17
 
-**Situação**: Rascunho (esclarecida)
+**Situação**: Implementada (2026-11-18) — falta publicar na produção e validar com os números reais (T027)
 
 **Ordem**: depois do primeiro deploy na VPS; antes do vídeo do Instagram (spec 005) e da importação de posts antigos
 (spec 002), que é a que mais gasta fotos e IA
