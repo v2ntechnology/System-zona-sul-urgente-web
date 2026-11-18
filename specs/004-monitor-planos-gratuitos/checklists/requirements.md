@@ -13,7 +13,7 @@
 
 ## Completude dos requisitos
 
-- [ ] Nenhum marcador [NEEDS CLARIFICATION] restante
+- [x] Nenhum marcador [NEEDS CLARIFICATION] restante
 - [x] Requisitos testáveis e sem ambiguidade
 - [x] Critérios de sucesso mensuráveis
 - [x] Critérios de sucesso sem tecnologia
@@ -31,6 +31,7 @@
 
 ## Notas
 
-- Pendentes (3): quem vê a tela (História 1), canal dos avisos (História 2) e limite da trava das fotos (História 3).
+- Esclarecidos em 2026-11-18: só o Administrador vê (1A), avisos no painel + e-mail quando houver envio de e-mails (2B),
+  trava das fotos em 95% (3A).
 - A tabela do Contexto cita valores dos planos atuais como referência para o cliente; os valores são configuráveis
   (FR-013), não regra fixa.

@@ -94,8 +94,8 @@ Decisões da fase 0. Cada uma: **Decisão**, **Por quê**, **Alternativas**. Bas
 
 ## R10. Auditoria
 
-- **Decisão**: (migração V12, porque a spec 003 usa a V11) ações novas `INSTAGRAM_HISTORY` (detalhe `event`: `start`, `cancel`, `completed`, `failed`, com
-  período e contadores) e `AI_BATCH` (total, enfileirados, pulados). A V12 recria o `CHECK` de `audit_logs.action`.
+- **Decisão**: (migração V13, porque a spec 003 usa a V11 e a spec 004 a V12) ações novas `INSTAGRAM_HISTORY` (detalhe `event`: `start`, `cancel`, `completed`, `failed`, com
+  período e contadores) e `AI_BATCH` (total, enfileirados, pulados). A V13 recria o `CHECK` de `audit_logs.action`.
 - **Por quê**: FR-015; o `CHECK` fixo da V9 exige a migração (achado da spec 001).
 
 ## R12. Pendências na tela e no Dashboard (FR-016)
@@ -110,3 +110,10 @@ Decisões da fase 0. Cada uma: **Decisão**, **Por quê**, **Alternativas**. Bas
 - **Decisão**: importar/interromper/pré-visualizar = `instagram.settings` (Administrador). Lote = `instagram.review`
   (quem já pode clicar em "Gerar agora").
 - **Por quê**: FR-001 e FR-010.
+
+## Revisão (2026-11-18): spec 004 vem antes
+
+A spec 004 (monitor dos planos gratuitos) foi implementada antes desta e usa a V12; esta passa a ser a **V13**. A
+importação do histórico e a geração em lote também passam a respeitar o `QuotaGuard` da spec 004: com a trava das
+fotos ou da IA ligada, os jobs **adiam** (`QuotaDeferredException`) em vez de falhar, e os posts aparecem como
+"Aguardando espaço" ou "Aguardando a IA".

@@ -4,7 +4,7 @@
 
 **Criada em**: 2026-11-17
 
-**Situação**: Rascunho
+**Situação**: Rascunho (esclarecida)
 
 **Ordem**: depois do primeiro deploy na VPS; antes do vídeo do Instagram (spec 005) e da importação de posts antigos
 (spec 002), que é a que mais gasta fotos e IA
@@ -25,6 +25,16 @@ conta), conferidos com o que o sistema sabe das fotos que gravou; os da IA, cont
 para a auditoria quando uma trava liga ou desliga. A ideia é depois reaproveitar esse monitor em outros projetos
 (portfólio), então os limites devem ser configuráveis, não fixos no código. Em aberto: se a trava do R2 deve ser 95%
 ou outro valor; quem recebe os avisos (só no painel ou também por e-mail); se o Editor também vê a tela."
+
+## Esclarecimentos
+
+### Sessão de 2026-11-18
+
+- P: Quem vê a tela de uso? → R: **Só o Administrador** (1A). Os outros perfis só veem a mensagem da trava quando ela
+  os impede de enviar foto.
+- P: Por onde chegam os avisos de 70% e 90%? → R: **Painel e e-mail para os Administradores** (2B). O e-mail depende
+  do serviço de envio de e-mails (Resend, spec própria); até ele existir, só o aviso no painel.
+- P: Em que ponto a trava das fotos liga? → R: **95%** (3A) do limite, configurável.
 
 ## Contexto
 
@@ -60,7 +70,7 @@ batem com o painel da Cloudflare e com a contagem de rascunhos do dia.
 2. **Dado** que a leitura dos números da nuvem falhou, **quando** a tela é aberta, **então** mostra o último número
    conhecido com a hora em que foi lido e um aviso de que está desatualizado — nunca um número inventado.
 3. **Dado** um perfil sem permissão, **quando** procura a tela, **então** ela não aparece no menu e o endereço responde
-   "não encontrado". [NEEDS CLARIFICATION: o Editor também vê a tela de uso, ou só o Administrador?]
+   "não encontrado". Só o Administrador vê a tela e os avisos.
 
 ---
 
@@ -83,7 +93,8 @@ velhas, pausar importações ou decidir pagar).
 4. **Dado** o começo de um mês novo, **quando** as contagens mensais zeram, **então** os avisos desses recursos somem
    sozinhos.
 
-O canal dos avisos: [NEEDS CLARIFICATION: só dentro do painel, ou também por e-mail para os Administradores?]
+O canal dos avisos: no painel e por e-mail para cada Administrador ativo (uma mensagem por mudança de nível). Enquanto
+o envio de e-mails não estiver configurado, só o painel — sem erro.
 
 ---
 
@@ -100,7 +111,7 @@ mensagem), salvar a notícia sem foto (funciona) e, liberando espaço, enviar de
 
 1. **Dado** o espaço das fotos no limite de trava, **quando** alguém envia uma foto, **então** o envio é recusado com
    uma mensagem clara ("O espaço gratuito de fotos está quase cheio; avise o Administrador") e a notícia pode ser
-   salva e publicada sem a foto. [NEEDS CLARIFICATION: o limite de trava do espaço das fotos é 95% ou outro valor?]
+   salva e publicada sem a foto. O limite de trava é **95%** (configurável).
 2. **Dado** o espaço das fotos travado, **quando** a sincronização do Instagram encontra um post novo, **então** o post
    entra na fila **sem foto**, marcado como "aguardando espaço", e a foto é baixada depois, quando houver folga.
 3. **Dado** as gravações de fotos do mês no limite de trava, **quando** alguém envia uma foto, **então** vale a mesma
@@ -161,7 +172,8 @@ Os limites e as porcentagens de aviso e de trava são configuráveis, para o mes
   aparece na tela como aviso.
 - **FR-004**: Os pedidos à IA DEVEM ser contados pelo próprio sistema, por dia e por minuto, antes de cada chamada.
 - **FR-005**: O sistema DEVE avisar ao passar de 70% (atenção) e de 90% (crítico) de qualquer limite, uma vez por
-  mudança de nível, no painel de quem administra. Canal adicional conforme o esclarecimento da História 2.
+  mudança de nível, no painel e por e-mail para os Administradores ativos (o e-mail só quando o envio de e-mails
+  estiver configurado; sem ele, só o painel).
 - **FR-006**: O sistema DEVE recusar fotos novas quando o espaço das fotos ou as gravações do mês atingirem o limite de
   trava, com mensagem clara, sem impedir salvar e publicar a notícia sem foto.
 - **FR-007**: Com a trava das fotos ligada, posts do Instagram DEVEM entrar na fila sem foto, marcados como
@@ -175,7 +187,7 @@ Os limites e as porcentagens de aviso e de trava são configuráveis, para o mes
 - **FR-012**: Ligar e desligar uma trava DEVE ir para a auditoria com recurso, uso, limite e motivo.
 - **FR-013**: Limites, porcentagens de aviso e de trava, e quais recursos existem DEVEM ser configuráveis sem mudar o
   código; recurso não configurado não aparece.
-- **FR-014**: A tela e os avisos DEVEM ser visíveis só para os perfis definidos na História 1; a mensagem de trava ao
+- **FR-014**: A tela e os avisos DEVEM ser visíveis só para o Administrador; a mensagem de trava ao
   enviar foto aparece para qualquer pessoa que tente enviar.
 - **FR-015**: As credenciais usadas para ler os dados de uso da nuvem DEVEM ser só de leitura e ficar fora do código e
   do banco em texto aberto (constituição III).
@@ -205,6 +217,7 @@ Os limites e as porcentagens de aviso e de trava são configuráveis, para o mes
 - A nuvem das fotos oferece dados de uso da conta lidos por uma credencial só de leitura; esses dados podem chegar com
   algum atraso (coberto pelos casos-limite).
 - O tráfego para os leitores (saída) é grátis e ilimitado no plano atual, por isso não é monitorado.
+- O envio de e-mails (Resend) é outra spec; esta só usa o envio quando ele existir.
 - A spec 002 (importação de posts antigos) e a spec 005 (vídeo do Instagram) passam a respeitar as travas desta spec.
 - Não faz parte: apagar fotos automaticamente para liberar espaço, nem trocar de plano sozinho; a decisão é sempre de
   uma pessoa.

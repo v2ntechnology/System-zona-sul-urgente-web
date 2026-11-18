@@ -24,7 +24,7 @@ description: "Tarefas da spec 002 — importar posts antigos do Instagram"
 
 ## Fase 1: Preparação
 
-- [ ] T001 Criar `{res}/db/migration/V12__instagram_history.sql` conforme data-model.md: tabela `instagram_history_imports`
+- [ ] T001 Criar `{res}/db/migration/V13__instagram_history.sql` conforme data-model.md: tabela `instagram_history_imports`
   (`id uuid PRIMARY KEY DEFAULT uuidv7()`, `ig_user_id varchar(64) NOT NULL`, `from_date date`, `to_date date`,
   `excluded_ids jsonb NOT NULL DEFAULT '[]'`, `status varchar(12) NOT NULL CHECK (status IN ('RUNNING','COMPLETED',
   'CANCELLED','FAILED'))`, `read_count`, `added_count`, `existing_count`, `excluded_count integer NOT NULL DEFAULT 0`,
@@ -35,7 +35,7 @@ description: "Tarefas da spec 002 — importar posts antigos do Instagram"
   `requested_by_name varchar(120) NOT NULL`, `total integer NOT NULL`, `skipped integer NOT NULL`, `created_at
   timestamptz NOT NULL DEFAULT now()`) e `instagram_generation_batch_items` (`batch_id` → batches ON DELETE CASCADE,
   `post_id varchar(64)` → instagram_posts ON DELETE CASCADE, PK `(batch_id, post_id)`); recriar o `CHECK
-  audit_logs_action_check` com os valores da V11 mais `INSTAGRAM_HISTORY` e `AI_BATCH`.
+  audit_logs_action_check` com os valores da V12 (spec 004) mais `INSTAGRAM_HISTORY` e `AI_BATCH`.
 - [ ] T002 [P] Acrescentar `INSTAGRAM_HISTORY` e `AI_BATCH` em `{api}/audit/AuditAction.java`; em
   `{api}/instagram/InstagramProperties.java` acrescentar `batchPerMinute` (padrão `4`), `oldNewsChecksPerSync` (`20`) e
   `historyMaxExcluded` (`1000`), com o bloco comentado em `{res}/application.yml`.
