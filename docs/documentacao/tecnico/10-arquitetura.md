@@ -63,6 +63,22 @@ Agendadas: `ScheduledPublisher` publica as que chegaram no horário, pelo relóg
 - As regras de deslocamento existem também no painel (`src/lib/home-featured.ts`) para a tela e a prévia — mudar de um
   lado exige mudar do outro.
 
+## Monitor de uso dos planos gratuitos (spec 004)
+
+- Módulo `usage`: os outros módulos só conhecem `QuotaGuard` (`check` antes de gastar, `record` depois). Recursos são
+  configuração (`zsu.usage.resources`, chaves entre colchetes no YAML): limite, janela (`NONE`, `MINUTE`, `DAY_PACIFIC`,
+  `MONTH`), `lock-at` e o medidor (`CLOUDFLARE_R2_STORAGE`, `CLOUDFLARE_R2_CLASS_A/B`, `DISK`, `COUNTER`).
+- Uso efetivo = `max(nuvem + gasto depois da leitura, conta do sistema)` (tabelas `usage_state` e `usage_counters`,
+  V12). `UsageRefreshJob` lê a GraphQL da Cloudflare (conta inteira, token só de leitura) e o disco a cada 30 min.
+- Níveis 70/90 e travas mudam na leitura e no `record`: auditoria `USAGE_LEVEL`/`USAGE_LOCK`/`USAGE_UNLOCK` e
+  `UsageNotifier` (hoje `PanelOnlyNotifier`; e-mail entra com a spec do Resend).
+- Travas: `MediaService.upload` → `QuotaBlockedException` (507); `GeminiEditorialAi` conta cada chamada em
+  `ia.principal.*`/`ia.reserva.*` e, sem cota, lança `QuotaDeferredException`, que estende `JobDeferredException`: o
+  `JobWorker` adia o job (`JobQueue.defer`) **sem gastar tentativa**. No Instagram, foto travada = post
+  `waiting = 'SPACE'` + `INSTAGRAM_IMPORT` adiado com `photoRetry` (foto vira a principal do rascunho ao chegar); IA
+  travada = `waiting = 'AI'` e, no "Gerar agora", 429 com `retryAt` e `INSTAGRAM_IMPORT` com `generate` agendado.
+- `GET /api/v1/admin/usage`, `POST /usage/refresh` (1/min) e `GET /usage/alerts`, com `settings.manage`.
+
 ## Instagram → rascunho (spec 001)
 
 1. O Administrador cola o **ID da conta** e o **acesso** (token de usuário do sistema do login unificado, sem

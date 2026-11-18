@@ -14,6 +14,7 @@ export type AdminNavItem = {
     | "analytics"
     | "ads"
     | "users"
+    | "usage"
     | "design";
   permission?: Permission;
   /** Contador de pendências (ex.: posts do Instagram esperando ação). */
@@ -41,6 +42,8 @@ export const adminRoutes = {
   campaign: (id: string) => `/admin/publicidade/campanhas/${id}`,
   team: "/admin/equipe",
   authors: "/admin/equipe/autores",
+  /** Uso dos planos gratuitos (spec 004); só Administrador. */
+  usage: "/admin/uso",
   designSystem: "/admin/design-system",
   /** Painel do projeto (plano, board, histórico, documentos); só em `next dev`. */
   project: "/admin/projeto",
@@ -85,6 +88,20 @@ export const adminNav: AdminNavItem[] = [
   },
 ];
 
+/**
+ * Configurações no menu da conta (desktop) e em "Mais" (celular): a navbar em pílula já não cabe
+ * mais itens a 1280 px.
+ */
+export const adminAccountNav: AdminNavItem[] = [
+  {
+    label: "Uso dos planos",
+    href: adminRoutes.usage,
+    icon: "usage",
+    // Só Administrador (spec 004); a página e a API conferem de novo.
+    permission: "settings.manage",
+  },
+];
+
 export const newNewsItem: AdminNavItem = {
   label: "Nova notícia",
   href: adminRoutes.newNews,
@@ -108,6 +125,7 @@ export const adminSegmentLabels: Record<string, string> = {
   posicoes: "Posições",
   equipe: "Equipe",
   autores: "Autores",
+  uso: "Uso dos planos",
   "design-system": "Design system",
   projeto: "Projeto",
 };

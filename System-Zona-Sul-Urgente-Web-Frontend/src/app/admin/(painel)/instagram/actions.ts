@@ -1,5 +1,6 @@
 "use server";
 
+import { formatTime } from "@/lib/format";
 import { adminFetch } from "@/services/admin/admin-api";
 import { apiBaseUrl } from "@/services/api/client";
 import type { InstagramConnection, InstagramPost } from "@/types/admin";
@@ -12,7 +13,13 @@ export type InstagramAction = "generate" | "reprocess" | "ignore" | "restore" | 
 
 export type PostResult =
   | { ok: true; post: InstagramPost }
-  | { ok: false; message: string; errors?: Record<string, string> };
+  | {
+      ok: false;
+      message: string;
+      errors?: Record<string, string>;
+      /** 429 "Limite da IA" (spec 004): a geração foi enfileirada para esta hora. */
+      retryAt?: string;
+    };
 
 const SIMULATED = { ok: false, message: "simulated" } as const;
 
@@ -21,10 +28,30 @@ const AI_TIMEOUT_MS = 90_000;
 
 function toResult(result: Awaited<ReturnType<typeof adminFetch<InstagramPost>>>): PostResult {
   if (result.ok) return { ok: true, post: result.data };
+  if (
+    result.status === 429 &&
+    (result.problem?.title === "Limite da IA" || result.problem?.retryAt)
+  )
+    return aiLimit(result.problem?.retryAt);
   return {
     ok: false,
     message: result.message,
     errors: result.errors && Object.fromEntries(result.errors.map((e) => [e.field, e.message])),
+  };
+}
+
+/**
+ * 429 "Limite da IA" (spec 004): a cota do minuto ou do dia acabou e a API já enfileirou a geração
+ * para `retryAt` — o rascunho sai sozinho, sem erro e sem custo.
+ */
+function aiLimit(retryAt: unknown): PostResult {
+  const when = typeof retryAt === "string" && !Number.isNaN(Date.parse(retryAt)) ? retryAt : null;
+  return {
+    ok: false,
+    message: when
+      ? `Limite da IA: o rascunho entrou na fila e sai sozinho às ${formatTime(when)}.`
+      : "Limite da IA: o rascunho entrou na fila e sai sozinho quando a cota voltar.",
+    retryAt: when ?? undefined,
   };
 }
 

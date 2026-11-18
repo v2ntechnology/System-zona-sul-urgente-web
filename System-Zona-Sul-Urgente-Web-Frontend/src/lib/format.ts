@@ -61,3 +61,35 @@ export function formatRelative(iso: string, now: number): string {
   if (minutes < 60) return `há ${minutes} min`;
   return `há ${Math.floor(minutes / 60)} h`;
 }
+
+// ---------------------------------------------------------------- números (uso dos planos, spec 004)
+
+const integer = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 0 });
+const oneDecimal = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
+
+/** "1.000.000" — separador de milhar do português. */
+export function formatCount(value: number): string {
+  return integer.format(value);
+}
+
+const BYTE_UNITS = ["bytes", "KB", "MB", "GB", "TB"] as const;
+
+/**
+ * "1,2 GB", "850 MB". Base 1024, como a Cloudflare mostra a cota (10 GB = 10 × 1024³ bytes);
+ * uma casa decimal abaixo de 100 e nenhuma acima.
+ */
+export function formatBytes(bytes: number): string {
+  let value = Math.max(0, bytes);
+  let unit = 0;
+  while (value >= 1024 && unit < BYTE_UNITS.length - 1) {
+    value /= 1024;
+    unit++;
+  }
+  if (unit === 0) return `${integer.format(value)} ${value === 1 ? "byte" : "bytes"}`;
+  return `${(value >= 100 ? integer : oneDecimal).format(value)} ${BYTE_UNITS[unit]}`;
+}
+
+/** "12%", "91,5%". */
+export function formatPercent(value: number): string {
+  return `${oneDecimal.format(value)}%`;
+}

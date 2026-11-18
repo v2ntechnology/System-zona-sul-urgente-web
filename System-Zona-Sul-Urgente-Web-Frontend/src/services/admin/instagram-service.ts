@@ -88,5 +88,10 @@ function toPost(p: InstagramPostMock): InstagramPost {
     // Demonstração: a conta de exemplo está ligada, então os posts vêm da sincronização.
     source: p.source ?? "API",
     needsPhoto: p.needsPhoto,
+    waiting: p.waiting ?? null,
+    waitingUntil:
+      p.waitingHours === undefined
+        ? null
+        : new Date(MOCK_NOW.getTime() + p.waitingHours * 3_600_000).toISOString(),
   };
 }

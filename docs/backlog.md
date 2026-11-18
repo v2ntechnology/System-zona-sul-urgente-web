@@ -200,6 +200,11 @@ redirecionamento `www` → raiz.
 **Status:** A fazer: spec 004 especificada (2026-11-17), aguardando 3 respostas (quem vê, canal dos avisos, limite da
 trava das fotos). Uso do R2, da IA e do disco com avisos em 70%/90% e trava antes da cota grátis.
 
+## QA-003 — Aviso de cache da home ("Unexpected cache miss after cache warming")
+**Status:** A fazer (vigiar): 18 avisos na produção entre 17/11 e 18/11, não reproduzidos localmente (argumentos
+determinísticos, vencimento do cache e banco vazio descartados). Ao reaparecer, cruzar o horário com reinícios do `web`
+e ligar `NEXT_PRIVATE_DEBUG_CACHE=1` por alguns minutos para ver a chave que falta.
+
 ## FE-161 — Vídeo do Instagram dentro da matéria
 **Status:** A fazer (spec 005): capa com ▶ e player do Instagram carregado só no clique (leve, sem guardar o vídeo).
 

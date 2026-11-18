@@ -23,6 +23,8 @@
 | `SITE_REVALIDATE_URL` · `REVALIDATE_SECRET` | URL interna do Next e o mesmo segredo do site. Vazios = revalidação desligada. |
 | `MEDIA_STORAGE` · `MEDIA_PUBLIC_URL` · `MEDIA_S3_*` | `local` (pasta `media-local/` em `/media/**`) ou `s3` (R2, `https://media.<domínio>`). |
 | `AI_PROVIDER` · `GEMINI_API_KEY` · `GEMINI_MODEL` · `GEMINI_FALLBACK_MODEL` | IA editorial (`fake` ou `gemini`) e modelo de reserva. |
+| `CLOUDFLARE_ACCOUNT_ID` · `CLOUDFLARE_ANALYTICS_TOKEN` | Monitor dos planos (spec 004): conta e token **só de leitura** ("Account Analytics: Read") da Cloudflare. Vazios = espaço das fotos medido só pela conta do sistema. |
+| `USAGE_AI_MAIN_RPM` · `USAGE_AI_MAIN_RPD` · `USAGE_AI_FALLBACK_RPM` · `USAGE_AI_FALLBACK_RPD` | Cota grátis do Gemini por modelo (perfil `prod`). **Obrigatórias em produção**: vazias = "Sem limite configurado" e a geração de rascunhos espera. |
 | `ZSU_BOOTSTRAP_ADMIN_EMAIL` · `ZSU_BOOTSTRAP_ADMIN_NAME` · `ZSU_SITE_URL` | Primeiro administrador num banco sem Admin ativo: a API cria o convite e mostra o link no log. |
 
 ## Produção

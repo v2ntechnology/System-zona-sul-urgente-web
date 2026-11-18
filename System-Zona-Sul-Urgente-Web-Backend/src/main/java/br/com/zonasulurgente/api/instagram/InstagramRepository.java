@@ -131,6 +131,25 @@ class InstagramRepository {
 			.update() == 1;
 	}
 
+	/** Post esperando uma trava do monitor de uso desligar (spec 004): "SPACE" (foto) ou "AI" (rascunho). */
+	void setWaiting(String id, String waiting, java.time.Instant until) {
+		jdbc.sql("UPDATE instagram_posts SET waiting = :w, waiting_until = :u, updated_at = now() WHERE id = :id")
+			.param("w", waiting)
+			.param("u", until == null ? null : java.sql.Timestamp.from(until))
+			.param("id", id)
+			.update();
+	}
+
+	/** Some a espera, se ainda for a mesma (a foto chegou ou o rascunho saiu). */
+	void clearWaiting(String id, String waiting) {
+		jdbc.sql("""
+				UPDATE instagram_posts SET waiting = NULL, waiting_until = NULL, updated_at = now()
+				WHERE id = :id AND waiting = :w""")
+			.param("id", id)
+			.param("w", waiting)
+			.update();
+	}
+
 	void markError(String id, String error) {
 		jdbc.sql("""
 				UPDATE instagram_posts
@@ -409,7 +428,8 @@ class InstagramRepository {
 								rs.getString("n_summary"), paragraphs(rs.getString("n_body"))),
 				rs.getString("error"), attempts == 0 ? null : attempts, rs.getString("ignored_reason"),
 				rs.getObject("source_changed_at", OffsetDateTime.class), rs.getString("source"),
-				rs.getBoolean("needs_photo"), mediaUrls(rs));
+				rs.getBoolean("needs_photo"), mediaUrls(rs), rs.getString("waiting"),
+				rs.getObject("waiting_until", OffsetDateTime.class));
 	}
 
 	private static List<String> mediaUrls(ResultSet rs) throws SQLException {

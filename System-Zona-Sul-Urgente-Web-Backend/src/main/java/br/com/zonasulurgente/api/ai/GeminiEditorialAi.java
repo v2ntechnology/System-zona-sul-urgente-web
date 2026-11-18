@@ -14,6 +14,8 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
+import br.com.zonasulurgente.api.usage.QuotaDeferredException;
+import br.com.zonasulurgente.api.usage.QuotaGuard;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -40,18 +42,40 @@ class GeminiEditorialAi implements EditorialAiProvider {
 	private final JsonMapper json;
 	private final RestClient http;
 	private final Duration retryDelay;
+	private final QuotaGuard quota;
 
+	/** Sem monitor de uso (teste ao vivo e testes do cliente do Gemini). */
 	GeminiEditorialAi(AiProperties.Gemini config, JsonMapper json) {
-		this(config, json, Duration.ofSeconds(2));
+		this(config, json, Duration.ofSeconds(2), NO_QUOTA);
+	}
+
+	GeminiEditorialAi(AiProperties.Gemini config, JsonMapper json, QuotaGuard quota) {
+		this(config, json, Duration.ofSeconds(2), quota);
 	}
 
 	GeminiEditorialAi(AiProperties.Gemini config, JsonMapper json, Duration retryDelay) {
+		this(config, json, retryDelay, NO_QUOTA);
+	}
+
+	/** Sem monitor de uso (testes do cliente do Gemini). */
+	static final QuotaGuard NO_QUOTA = new QuotaGuard() {
+		@Override
+		public void check(String resource, long amount) {
+		}
+
+		@Override
+		public void record(String resource, long amount) {
+		}
+	};
+
+	GeminiEditorialAi(AiProperties.Gemini config, JsonMapper json, Duration retryDelay, QuotaGuard quota) {
 		if (config.apiKey().isBlank()) {
 			throw new IllegalStateException("zsu.ai.provider=gemini exige GEMINI_API_KEY (Google AI Studio)");
 		}
 		this.config = config;
 		this.json = json;
 		this.retryDelay = retryDelay;
+		this.quota = quota;
 		var factory = new JdkClientHttpRequestFactory(HttpClient.newBuilder()
 			.connectTimeout(Duration.ofSeconds(10))
 			.build());
@@ -76,12 +100,28 @@ class GeminiEditorialAi implements EditorialAiProvider {
 			.filter(m -> m != null && !m.isBlank())
 			.distinct()
 			.toList();
+		QuotaDeferredException earliest = null;
 		for (int i = 0;; i++) {
 			try {
-				return draft(models.get(i), post, context);
+				return draft(models.get(i), quotaKey(i), post, context);
+			}
+			catch (QuotaDeferredException e) {
+				// Cota do plano grátis deste modelo esgotada (spec 004): tenta o próximo; sem nenhum, espera o primeiro
+				// que voltar.
+				if (earliest == null || e.retryAt().isBefore(earliest.retryAt())) {
+					earliest = e;
+				}
+				if (i + 1 >= models.size()) {
+					throw earliest;
+				}
+				log.info("{}: cota do plano grátis esgotada ({}); usando o reserva {}", models.get(i), e.reason(),
+						models.get(i + 1));
 			}
 			catch (AiUnavailableException e) {
 				if (i + 1 >= models.size()) {
+					if (earliest != null) {
+						throw earliest;
+					}
 					throw e;
 				}
 				log.warn("{} não respondeu ({}); usando o reserva {}", models.get(i), e.getMessage(), models.get(i + 1));
@@ -89,7 +129,12 @@ class GeminiEditorialAi implements EditorialAiProvider {
 		}
 	}
 
-	private AiDraft draft(String model, SourcePost post, EditorialContext context) {
+	/** Recursos do monitor de uso: o principal e o reserva têm cotas separadas no Gemini. */
+	static String quotaKey(int modelIndex) {
+		return modelIndex == 0 ? "ia.principal" : "ia.reserva";
+	}
+
+	private AiDraft draft(String model, String quotaKey, SourcePost post, EditorialContext context) {
 		Map<String, Object> body = Map.of(
 				"model", model,
 				"system_instruction", EditorialPrompt.SYSTEM,
@@ -100,7 +145,7 @@ class GeminiEditorialAi implements EditorialAiProvider {
 						"schema", EditorialPrompt.schema(context)),
 				"generation_config", Map.of("max_output_tokens", MAX_OUTPUT_TOKENS));
 
-		String raw = call(body);
+		String raw = call(body, quotaKey);
 		JsonNode interaction = parse(raw, "a resposta do fornecedor não é JSON");
 		String status = interaction.path("status").asString();
 		if (!"completed".equals(status)) {
@@ -114,9 +159,14 @@ class GeminiEditorialAi implements EditorialAiProvider {
 				"gemini:" + model);
 	}
 
-	private String call(Map<String, Object> body) {
+	private String call(Map<String, Object> body, String quotaKey) {
 		for (int attempt = 0;; attempt++) {
 			try {
+				// Cada chamada (inclusive nova tentativa) conta na cota do modelo: pergunta antes, conta depois.
+				quota.check(quotaKey + ".minuto", 1);
+				quota.check(quotaKey + ".dia", 1);
+				quota.record(quotaKey + ".minuto", 1);
+				quota.record(quotaKey + ".dia", 1);
 				return send(body);
 			}
 			catch (RestClientResponseException e) {

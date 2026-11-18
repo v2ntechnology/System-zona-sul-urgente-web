@@ -81,6 +81,18 @@ public class AdminNewsService {
 	}
 
 	/** Cria (id nulo) ou atualiza uma notícia a partir do editor. */
+	/**
+	 * Põe a foto principal num rascunho sem foto (spec 004: a foto de um post do Instagram chegou depois de a trava do
+	 * espaço desligar). Notícia já com foto, publicada ou na lixeira não muda. Devolve se mudou.
+	 */
+	@Transactional
+	public boolean attachImageIfMissing(UUID newsId, NewsDraft.Image image) {
+		if (image == null || image.url() == null || image.url().isBlank()) {
+			return false;
+		}
+		return repo.attachImageIfMissing(newsId, repo.imageAsset(image));
+	}
+
 	@Transactional
 	public SaveResult save(UUID id, NewsDraft draft, String intent, AuthenticatedUser user) {
 		return save(id, draft, intent, user, "MANUAL");

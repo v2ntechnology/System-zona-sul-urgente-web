@@ -2,11 +2,13 @@ import { Suspense } from "react";
 
 import { AdminBreadcrumb } from "@/components/admin/admin-breadcrumb";
 import { AdminNavbar } from "@/components/admin/admin-navbar";
+import { UsageAlertBanner } from "@/components/admin/usage-alert-banner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { adminNav, newNewsItem } from "@/config/admin-navigation";
+import { adminAccountNav, adminNav, newNewsItem } from "@/config/admin-navigation";
 import { can, roleLabels } from "@/config/permissions";
 import { getCurrentUser } from "@/services/admin/admin-service";
 import { countInstagramPostsByStatus } from "@/services/admin/instagram-service";
+import { getUsageAlerts } from "@/services/admin/usage-service";
 
 // Layout do painel (FE-151): navbar em pílula no topo e, no celular, barra inferior como a
 // do app do Instagram (decisão 2026-10-15). Itens filtrados por permissão (RBAC).
@@ -33,6 +35,9 @@ async function Painel({ children }: { children: React.ReactNode }) {
     <>
       <AdminNavbar
         items={items}
+        accountItems={adminAccountNav.filter(
+          (item) => !item.permission || can(user.role, item.permission),
+        )}
         newNews={can(user.role, "news.create") ? newNewsItem : undefined}
         user={{ name: user.name, roleLabel: roleLabels[user.role] }}
         showProject={process.env.NODE_ENV === "development" && user.role === "ADMIN"}
@@ -42,6 +47,13 @@ async function Painel({ children }: { children: React.ReactNode }) {
         className="mx-auto flex w-full max-w-screen-2xl flex-1 flex-col gap-3 px-4 pt-4 pb-28 sm:px-6 md:pb-10"
       >
         {/* A trilha depende da URL: em <Suspense> para rotas dinâmicas pré-renderizarem. */}
+        {/* Faixa do uso dos planos (spec 004): só Administrador; em <Suspense> próprio para não
+            atrasar o painel, e qualquer falha na busca vira "sem faixa". */}
+        {can(user.role, "settings.manage") && (
+          <Suspense fallback={null}>
+            <UsageAlerts />
+          </Suspense>
+        )}
         <Suspense fallback={null}>
           <AdminBreadcrumb />
         </Suspense>
@@ -49,6 +61,11 @@ async function Painel({ children }: { children: React.ReactNode }) {
       </main>
     </>
   );
+}
+
+async function UsageAlerts() {
+  const alerts = await getUsageAlerts();
+  return <UsageAlertBanner alerts={alerts} />;
 }
 
 function PainelSkeleton() {

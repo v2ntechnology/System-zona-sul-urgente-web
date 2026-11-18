@@ -2,7 +2,7 @@ package br.com.zonasulurgente.api.audit;
 
 /**
  * Ações auditadas (ARCHITECTURE §15, mais as de acesso e equipe). Espelho do CHECK de
- * audit_logs.action (V9, recriado na V10 e na V11): ação nova entra nos dois.
+ * audit_logs.action (V9, recriado na V10, na V11 e na V12): ação nova entra nos dois.
  */
 public enum AuditAction {
 	CREATE, UPDATE, PUBLISH, UNPUBLISH, DELETE, RESTORE,
@@ -10,5 +10,6 @@ public enum AuditAction {
 	ROLE_CHANGE, INVITE, INVITE_ACCEPT, ACTIVATE, DEACTIVATE, MERGE,
 	INSTAGRAM_IMPORT, AI_GENERATION, IGNORE,
 	INSTAGRAM_CONNECT, INSTAGRAM_DISCONNECT, INSTAGRAM_ACCESS_LOST,
-	HOME_FEATURE
+	HOME_FEATURE,
+	USAGE_LEVEL, USAGE_LOCK, USAGE_UNLOCK
 }

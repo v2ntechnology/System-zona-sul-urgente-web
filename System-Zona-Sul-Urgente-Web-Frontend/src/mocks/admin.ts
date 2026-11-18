@@ -5,6 +5,8 @@ import type {
   InstagramConnection,
   InstagramImportStatus,
   InstagramMediaType,
+  InstagramWaiting,
+  UsageReport,
 } from "@/types/admin";
 import type { NewsOrigin, NewsStatus } from "@/types/news";
 
@@ -160,6 +162,10 @@ export type InstagramPostMock = {
   /** Origem na fila (padrão: API, a conta de exemplo está ligada). */
   source?: "MANUAL" | "API";
   needsPhoto?: boolean;
+  /** Espera por cota (spec 004). */
+  waiting?: InstagramWaiting;
+  /** Horas depois de MOCK_NOW em que a IA volta (waiting = AI). */
+  waitingHours?: number;
 };
 
 const post = (n: number) => `https://www.instagram.com/p/exemplo${n}/`;
@@ -174,6 +180,8 @@ export const instagramPostsMock: InstagramPostMock[] = [
     status: "IMPORTED",
     mediaType: "VIDEO",
     newsSlug: "rascunho-1",
+    // Rascunho gerado sem a foto: o espaço das fotos estava travado (spec 004).
+    waiting: "SPACE",
   },
   {
     id: "ig-8",
@@ -192,6 +200,9 @@ export const instagramPostsMock: InstagramPostMock[] = [
     postedAt: hoursBefore(0.4),
     status: "NEW",
     mediaType: "VIDEO",
+    // Limite do dia da IA atingido: volta à meia-noite do Pacífico (04:00 em Brasília em outubro).
+    waiting: "AI",
+    waitingHours: 13,
   },
   {
     id: "ig-2",
@@ -359,3 +370,117 @@ export const teamMock: TeamMember[] = [
     authorSlug,
   })),
 ];
+
+// ---------------------------------------------------------------- uso dos planos (spec 004)
+
+const GB = 1024 ** 3;
+const minutesBefore = (m: number) => new Date(MOCK_NOW.getTime() - m * 60_000).toISOString();
+
+/**
+ * Uso de exemplo dos planos gratuitos. Um recurso em aviso (gravações em 74%) para a faixa do
+ * painel aparecer na demonstração; IA contada pelo sistema; disco do servidor da VPS.
+ */
+export const usageReportMock: UsageReport = {
+  warnAt: 70,
+  criticalAt: 90,
+  refreshedAt: minutesBefore(12),
+  resources: [
+    {
+      key: "fotos.espaco",
+      label: "Fotos — espaço",
+      unit: "BYTES",
+      used: 1_288_490_188,
+      limit: 10 * GB,
+      percent: 12,
+      level: "NORMAL",
+      locked: false,
+      lockAt: 95,
+      source: "cloud",
+      readAt: minutesBefore(12),
+      stale: false,
+      resetsAt: null,
+      note: null,
+    },
+    {
+      key: "fotos.gravacoes",
+      label: "Fotos — gravações",
+      unit: "OPERATIONS",
+      used: 742_318,
+      limit: 1_000_000,
+      percent: 74.2,
+      level: "WARN",
+      locked: false,
+      lockAt: 95,
+      source: "cloud",
+      readAt: minutesBefore(12),
+      stale: false,
+      resetsAt: "2026-11-01T00:00:00Z",
+      note: null,
+    },
+    {
+      key: "fotos.leituras",
+      label: "Fotos — leituras",
+      unit: "OPERATIONS",
+      used: 1_204_551,
+      limit: 10_000_000,
+      percent: 12,
+      level: "NORMAL",
+      locked: false,
+      lockAt: null,
+      source: "cloud",
+      readAt: minutesBefore(12),
+      stale: false,
+      resetsAt: "2026-11-01T00:00:00Z",
+      note: null,
+    },
+    {
+      key: "ia.gemini-2.5-flash.dia",
+      label: "IA — pedidos no dia",
+      unit: "REQUESTS",
+      used: 38,
+      limit: 250,
+      percent: 15.2,
+      level: "NORMAL",
+      locked: false,
+      lockAt: 100,
+      source: "system",
+      readAt: minutesBefore(1),
+      stale: false,
+      // Meia-noite do Pacífico (PDT em outubro).
+      resetsAt: "2026-10-16T07:00:00Z",
+      note: null,
+    },
+    {
+      key: "ia.gemini-2.5-flash.minuto",
+      label: "IA — pedidos no minuto",
+      unit: "REQUESTS",
+      used: 2,
+      limit: 10,
+      percent: 20,
+      level: "NORMAL",
+      locked: false,
+      lockAt: 100,
+      source: "system",
+      readAt: minutesBefore(1),
+      stale: false,
+      resetsAt: new Date(MOCK_NOW.getTime() + 60_000).toISOString(),
+      note: null,
+    },
+    {
+      key: "disco",
+      label: "Disco do servidor",
+      unit: "BYTES",
+      used: Math.round(21.4 * GB),
+      limit: 96 * GB,
+      percent: 22.3,
+      level: "NORMAL",
+      locked: false,
+      lockAt: null,
+      source: "system",
+      readAt: minutesBefore(12),
+      stale: false,
+      resetsAt: null,
+      note: null,
+    },
+  ],
+};

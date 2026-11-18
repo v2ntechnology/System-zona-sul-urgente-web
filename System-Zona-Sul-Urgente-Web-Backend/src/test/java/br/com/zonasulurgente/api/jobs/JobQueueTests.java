@@ -45,6 +45,19 @@ class JobQueueTests {
 		}
 
 		@Bean
+		JobHandler deferringHandler() {
+			return new JobHandler() {
+				public String type() {
+					return "TEST_DEFER";
+				}
+
+				public void handle(JsonNode payload) {
+					throw new JobDeferredException(java.time.Instant.now().plusSeconds(3600), "cota esgotada");
+				}
+			};
+		}
+
+		@Bean
 		JobHandler failingHandler() {
 			return new JobHandler() {
 				public String type() {
@@ -98,6 +111,28 @@ class JobQueueTests {
 			.update();
 		worker.runOnce();
 		assertThat(status(id)).isEqualTo("DEAD");
+	}
+
+	@Test
+	void deferredJobWaitsWithoutSpendingAnAttempt() {
+		UUID id = queue.enqueue("TEST_DEFER", Map.of());
+		worker.runOnce();
+		var row = jdbc.sql("SELECT status, attempts, last_error, run_at > now() + interval '50 minutes' AS later"
+				+ " FROM job_queue WHERE id = :id").param("id", id).query().singleRow();
+		assertThat(row).containsEntry("status", "PENDING").containsEntry("later", true);
+		assertThat(((Number) row.get("attempts")).intValue()).as("adiar não gasta tentativa").isZero();
+		assertThat((String) row.get("last_error")).isEqualTo("Aguardando: cota esgotada");
+		assertThat(worker.runOnce()).as("ainda esperando").isZero();
+	}
+
+	@Test
+	void enqueueAtWaitsUntilTheTime() {
+		UUID id = queue.enqueueAt("TEST_OK", Map.of("n", "depois"), java.time.Instant.now().plusSeconds(600));
+		assertThat(worker.runOnce()).isZero();
+		jdbc.sql("UPDATE job_queue SET run_at = now() WHERE id = :id").param("id", id).update();
+		handled.clear();
+		assertThat(worker.runOnce()).isEqualTo(1);
+		assertThat(handled).containsExactly("depois");
 	}
 
 	@Test

@@ -42,3 +42,15 @@ describe("instagram-service", () => {
     expect(connection).not.toHaveProperty("accessToken");
   });
 });
+
+describe("instagram-service — espera por cota (spec 004)", () => {
+  it("posts aguardando espaço ou a IA trazem waiting e waitingUntil", async () => {
+    const all = await listInstagramPosts();
+    const ai = all.find((p) => p.waiting === "AI");
+    expect(ai?.waitingUntil).toBe("2026-10-16T07:00:00.000Z");
+    const space = all.find((p) => p.waiting === "SPACE");
+    expect(space).toBeDefined();
+    expect(space?.waitingUntil).toBeNull();
+    expect(all.filter((p) => !p.waiting).every((p) => p.waiting === null)).toBe(true);
+  });
+});

@@ -124,7 +124,13 @@ export async function saveNewsAction(draft: NewsDraft, intent: SaveIntent): Prom
 }
 
 export type UploadResult =
-  { ok: true; url: string; width: number; height: number } | { ok: false; message: string };
+  | { ok: true; url: string; width: number; height: number }
+  | {
+      ok: false;
+      message: string;
+      /** 507: espaço gratuito de fotos esgotado (trava da spec 004). */
+      noSpace?: boolean;
+    };
 
 /** Mesmo limite da API (BE-012); conferido aqui para não repassar um arquivo que ela recusaria. */
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024;
@@ -151,6 +157,15 @@ export async function uploadPhotoAction(formData: FormData): Promise<UploadResul
     form,
     timeoutMs: 60_000,
   });
+  if (!result.ok && result.status === 507) {
+    // Espaço de fotos esgotado (spec 004): a API trava perto do limite gratuito e nada é gravado.
+    // O `detail` é a mensagem para a pessoa; a notícia segue sem foto.
+    return {
+      ok: false,
+      message: `${result.message} Você pode salvar a notícia sem a foto e colocá-la depois.`,
+      noSpace: true,
+    };
+  }
   if (!result.ok) return { ok: false, message: result.message };
   return { ok: true, ...result.data };
 }

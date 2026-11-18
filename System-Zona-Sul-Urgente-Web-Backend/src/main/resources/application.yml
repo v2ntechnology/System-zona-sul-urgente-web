@@ -74,6 +74,25 @@ zsu:
       # Usado quando o principal não responde (tempo esgotado ou sobrecarga). Vazio = sem reserva.
       fallback-model: ${GEMINI_FALLBACK_MODEL:gemini-3.5-flash-lite}
 
+  # Monitor de uso dos planos gratuitos (spec 004). Limites de referência do plano grátis — configuráveis
+  # (FR-013). Recurso fora desta lista não aparece nem trava. lock-at = % em que trava (sem ele, só aviso).
+  # A Cloudflare (números reais do R2) precisa de um token SÓ DE LEITURA ("Account Analytics: Read") no .env.
+  usage:
+    refresh: ${USAGE_REFRESH:30m}
+    warn-at: 70
+    critical-at: 90
+    cloudflare:
+      account-id: ${CLOUDFLARE_ACCOUNT_ID:}
+      api-token: ${CLOUDFLARE_ANALYTICS_TOKEN:}
+    resources:
+      "[fotos.espaco]": { label: "Fotos — espaço guardado", unit: BYTES, limit: 10737418240, period: NONE,
+                          meter: CLOUDFLARE_R2_STORAGE, lock-at: 95, order: 1 }
+      "[fotos.gravacoes]": { label: "Fotos — gravações no mês", unit: OPERATIONS, limit: 1000000, period: MONTH,
+                             meter: CLOUDFLARE_R2_CLASS_A, lock-at: 95, order: 2 }
+      "[fotos.leituras]": { label: "Fotos — leituras no mês", unit: OPERATIONS, limit: 10000000, period: MONTH,
+                            meter: CLOUDFLARE_R2_CLASS_B, order: 3 }
+      "[disco]": { label: "Disco do servidor", unit: BYTES, period: NONE, meter: DISK, order: 9 }
+
 server:
   port: ${PORT:8080}
   shutdown: graceful
@@ -128,6 +147,21 @@ zsu:
   # Sem GEMINI_API_KEY a API não sobe em produção (nunca a IA falsa por engano).
   ai:
     provider: ${AI_PROVIDER:gemini}
+  # Cota da IA por modelo (spec 004): principal e reserva têm cotas separadas no Gemini. Sem os valores, aparecem em
+  # vermelho como "Sem limite configurado" e a geração espera (análise G1) — preencha USAGE_AI_* no .env.
+  usage:
+    resources:
+      "[ia.principal.minuto]": { label: "IA principal — pedidos no minuto", unit: REQUESTS,
+                                 limit: "${USAGE_AI_MAIN_RPM:}", period: MINUTE, lock-at: 100, require-limit: true,
+                                 order: 4 }
+      "[ia.principal.dia]": { label: "IA principal — pedidos no dia", unit: REQUESTS, limit: "${USAGE_AI_MAIN_RPD:}",
+                              period: DAY_PACIFIC, lock-at: 100, require-limit: true, order: 5 }
+      "[ia.reserva.minuto]": { label: "IA reserva — pedidos no minuto", unit: REQUESTS,
+                               limit: "${USAGE_AI_FALLBACK_RPM:}", period: MINUTE, lock-at: 100, require-limit: true,
+                               order: 6 }
+      "[ia.reserva.dia]": { label: "IA reserva — pedidos no dia", unit: REQUESTS,
+                            limit: "${USAGE_AI_FALLBACK_RPD:}", period: DAY_PACIFIC, lock-at: 100,
+                            require-limit: true, order: 7 }
 
 # Em produção a documentação da API não fica pública.
 springdoc:

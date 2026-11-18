@@ -63,6 +63,13 @@ repositório oficial com logs limitados (`/etc/docker/daemon.json`). Firewall do
    A Cloudflare cria os registros de DNS do tipo *Tunnel*.
 5. Token perdido: **Overview → Add a replica → Docker** mostra o comando de novo (ou *Rotate token*).
 
+## 3b. Cloudflare: token só de leitura do monitor (spec 004)
+
+**My Profile → API Tokens → Create Token → Custom token**: permissão **Account → Account Analytics → Read**, só a conta
+do jornal, filtro de IP com o IP da VPS. O token vai em `CLOUDFLARE_ANALYTICS_TOKEN` e o ID da conta (página do R2) em
+`CLOUDFLARE_ACCOUNT_ID`. Preencher também `USAGE_AI_*` com os limites do plano grátis do Gemini (Google AI Studio →
+*Rate limits*) **antes** de publicar a versão com a spec 004 — sem eles a geração de rascunhos fica esperando.
+
 ## 4. VPS: código e segredos
 
 ```bash

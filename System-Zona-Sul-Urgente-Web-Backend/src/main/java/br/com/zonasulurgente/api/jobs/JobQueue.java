@@ -36,6 +36,34 @@ public class JobQueue {
 			.single();
 	}
 
+	/** Igual a {@link #enqueue(String, Object)}, mas só fica pronto em {@code runAt}. */
+	@Transactional
+	public UUID enqueueAt(String type, Object payload, java.time.Instant runAt) {
+		return jdbc.sql("""
+				INSERT INTO job_queue (type, payload, run_at) VALUES (:type, :payload::jsonb, :runAt) RETURNING id""")
+			.param("type", type)
+			.param("payload", json.writeValueAsString(payload))
+			.param("runAt", java.sql.Timestamp.from(runAt))
+			.query(UUID.class)
+			.single();
+	}
+
+	/**
+	 * Adiado (ex.: cota esgotada, spec 004): volta para a fila em {@code runAt} <b>sem gastar tentativa</b> e sem
+	 * contar como erro; o motivo fica em {@code last_error} com o prefixo "Aguardando:".
+	 */
+	@Transactional
+	public void defer(Job job, java.time.Instant runAt, String reason) {
+		jdbc.sql("""
+				UPDATE job_queue SET status = 'PENDING', attempts = GREATEST(attempts - 1, 0), locked_at = NULL,
+				  updated_at = now(), run_at = :runAt, last_error = :reason WHERE id = :id""")
+			.param("runAt", java.sql.Timestamp.from(runAt))
+			.param("reason", ("Aguardando: " + reason).length() > 2000 ? ("Aguardando: " + reason).substring(0, 2000)
+					: "Aguardando: " + reason)
+			.param("id", job.id())
+			.update();
+	}
+
 	/** Pega até {@code limit} jobs prontos; outra instância nunca pega os mesmos (SKIP LOCKED). */
 	@Transactional
 	public List<Job> claim(int limit, String worker) {

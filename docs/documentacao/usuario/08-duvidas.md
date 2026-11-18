@@ -35,7 +35,12 @@ transformar um desses em notícia, use **Adicionar post do Instagram** (cole o l
 Alguns vídeos chegam do Instagram sem imagem (o post mostra *Precisa de foto*). Escolha a foto principal no editor.
 
 **A foto não sobe.**
-Use JPEG, PNG, WebP ou HEIC de até 10 MB.
+Use JPEG, PNG, WebP ou HEIC de até 10 MB. Se aparecer *"Espaço de fotos esgotado"*, o espaço grátis de fotos chegou à
+trava: salve a notícia como rascunho sem a foto e avise o Administrador (capítulo 6, *Uso dos planos gratuitos*).
+
+**O post do Instagram está "Aguardando a IA" ou "Aguardando espaço".**
+A cota grátis da IA ou o espaço das fotos chegou ao limite. Não precisa fazer nada: o rascunho (ou a foto) sai sozinho
+na hora indicada ou quando a trava desligar.
 
 **Saí do editor sem salvar.**
 Abra a mesma matéria (ou *Nova notícia*) no mesmo navegador: o editor oferece recuperar o que foi digitado.

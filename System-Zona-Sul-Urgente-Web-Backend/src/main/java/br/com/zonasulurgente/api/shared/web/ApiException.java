@@ -22,4 +22,9 @@ public class ApiException extends RuntimeException {
 		return title;
 	}
 
+	/** Campos extras do problem+json (ex.: {@code retryAt}). Vazio por padrão. */
+	public java.util.Map<String, Object> properties() {
+		return java.util.Map.of();
+	}
+
 }

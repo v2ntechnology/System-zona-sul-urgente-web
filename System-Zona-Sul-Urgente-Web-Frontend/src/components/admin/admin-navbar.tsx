@@ -6,6 +6,7 @@ import {
   ClipboardListIcon,
   ExternalLinkIcon,
   FolderTreeIcon,
+  GaugeIcon,
   LayoutDashboardIcon,
   LogOutIcon,
   MegaphoneIcon,
@@ -46,12 +47,15 @@ const icons = {
   analytics: BarChart3Icon,
   ads: MegaphoneIcon,
   users: UsersIcon,
+  usage: GaugeIcon,
   design: PaletteIcon,
   project: ClipboardListIcon,
 };
 
 type NavbarProps = {
   items: AdminNavItem[];
+  /** Configurações (ex.: Uso dos planos): menu da conta no desktop, "Mais" no celular. */
+  accountItems?: AdminNavItem[];
   newNews?: AdminNavItem;
   user: { name: string; roleLabel: string };
   /** Painel do projeto (plano/backlog): só em `next dev` e para Administrador. */
@@ -71,7 +75,11 @@ export function AdminNavbar(props: NavbarProps) {
 
 function ActiveNavbar(props: NavbarProps) {
   const pathname = usePathname();
-  const candidates = [...props.items, ...(props.newNews ? [props.newNews] : [])];
+  const candidates = [
+    ...props.items,
+    ...(props.accountItems ?? []),
+    ...(props.newNews ? [props.newNews] : []),
+  ];
   // Item mais específico que casa com a URL (/admin/noticias/nova → "Nova notícia").
   const active = candidates
     .filter(
@@ -88,6 +96,7 @@ const subscribeScroll = (onChange: () => void) => {
 
 function NavbarView({
   items,
+  accountItems = [],
   newNews,
   user,
   showProject,
@@ -131,12 +140,18 @@ function NavbarView({
                 <PlusIcon aria-hidden className="size-4" /> {newNews.label}
               </Link>
             )}
-            <UserMenu user={user} showProject={showProject} />
+            <UserMenu user={user} showProject={showProject} accountItems={accountItems} />
           </div>
         </div>
       </header>
 
-      <MobileTabBar items={items} newNews={newNews} showProject={showProject} active={active} />
+      <MobileTabBar
+        items={items}
+        accountItems={accountItems}
+        newNews={newNews}
+        showProject={showProject}
+        active={active}
+      />
     </>
   );
 }
@@ -169,7 +184,11 @@ function PillLink({ item, current }: { item: AdminNavItem; current: boolean }) {
   );
 }
 
-function UserMenu({ user, showProject }: Pick<NavbarProps, "user" | "showProject">) {
+function UserMenu({
+  user,
+  showProject,
+  accountItems = [],
+}: Pick<NavbarProps, "user" | "showProject" | "accountItems">) {
   const initials = user.name
     .split(" ")
     .map((p) => p[0])
@@ -203,6 +222,14 @@ function UserMenu({ user, showProject }: Pick<NavbarProps, "user" | "showProject
         <DropdownMenuItem render={<a href="/" target="_blank" rel="noopener" />} className="py-2">
           <ExternalLinkIcon aria-hidden /> Ver o site
         </DropdownMenuItem>
+        {accountItems.map((item) => {
+          const Icon = icons[item.icon];
+          return (
+            <DropdownMenuItem key={item.href} render={<Link href={item.href} />} className="py-2">
+              <Icon aria-hidden /> {item.label}
+            </DropdownMenuItem>
+          );
+        })}
         <DropdownMenuItem render={<Link href={adminRoutes.designSystem} />} className="py-2">
           <PaletteIcon aria-hidden /> Design system
         </DropdownMenuItem>
@@ -224,11 +251,13 @@ function UserMenu({ user, showProject }: Pick<NavbarProps, "user" | "showProject
 /** Celular: 2 itens, "+" no meio, 1 item e "Mais" (o resto abre numa folha de baixo). */
 function MobileTabBar({
   items,
+  accountItems = [],
   newNews,
   showProject,
   active,
 }: {
   items: AdminNavItem[];
+  accountItems?: AdminNavItem[];
   newNews?: AdminNavItem;
   showProject?: boolean;
   active?: string;
@@ -236,7 +265,7 @@ function MobileTabBar({
   const [moreOpen, setMoreOpen] = useState(false);
   const left = items.slice(0, 2);
   const right = items.slice(2, 3);
-  const rest = items.slice(3);
+  const rest = [...items.slice(3), ...accountItems];
   const restActive = rest.some((i) => i.href === active);
 
   return (

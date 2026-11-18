@@ -1098,6 +1098,8 @@ function MediaPanel({
 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // 507 "Espaço de fotos esgotado" (spec 004): não é erro da pessoa; a notícia pode seguir sem foto.
+  const [noSpace, setNoSpace] = useState(false);
   // O envio leva alguns segundos: guarda a versão mais nova dos campos (texto alternativo,
   // legenda...) para não desfazer o que a pessoa digitou enquanto isso.
   const latest = useRef(image);
@@ -1117,6 +1119,7 @@ function MediaPanel({
     }
     const preview = URL.createObjectURL(file);
     setUploadError(null);
+    setNoSpace(false);
     setUploading(true);
     onChange({ ...latest.current, url: preview });
     const form = new FormData();
@@ -1131,6 +1134,7 @@ function MediaPanel({
       URL.revokeObjectURL(preview);
     } else if (result.message !== "simulated") {
       setUploadError(result.message);
+      setNoSpace("noSpace" in result && result.noSpace === true);
       onChange({ ...latest.current, url: "" });
       URL.revokeObjectURL(preview);
     }
@@ -1237,7 +1241,13 @@ function MediaPanel({
       </div>
       {error && <FieldError id="erro-image-url">{error}</FieldError>}
       {uploadError && (
-        <p role="alert" className="text-xs font-medium text-destructive">
+        <p
+          role="alert"
+          className={cn(
+            "text-xs font-medium",
+            noSpace ? "rounded-md bg-amber-50 px-3 py-2 text-amber-900" : "text-destructive",
+          )}
+        >
           {uploadError}
         </p>
       )}

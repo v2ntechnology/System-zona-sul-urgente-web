@@ -19,6 +19,7 @@ const pages = [
   ["painel: Instagram", "/admin/instagram"],
   ["painel: Instagram (fila)", "/admin/instagram?visao=fila"],
   ["painel: analytics", "/admin/analytics"],
+  ["painel: uso dos planos", "/admin/uso"],
 ] as const;
 
 for (const [name, path] of pages) {

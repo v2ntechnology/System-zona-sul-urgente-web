@@ -66,7 +66,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
 	@ExceptionHandler(ApiException.class)
 	ProblemDetail api(ApiException ex) {
-		return problem(ex.status(), ex.title(), ex.getMessage());
+		ProblemDetail body = problem(ex.status(), ex.title(), ex.getMessage());
+		ex.properties().forEach(body::setProperty);
+		return body;
 	}
 
 	/** @PreAuthorize negado dentro do MVC: mesmo 403 da política de segurança. */

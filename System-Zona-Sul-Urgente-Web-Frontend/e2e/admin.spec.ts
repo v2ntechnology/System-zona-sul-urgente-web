@@ -164,3 +164,62 @@ test.describe("destaques da home", () => {
     await expect(page.getByText(/colocar como manchete \(simulação/)).toBeVisible();
   });
 });
+
+// Spec 004: uso dos planos gratuitos (modo demonstração: números de exemplo, com as gravações de
+// fotos em 74% para a faixa amarela aparecer). Só o Administrador vê a tela e a faixa; a regra por
+// perfil é da API (UsageApiTests) e o menu por perfil está em src/lib/usage.test.ts.
+test.describe("uso dos planos", () => {
+  test("mostra as barras de cada recurso e atualiza (simulado)", async ({ page }) => {
+    await page.goto("/admin/uso");
+    await expect(page.getByRole("heading", { level: 1, name: "Uso dos planos" })).toBeVisible();
+
+    const fotos = page.getByRole("article", { name: "Fotos — espaço" });
+    await expect(fotos.getByText("1,2 GB de 10 GB")).toBeVisible();
+    await expect(fotos.getByText("Cloudflare")).toBeVisible();
+    await expect(fotos.getByText(/lido às \d{2}:\d{2}/)).toBeVisible();
+    await expect(fotos.getByRole("progressbar", { name: "Fotos — espaço" })).toHaveAttribute(
+      "aria-valuenow",
+      "12",
+    );
+
+    const gravacoes = page.getByRole("article", { name: "Fotos — gravações" });
+    await expect(gravacoes.getByText("742.318 de 1.000.000 operações")).toBeVisible();
+    await expect(gravacoes.getByText("Atenção")).toBeVisible();
+    await expect(gravacoes.getByText(/zera em/)).toBeVisible();
+
+    const ia = page.getByRole("article", { name: "IA — pedidos no dia" });
+    await expect(ia.getByText("conta do sistema")).toBeVisible();
+    await expect(ia.getByText("zera às 04:00")).toBeVisible();
+
+    await page.getByRole("button", { name: "Atualizar agora" }).click();
+    await expect(page.getByText(/Demonstração: sem a API/)).toBeVisible();
+  });
+
+  test("faixa de alerta no painel leva à tela de uso", async ({ page }) => {
+    await page.goto("/admin");
+    const banner = page.getByRole("region", { name: "Aviso de uso dos planos" });
+    await expect(banner).toBeVisible();
+    await expect(banner).toContainText("Fotos — gravações em 74,2%");
+    await banner.getByRole("link", { name: "Ver o uso dos planos" }).click();
+    await expect(page).toHaveURL("/admin/uso");
+  });
+
+  // Desktop: no menu da conta (a navbar em pílula não comporta mais itens); celular: em "Mais".
+  test("item Uso dos planos no menu do Administrador", async ({ page, isMobile }) => {
+    await page.goto("/admin");
+    if (isMobile) {
+      await page.getByRole("button", { name: "Mais" }).click();
+      await page.getByRole("link", { name: "Uso dos planos" }).click();
+    } else {
+      await page.getByRole("button", { name: "Conta de Juliana Prado" }).click();
+      await page.getByRole("menuitem", { name: "Uso dos planos" }).click();
+    }
+    await expect(page).toHaveURL("/admin/uso");
+  });
+
+  test("fila do Instagram mostra os posts aguardando a cota", async ({ page }) => {
+    await page.goto("/admin/instagram?visao=fila");
+    await expect(page.getByText("Aguardando a IA · volta às 04:00").first()).toBeVisible();
+    await expect(page.getByText("Aguardando espaço").first()).toBeVisible();
+  });
+});

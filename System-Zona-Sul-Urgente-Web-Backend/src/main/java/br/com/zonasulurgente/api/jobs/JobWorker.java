@@ -71,6 +71,10 @@ public class JobWorker {
 			handler.handle(job.payload());
 			queue.complete(job.id());
 		}
+		catch (JobDeferredException e) {
+			queue.defer(job, e.retryAt(), e.reason());
+			log.info("Job {} {} adiado para {}: {}", job.type(), job.id(), e.retryAt(), e.reason());
+		}
 		catch (Exception e) {
 			Duration retryIn = backoff(job.attempts());
 			boolean dead = job.attempts() >= job.maxAttempts();

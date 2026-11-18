@@ -27,11 +27,13 @@ import br.com.zonasulurgente.api.audit.AuditDiff;
 import br.com.zonasulurgente.api.audit.AuditEvent;
 import br.com.zonasulurgente.api.audit.AuditLog;
 import br.com.zonasulurgente.api.auth.application.AuthenticatedUser;
+import br.com.zonasulurgente.api.jobs.JobQueue;
 import br.com.zonasulurgente.api.news.admin.AdminNewsService;
 import br.com.zonasulurgente.api.news.admin.NewsDraft;
 import br.com.zonasulurgente.api.shared.web.ApiException;
 import br.com.zonasulurgente.api.shared.web.InvalidFieldsException;
 import br.com.zonasulurgente.api.shared.web.NotFoundException;
+import br.com.zonasulurgente.api.usage.QuotaDeferredException;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -59,9 +61,11 @@ public class InstagramQueueService {
 	private final TransactionTemplate tx;
 	private final JsonMapper json;
 	private final AuditLog audit;
+	private final JobQueue jobs;
 
 	public InstagramQueueService(InstagramRepository repo, EditorialAiProvider ai, AdminNewsService news,
-			TransactionTemplate tx, JsonMapper json, AuditLog audit) {
+			TransactionTemplate tx, JsonMapper json, AuditLog audit, JobQueue jobs) {
+		this.jobs = jobs;
 		this.repo = repo;
 		this.ai = ai;
 		this.news = news;
@@ -151,6 +155,17 @@ public class InstagramQueueService {
 		try {
 			draft = ai.draftFromPost(new SourcePost(post.caption(), post.permalink(), post.postedAt()), context);
 		}
+		catch (QuotaDeferredException e) {
+			// Cota grátis da IA esgotada (spec 004, FR-008): o post espera, sem "Erro". Na sincronização, a fila adia o
+			// job; no "Gerar agora", a geração fica agendada para a hora em que a cota volta e a tela recebe 429.
+			repo.setWaiting(id, "AI", e.retryAt());
+			log.info("Post {} aguardando a IA até {}: {}", id, e.retryAt(), e.reason());
+			if (SyncActor.is(user)) {
+				throw e;
+			}
+			jobs.enqueueAt(InstagramImportJob.TYPE, Map.of("postId", id, "generate", true), e.retryAt());
+			throw new AiQuotaException(e.retryAt());
+		}
 		catch (ApiException e) {
 			log.warn("IA falhou no post {} ({}): {}", id, ai.name(), e.getMessage());
 			repo.markError(id, e.getMessage());
@@ -172,6 +187,7 @@ public class InstagramQueueService {
 				.detail("advertising", draft.advertising() ? true : null)
 				.detail("source", SyncActor.is(user) ? "API" : null), AuditLog.Actor.of(user));
 		});
+		repo.clearWaiting(id, "AI");
 		log.info("Post {} virou rascunho ({})", id, draft.generatedBy());
 		return repo.view(id).orElseThrow();
 	}
@@ -245,6 +261,24 @@ public class InstagramQueueService {
 				category, user.authorSlug() == null ? List.of() : List.of(user.authorSlug()), d.neighborhoodSlug(),
 				List.of(), canTag ? d.tags() : List.of(), image, d.urgent() && canUrgent, false, null, null, null,
 				null, "INSTAGRAM", post.caption(), null, null);
+	}
+
+	/** "Gerar agora" com a cota grátis da IA esgotada (spec 004): 429 com a hora em que o rascunho sai sozinho. */
+	static class AiQuotaException extends ApiException {
+
+		private final transient java.time.Instant retryAt;
+
+		AiQuotaException(java.time.Instant retryAt) {
+			super(HttpStatus.TOO_MANY_REQUESTS, "Limite da IA",
+					"A cota gratuita da IA acabou por agora. O rascunho será gerado sozinho quando ela voltar.");
+			this.retryAt = retryAt;
+		}
+
+		@Override
+		public Map<String, Object> properties() {
+			return Map.of("retryAt", retryAt.toString());
+		}
+
 	}
 
 }

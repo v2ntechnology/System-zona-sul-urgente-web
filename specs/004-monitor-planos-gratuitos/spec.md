@@ -35,6 +35,8 @@ ou outro valor; quem recebe os avisos (só no painel ou também por e-mail); se 
 - P: Por onde chegam os avisos de 70% e 90%? → R: **Painel e e-mail para os Administradores** (2B). O e-mail depende
   do serviço de envio de e-mails (Resend, spec própria); até ele existir, só o aviso no painel.
 - P: Em que ponto a trava das fotos liga? → R: **95%** (3A) do limite, configurável.
+- P: Com a trava das fotos ligada, dá para publicar sem foto? → R: **Não** (opção A): publicar continua exigindo foto
+  (regra editorial do site); a notícia fica salva como rascunho até a foto poder entrar.
 
 ## Contexto
 
@@ -111,7 +113,7 @@ mensagem), salvar a notícia sem foto (funciona) e, liberando espaço, enviar de
 
 1. **Dado** o espaço das fotos no limite de trava, **quando** alguém envia uma foto, **então** o envio é recusado com
    uma mensagem clara ("O espaço gratuito de fotos está quase cheio; avise o Administrador") e a notícia pode ser
-   salva e publicada sem a foto. O limite de trava é **95%** (configurável).
+   salva como rascunho sem a foto (publicar continua exigindo foto — regra editorial do site; decisão de 2026-11-18). O limite de trava é **95%** (configurável).
 2. **Dado** o espaço das fotos travado, **quando** a sincronização do Instagram encontra um post novo, **então** o post
    entra na fila **sem foto**, marcado como "aguardando espaço", e a foto é baixada depois, quando houver folga.
 3. **Dado** as gravações de fotos do mês no limite de trava, **quando** alguém envia uma foto, **então** vale a mesma
@@ -175,7 +177,8 @@ Os limites e as porcentagens de aviso e de trava são configuráveis, para o mes
   mudança de nível, no painel e por e-mail para os Administradores ativos (o e-mail só quando o envio de e-mails
   estiver configurado; sem ele, só o painel).
 - **FR-006**: O sistema DEVE recusar fotos novas quando o espaço das fotos ou as gravações do mês atingirem o limite de
-  trava, com mensagem clara, sem impedir salvar e publicar a notícia sem foto.
+  trava, com mensagem clara, sem impedir salvar a notícia como rascunho sem foto. Publicar continua exigindo foto (regra
+  editorial existente; decisão de 2026-11-18, opção A).
 - **FR-007**: Com a trava das fotos ligada, posts do Instagram DEVEM entrar na fila sem foto, marcados como
   "aguardando espaço", e a foto DEVE ser baixada sozinha quando a trava desligar (se o post ainda existir).
 - **FR-008**: Ao atingir o limite de pedidos à IA do dia, a geração de rascunhos DEVE esperar o dia seguinte; no

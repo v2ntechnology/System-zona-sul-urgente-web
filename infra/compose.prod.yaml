@@ -55,6 +55,13 @@ services:
       ZSU_BOOTSTRAP_ADMIN_EMAIL: ${ZSU_BOOTSTRAP_ADMIN_EMAIL:-}
       ZSU_BOOTSTRAP_ADMIN_NAME: ${ZSU_BOOTSTRAP_ADMIN_NAME:-Administrador Zona Sul}
       ZSU_SITE_URL: ${SITE_URL}
+      # Monitor dos planos gratuitos (spec 004): token SÓ DE LEITURA da Cloudflare e cotas da IA por modelo.
+      CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID:-}
+      CLOUDFLARE_ANALYTICS_TOKEN: ${CLOUDFLARE_ANALYTICS_TOKEN:-}
+      USAGE_AI_MAIN_RPM: ${USAGE_AI_MAIN_RPM:-}
+      USAGE_AI_MAIN_RPD: ${USAGE_AI_MAIN_RPD:-}
+      USAGE_AI_FALLBACK_RPM: ${USAGE_AI_FALLBACK_RPM:-}
+      USAGE_AI_FALLBACK_RPD: ${USAGE_AI_FALLBACK_RPD:-}
       # Heap = 60% do limite do contêiner; o resto fica para o libvips (fotos) e a própria JVM.
       JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=60 --enable-native-access=ALL-UNNAMED"
     mem_limit: 2560m

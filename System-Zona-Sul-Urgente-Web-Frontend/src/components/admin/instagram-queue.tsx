@@ -8,6 +8,8 @@ import {
   FileTextIcon,
   GalleryHorizontalIcon,
   GitCompareIcon,
+  HourglassIcon,
+  ImageOffIcon,
   Loader2Icon,
   PlayIcon,
   PlusIcon,
@@ -42,6 +44,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { adminRoutes } from "@/config/admin-navigation";
+import { formatTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { diffWords } from "@/lib/word-diff";
 import type { InstagramImportStatus, InstagramPost } from "@/types/admin";
@@ -113,6 +116,15 @@ export function InstagramQueue({
       const result = await runInstagramAction(post.id, action);
       setBusyId(null);
       if (!result.ok && result.message === "simulated") return simulate(post, action);
+      if (!result.ok && result.retryAt) {
+        // 429 "Limite da IA" (spec 004): a API enfileirou a geração para retryAt.
+        const waitingUntil = result.retryAt;
+        setPosts((current) =>
+          current.map((p) => (p.id === post.id ? { ...p, waiting: "AI", waitingUntil } : p)),
+        );
+        setMessage(result.message);
+        return router.refresh();
+      }
       if (!result.ok) return setMessage(result.message);
       setPosts((current) => current.map((p) => (p.id === post.id ? result.post : p)));
       setMessage(doneMessage(action, result.post));
@@ -329,6 +341,7 @@ function PostCard({
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
           <InstagramStatusBadge status={post.status} />
+          <WaitingBadge post={post} />
           <span>{mediaLabel(post)}</span>
           <span aria-hidden>·</span>
           <span>
@@ -515,6 +528,20 @@ function StatusNote({ post }: { post: InstagramPost }) {
         {post.attempts ? ` (${post.attempts} tentativas)` : ""}
       </>,
     );
+  if (post.waiting === "AI")
+    return note(
+      "warning",
+      <HourglassIcon aria-hidden className={icon} />,
+      post.waitingUntil
+        ? `A IA atingiu o limite gratuito: o rascunho sai sozinho às ${formatTime(post.waitingUntil)}, sem custo.`
+        : "A IA atingiu o limite gratuito: o rascunho sai sozinho quando a cota voltar, sem custo.",
+    );
+  if (post.waiting === "SPACE")
+    return note(
+      "warning",
+      <ImageOffIcon aria-hidden className={icon} />,
+      "O espaço gratuito de fotos está quase cheio: a foto deste post é baixada sozinha quando houver folga.",
+    );
   if (post.status === "CHANGED_AT_SOURCE")
     return note(
       "warning",
@@ -598,6 +625,33 @@ function Thumbnail({ post }: { post: InstagramPost }) {
         </span>
       )}
     </div>
+  );
+}
+
+/** "Aguardando espaço" ou "Aguardando a IA · volta às 04:00" (spec 004); vazio sem espera. */
+function waitingLabel(post: InstagramPost): string {
+  if (post.waiting === "SPACE") return "Aguardando espaço";
+  if (post.waiting === "AI")
+    return post.waitingUntil
+      ? `Aguardando a IA · volta às ${formatTime(post.waitingUntil)}`
+      : "Aguardando a IA";
+  return "";
+}
+
+function WaitingBadge({ post, className }: { post: InstagramPost; className?: string }) {
+  const label = waitingLabel(post);
+  if (!label) return null;
+  const Icon = post.waiting === "AI" ? HourglassIcon : ImageOffIcon;
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-amber-900 ring-1 ring-amber-300 ring-inset",
+        className,
+      )}
+    >
+      <Icon aria-hidden className="size-3" />
+      {label}
+    </span>
   );
 }
 
@@ -727,7 +781,7 @@ function GridTile({ post, onOpen }: { post: InstagramPost; onOpen: () => void })
     <button
       type="button"
       onClick={onOpen}
-      aria-label={`${instagramStatusLabel(post.status)}: ${post.caption.slice(0, 80)}`}
+      aria-label={`${[instagramStatusLabel(post.status), waitingLabel(post)].filter(Boolean).join(" · ")}: ${post.caption.slice(0, 80)}`}
       className="group relative block aspect-square w-full overflow-hidden bg-muted outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       {post.thumbnailUrl && (
@@ -749,11 +803,12 @@ function GridTile({ post, onOpen }: { post: InstagramPost; onOpen: () => void })
           <GalleryHorizontalIcon aria-hidden className="size-5" />
         ) : null}
       </span>
-      <span className="absolute bottom-2 left-2">
+      <span className="absolute bottom-2 left-2 flex flex-wrap gap-1">
         <InstagramStatusBadge
           status={post.status}
           className={cn("shadow-sm", !attention && "max-sm:hidden")}
         />
+        <WaitingBadge post={post} className="shadow-sm max-sm:hidden" />
       </span>
       {/* Ao passar o mouse: começo da legenda (no Instagram seriam as curtidas). */}
       <span className="absolute inset-0 hidden items-center justify-center bg-foreground/60 p-4 text-center text-sm font-medium text-white opacity-0 transition group-hover:opacity-100 sm:flex">
@@ -801,6 +856,7 @@ function PostDetail({
           </span>
           <Dialog.Title className="flex-1 text-sm font-semibold">zonasulurgente</Dialog.Title>
           <InstagramStatusBadge status={post.status} />
+          <WaitingBadge post={post} />
           <Dialog.Close
             aria-label="Fechar"
             className="inline-flex size-8 items-center justify-center rounded-full hover:bg-muted"

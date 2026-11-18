@@ -124,7 +124,16 @@ export type InstagramPost = {
   needsPhoto?: boolean;
   /** Imagens guardadas do post (foto, carrossel ou capa do vídeo), na ordem. */
   mediaUrls?: string[];
+  /**
+   * Espera por cota (spec 004): SPACE = foto aguardando espaço no armazenamento; AI = rascunho
+   * aguardando a IA voltar (limite do minuto ou do dia). Nulo quando não espera nada.
+   */
+  waiting?: InstagramWaiting | null;
+  /** Quando a espera deve acabar (a IA volta); nulo para SPACE, que depende de liberar espaço. */
+  waitingUntil?: ISODateTime | null;
 };
+
+export type InstagramWaiting = "SPACE" | "AI";
 
 /** Aviso da conexão para a tela (mensagem já pronta, em português). */
 export type InstagramConnectionAlert = {
@@ -396,4 +405,52 @@ export type HomeFeatured = {
   automaticMain?: HomeFeaturedNews | null;
   /** Ordem que a tela carregou; volta no salvar para detectar mudança de outra pessoa. */
   signature: string;
+};
+
+// ---------------------------------------------------------------- uso dos planos (spec 004)
+
+export type UsageUnit = "BYTES" | "OPERATIONS" | "REQUESTS";
+
+export type UsageLevel = "NORMAL" | "WARN" | "CRITICAL";
+
+/** Um recurso monitorado (espaço das fotos, gravações, pedidos à IA, disco…). */
+export type UsageResource = {
+  /** Chave da configuração (ex.: "fotos.espaco", "ia.gemini-2.5-flash.dia"). */
+  key: string;
+  label: string;
+  unit: UsageUnit;
+  used: number;
+  /** Nulo ou 0 = sem limite configurado (a tela avisa em vermelho). */
+  limit: number | null;
+  percent: number | null;
+  level: UsageLevel;
+  /** Trava ligada: o recurso parou de ser gasto (fotos recusadas, IA adiada). */
+  locked: boolean;
+  /** % em que a trava liga; nulo = só aviso, nunca trava. */
+  lockAt: number | null;
+  /** cloud = número da Cloudflare; system = conta do próprio sistema. */
+  source: "cloud" | "system";
+  readAt: ISODateTime | null;
+  /** A última leitura da nuvem falhou ou é velha demais. */
+  stale: boolean;
+  /** Quando a janela zera (dia/mês/minuto); nulo para espaço e disco. */
+  resetsAt: ISODateTime | null;
+  note: string | null;
+};
+
+/** GET /api/v1/admin/usage (e POST /usage/refresh). */
+export type UsageReport = {
+  resources: UsageResource[];
+  warnAt: number;
+  criticalAt: number;
+  refreshedAt: ISODateTime | null;
+};
+
+/** GET /api/v1/admin/usage/alerts — só recursos em WARN, CRITICAL ou travados (faixa do painel). */
+export type UsageAlert = {
+  key: string;
+  label: string;
+  percent: number | null;
+  level: UsageLevel;
+  locked: boolean;
 };

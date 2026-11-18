@@ -209,4 +209,69 @@ class GeminiEditorialAiTests {
 			.hasMessageContaining("GEMINI_API_KEY");
 	}
 
+	// ------------------------------------------------------------------ cota do plano grátis (spec 004)
+
+	/** Cota falsa: os recursos listados estão esgotados até {@code retryAt}. */
+	private static br.com.zonasulurgente.api.usage.QuotaGuard exhausted(java.util.Map<String, java.time.Instant> until,
+			java.util.List<String> recorded) {
+		return new br.com.zonasulurgente.api.usage.QuotaGuard() {
+			@Override
+			public void check(String resource, long amount) {
+				if (until.containsKey(resource)) {
+					throw new br.com.zonasulurgente.api.usage.QuotaDeferredException(resource, until.get(resource),
+							"limite do plano gratuito");
+				}
+			}
+
+			@Override
+			public void record(String resource, long amount) {
+				recorded.add(resource);
+			}
+		};
+	}
+
+	private GeminiEditorialAi ai(br.com.zonasulurgente.api.usage.QuotaGuard quota) {
+		String base = "http://127.0.0.1:" + server.getAddress().getPort();
+		return new GeminiEditorialAi(new AiProperties.Gemini("chave-de-teste", "gemini-3.7-flash",
+				"gemini-3.5-flash-lite", base, "2026-05-20", Duration.ofSeconds(5)), JSON, Duration.ofMillis(1), quota);
+	}
+
+	@Test
+	void eachCallCountsOnTheQuotaOfItsModel() {
+		responseBody = completed(draft("Rua alagada em Copacabana"));
+		var recorded = new java.util.concurrent.CopyOnWriteArrayList<String>();
+
+		ai(exhausted(java.util.Map.of(), recorded)).draftFromPost(POST, CONTEXT);
+
+		assertThat(recorded).containsExactly("ia.principal.minuto", "ia.principal.dia");
+	}
+
+	@Test
+	void mainModelOutOfQuotaUsesTheFallbackWithItsOwnQuota() {
+		responseBody = completed(draft("Rua alagada em Copacabana"));
+		var recorded = new java.util.concurrent.CopyOnWriteArrayList<String>();
+		var soon = java.time.Instant.now().plusSeconds(30);
+
+		AiDraft draft = ai(exhausted(java.util.Map.of("ia.principal.minuto", soon), recorded)).draftFromPost(POST,
+				CONTEXT);
+
+		assertThat(draft.generatedBy()).isEqualTo("gemini:gemini-3.5-flash-lite");
+		assertThat(requestBody.get()).contains("gemini-3.5-flash-lite");
+		assertThat(recorded).containsExactly("ia.reserva.minuto", "ia.reserva.dia");
+	}
+
+	@Test
+	void bothModelsOutOfQuotaWaitForTheFirstThatComesBack() {
+		var later = java.time.Instant.now().plusSeconds(3600);
+		var soon = java.time.Instant.now().plusSeconds(40);
+		var quota = exhausted(java.util.Map.of("ia.principal.dia", later, "ia.reserva.minuto", soon),
+				new java.util.ArrayList<>());
+
+		assertThatThrownBy(() -> ai(quota).draftFromPost(POST, CONTEXT))
+			.isInstanceOf(br.com.zonasulurgente.api.usage.QuotaDeferredException.class)
+			.satisfies(e -> assertThat(((br.com.zonasulurgente.api.usage.QuotaDeferredException) e).retryAt())
+				.isEqualTo(soon));
+		assertThat(calls.get()).as("nenhuma chamada ao Google").isZero();
+	}
+
 }

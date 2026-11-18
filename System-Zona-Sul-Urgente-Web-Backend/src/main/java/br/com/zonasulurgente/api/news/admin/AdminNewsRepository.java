@@ -248,6 +248,16 @@ class AdminNewsRepository {
 	 * alternativo, a legenda e o crédito. Endereço externo colado: cria um registro novo
 	 * (dimensões padrão; o site exibe sem otimização).
 	 */
+	/** Foto principal de um rascunho que ainda não tem (spec 004: a foto do Instagram chegou depois). */
+	boolean attachImageIfMissing(UUID newsId, UUID imageId) {
+		return jdbc.sql("""
+				UPDATE news SET image_id = :img, updated_at = now()
+				WHERE id = :id AND image_id IS NULL AND status = 'DRAFT' AND deleted_at IS NULL""")
+			.param("img", imageId)
+			.param("id", newsId)
+			.update() > 0;
+	}
+
 	UUID imageAsset(NewsDraft.Image image) {
 		String alt = image.alt() == null || image.alt().isBlank() ? "Foto da matéria" : image.alt().strip();
 		var uploaded = jdbc.sql("""
